@@ -1,0 +1,7 @@
+\ Starting Forth Chapter 11, Problem 11-3
+
+: PLURAL  ( compile: xt -- )  ( run: ? #times -- )
+	CREATE  ,
+   	DOES>   @ LOCALS| xt | 
+		0 ?DO  xt EXECUTE  LOOP ;
+

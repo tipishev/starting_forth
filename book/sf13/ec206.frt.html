@@ -1,0 +1,66 @@
+\ Shift game (Albert Nijhof)
+\ The player shifts the blocks to their correct position.
+
+FORTH DEFINITIONS  DECIMAL
+: CHAR-ARRAY ( amount -- )      \ Defining word
+  CREATE 255 UMIN               \ Max. length? ( **)
+  DUP C, 1+ ALLOT ALIGN
+  DOES>  ( index -- address )
+         COUNT ROT UMIN + ;     \ Range?       ( **)
+
+#16 CHAR-ARRAY board            \ 15 chars plus an empty space
+0 VALUE SPOT                    \ Position of empty space
+
+: FINAL ( -- )
+  S" VIJGEBLAD*FORTH "
+  DUP 1- TO SPOT
+  0 BOARD SWAP MOVE ;
+
+: .BOARD ( -- )
+  0 5 AT-XY
+  0 board
+  4 0 DO   CR CR 33 SPACES
+           4 0 DO   COUNT EMIT 3 SPACES
+               LOOP
+      LOOP DROP 7 SPACES ;
+
+\ The player chooses the character to shift.
+\ This is why the characters should be unique.
+0 VALUE CHECK
+: >CODE  ( ch -- c ) DUP 32 AND - ;       \ Upper?    ( **)
+: PLAYER ( -- ) KEY >CODE TO CHECK ;
+
+\ Pos = position relative to SPOT. Take care of borders.
+: WEST?  ( -- pos ) SPOT    3 AND 0<>   -1 AND ;      ( **)
+: EAST?  ( -- pos ) SPOT 1+ 3 AND 0<>    1 AND ;      ( **)
+: NORTH? ( -- pos ) SPOT    3 > -4 AND ;              ( **)
+: SOUTH? ( -- pos ) SPOT   12 <  4 AND ;              ( **)
+
+: CHAR? ( pos -- pos )       \ The correct character?
+  DUP SPOT + BOARD C@ >CODE
+  CHECK = AND ;                                       ( **)
+
+: THERE ( -- index ) \ Position of character to shift
+  NORTH? CHAR?
+  WEST?  CHAR? OR
+  EAST?  CHAR? OR
+  SOUTH? CHAR? OR SPOT + ;
+
+: SHIFT ( index -- )
+  DUP BOARD SPOT BOARD           
+  OVER C@ OVER C@
+  -ROT
+  SWAP C! SWAP C!
+  TO SPOT ;
+
+\ For CHOOSE see e.g. Brodie, SF.
+: PLAY ( -- )
+  PAGE FINAL .BOARD 1997 MS
+  32 0
+  DO   15 CHOOSE SHIFT .BOARD
+  LOOP
+  BEGIN PLAYER THERE SHIFT .BOARD
+        CHECK 27 =          \ Escape? 
+  UNTIL ;
+
+\ ----- END -----

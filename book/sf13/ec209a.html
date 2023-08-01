@@ -1,0 +1,80 @@
+<HTML><HEAD><TITLE> ec 209a catch2 </TITLE>
+<link rel="stylesheet" type="text/css" href="an.css">
+</HEAD>
+<BODY><center>
+
+<table><tr><td><center>209a
+<br><tt>
+<a href="ec208c.html"> &#171;&#171; </a> &nbsp;
+<a href="ec200.html"> &#171;&#187; </a> &nbsp;
+<a href="ec209b.html"> &#187;&#187; </a>
+
+</tt>
+</center></table>
+
+<br> &nbsp;
+
+<table width="80%"><tr><td><h1> &nbsp; 209 </h1>
+<td class=r align=right> The programming language Forth &nbsp;
+<hr size="1">
+</table>
+
+
+<table width="80%"><tr><td>
+
+
+<h5> &nbsp;CATCH and THROW II </h5>
+
+
+ Theo:
+<br>
+ One uses<tt> CATCH </tt>and<tt> THROW </tt>in complex programs containing parts whose correct termination
+ is not always guaranteed. With our current knowledge, it would take us too long to develop a suitable test 
+ program just for this purpose. I've thought of a trick:
+<br> Let's consider our Forth as a complex program that allows its user to do many unexpected things,
+     i.e. generating many<tt> THROW</tt>s. The complete Forth is put in a<tt> CATCH</tt>, around which
+     a small program is build that lets us observe what happens.
+<br> Purpose: demonstrate<tt> THROW </tt>and<tt> CATCH </tt>usage.
+
+<pre>Forth file: <a href="ec209.frt.html" target="_blank"> ec209.frt</a>
+\ CATCH and THROW (Albert Nijhof)
+
+FORTH DEFINITIONS   DECIMAL
+: .DEPTH ( ? -- ) 
+  DEPTH 0 .R ." : "
+  DEPTH 0&lt;                       \ When necessary:
+  IF   BEGIN 0 DEPTH 0= UNTIL    \   stack repair
+       ." Stack underflow "      \   with message.
+  THEN ;
+
+: .TOP2 ( ? -- )                 \ If possible, show
+  DEPTH 1 > IF OVER . THEN       \   top two numbers
+  DEPTH IF DUP . THEN ;          \   on stack.
+
+: .TOP4 ( ? -- )
+  DEPTH 4 > IF ." ~ " THEN
+  DEPTH 2 > IF 2>R .TOP2 2R> THEN
+  .TOP2 ;
+
+: STATE-SIGN ( - char )
+  STATE @ IF [CHAR] ] ELSE [CHAR] [ THEN ;
+
+: .SITUATION ( -- )
+  CR .DEPTH .TOP4 STATE-SIGN EMIT SPACE ;
+
+CREATE INPUTBUFFER 80 ALLOT
+: INPUT ( -- addr len )
+  INPUTBUFFER DUP 80 ACCEPT SPACE ;
+
+: RISKY-PROGRAM ( -- ) .SITUATION INPUT EVALUATE ;
+
+: EX ( - )
+  BEGIN ['] RISKY-PROGRAM CATCH
+        DUP IF DUP . ." THROW executes " THEN DROP
+  AGAIN ;
+<div align=right><tt><a href="ec209b.html">&#187;&#187;</a></tt></div>
+</pre>
+
+</table>
+
+</center></BODY></HTML>

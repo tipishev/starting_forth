@@ -1,0 +1,15 @@
+\ Code from Starting Forth Chapter 6
+\ ANSized by Benjamin Hoyt in 1997
+
+( problem 6-7 )
+: R%  ( n1 % -- n2 )  10 */  5 +  10 / ;
+
+: DOUBLED  ( amount interest -- )
+   OVER 2*  SWAP ROT  21 1 DO
+      CR  ." Year "  I 2 .R  3 SPACES
+      2DUP  R% +  DUP  ." Bal "  .  DUP  2OVER DROP > IF
+      CR CR  ." More than doubled in "  I .  ." years "  LEAVE
+   THEN LOOP  2DROP  DROP ;
+
+
+

@@ -1,0 +1,78 @@
+<HTML><HEAD><TITLE>ec 205b ifthen2</TITLE>
+<link rel="stylesheet" type="text/css" href="an.css">
+</HEAD>
+<BODY><center>
+
+<table><tr><td><center>205b
+<br><tt>
+<a href="ec205a.html"> &#171;&#171; </a> &nbsp;
+<a href="ec200.html"> &#171;&#187; </a> &nbsp;
+<a href="ec206a.html"> &#187;&#187; </a>
+</tt>
+</center></table>
+
+<br> &nbsp;
+
+<table width="80%"><tr><td>
+
+<H2>5. DO-LOOP, CASE</H2>
+
+At runtime, the pair DO-LOOP works just like BEGIN-AGAIN with the following extra's:
+<OL>
+<LI> <TT>DO ( boundary start_count -- ) </TT>builds a count mechanism.
+<LI> Inside the loop the count is accessible with<TT> I</TT>.
+<LI> <TT>LOOP </TT>adjusts the count after each iteration.
+<LI> <TT>LOOP </TT>falls through when the counter has finished the indicated range.
+</OL>
+To formulate it precisely: the counter finishes the indicated range when it passes the "fence post"
+between 'boundary-minus-1' and 'boundary.' The same goes for positive <em>and</em> negative 
+steps in case of<TT> +LOOP</TT>.
+
+<PRE> 
+ 10 1 DO ...           ( 1 2 .. 9 ready )
+  0 0 DO ...           ( 0 1 .. -2 -1 ready ) 
+ 20 0 DO ...  2 +LOOP  ( 0 2 .. 18 ready )
+-10 0 DO ... -1 +LOOP  ( 0 -1 .. -10 ready )
+  0 0 DO ... -1 +LOOP  ( 0 ready )
+</PRE>
+
+The word<TT> LEAVE </TT>is used to prematurely exit a DO-LOOP:
+
+<PRE>
+.. DO .. IF LEAVE THEN .. LOOP aaa
+</PRE>
+
+<TT>LEAVE </TT>removes the counter administration and causes a jump to<TT> aaa</TT>, immediately
+after<TT> LOOP</TT>.
+
+<P>
+DO-LOOP resembles BEGIN-AGAIN even at compile-time. 
+That's why it is possible to use<TT> WHILE </TT>to compile a jump out of a DO-LOOP. 
+This has its use when the continuation of the conditionally aborted loop differs substantially 
+from that of the normal loop:
+
+<PRE>
+.. DO .. WHILE LOOP aaa ELSE .. I .. UNLOOP THEN ..
+</PRE>
+
+<TT>aaa </TT>is executed when<TT> LOOP </TT>finishes the loop. The part between<TT> ELSE </TT>and<TT> THEN </TT>is used only after the conditional loop exit. 
+In most cases there is no way to do this elegantly using<TT> LEAVE </TT>instead. Two remarks: 
+<OL>
+<LI> In all cases, the counter administration <B>must be removed explictly</B> using<TT> UNLOOP</TT>.
+<LI> <TT>I </TT>is usable outside the loop, <B>as long as the counter administration is still intact</B>.
+</OL>
+
+<TT>LEAVE </TT>(always) and<TT> LOOP </TT>(after the last pass) implicitly execute<TT> UNLOOP</TT>.
+
+<P>
+To finish off, Forth's CASE-construct. Hot debates have accompanied CASE ever since it was first 
+proposed. Is it worth all that attention? Some people, including this author, think not. 
+Forth has so many constructs available that CASE is actually redundant. Some people feel that CASE is 
+only there to let Forth beginners feel at home with a construct they might recognize from their previous 
+programming environments (and that this is doing more bad than good).
+
+
+<div align=right><tt><a href="ec206a.html">&#187;&#187;</a></tt></div>
+</table>
+<h2>:;</h2>
+</center></BODY></HTML>

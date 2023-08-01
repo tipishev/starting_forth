@@ -1,0 +1,74 @@
+<HTML><HEAD><TITLE> EC 204b ifthen1 </TITLE>
+<link rel="stylesheet" type="text/css" href="an.css">
+</HEAD>
+<BODY><center>
+
+<table><tr><td><center>204b
+<br><tt>
+<a href="ec204a.html"> &#171;&#171; </a> &nbsp;
+<a href="ec200.html"> &#171;&#187; </a> &nbsp;
+<a href="ec204c.html"> &#187;&#187; </a>
+</tt>
+</center></table>
+
+<br> &nbsp;
+
+<table width="80%"><tr><td>
+
+<H2>2. The compiler</H2>
+
+When having a definition with
+
+<pre>
+... aaa IF bbb THEN ccc ...
+</pre>
+
+inside, and it's decompiled, something like the following will show up:
+ 
+<pre>
+... aaa, JOF addr, bbb, ccc, ...
+</pre>
+
+<tt>IF </tt>has turned into<tt> JOF </tt>(jump on false) followed by a (relative) address.
+<br><tt>THEN </tt>has completely vanished, which makes sense because the address already points 
+to<tt> ccc </tt>, most likely in the form of an offset. The needed address however, is not yet known 
+at the moment<tt> IF </tt>is reached.
+
+<p> How did the compiler pull that of?
+
+<p> In fact, the compiler doesn't,<tt> IF </tt>and<tt> THEN </tt>have taken care of it themselves.
+
+<pre>
+: IF ( -- ) ?COMPILING \ Explanation follows
+  POSTPONE JOF
+  HERE IFADMIN COMADMIN!
+  0 , ; IMMEDIATE
+
+: THEN ( -- ) ?COMPILING
+  HERE COMADMIN@
+  IFADMIN ?PAIRS
+  OFFSET! ; IMMEDIATE
+</pre>
+
+<tt>?COMPILING </tt>causes an error message when not compiling.
+<br><tt> IFADMIN </tt>a constant used for recognition purposes.
+<br><tt> COMADMIN! ( addr const -- ) </tt>sends admin (a packet of two numbers) to the compiler.
+<br><tt> COMADMIN@ ( -- addr const ) </tt>asks back the last packet sent.
+<br><tt> ?PAIRS ( x y - ) </tt>gives an error message when<tt> x &lt;&gt; y</tt>.
+<br><tt> OFFSET! ( addr1 addr2 -- ) </tt>stores<tt> addr1 </tt>as an offset in<tt> addr2</tt>.
+
+<p> All non-standard names in this article are made up. They're only used to clarify what happens. 
+    In any particular Forth these names and details will differ. However, the global way of working
+    will match the above description.
+
+<p><tt>BEGIN </tt>and<tt> UNTIL </tt>should not pose a problem any more.
+
+<pre>
+: BEGIN ( -- )
+  HERE BEGINADMIN COMADMIN! ; IMMEDIATE
+<div align=right><tt><a href="ec204c.html">&#187;&#187;</a></tt></div>
+<pre>
+
+</table>
+
+</center></body><html>

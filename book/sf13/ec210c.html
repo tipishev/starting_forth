@@ -1,0 +1,41 @@
+<HTML><HEAD><TITLE> ec 210c many times </TITLE>
+<link rel="stylesheet" type="text/css" href="an.css">
+</HEAD>
+<BODY><center>
+
+<table><tr><td><center>210c
+<br><tt>
+<a href="ec210b.html"> &#171;&#171; </a> &nbsp;
+<a href="ec200.html"> &#171;&#187; </a> &nbsp;
+<a href="ec212a.html"> &#187;&#187; </a>
+</tt>
+</center></table>
+
+<br> &nbsp;
+
+<table width="80%"><tr><td>
+
+<tt>TIMES </tt>is a variant of<tt> MANY </tt>that expects the number of times Forth should execute the following text.
+ 
+<pre>
+0 VALUE #TIMES        \ Counter
+: TIMES ( n -- )
+  #TIMES 1+ TUCK      ( #times+1 n #times+1 ) 
+  0 TO #TIMES         \ Let's be careful.
+  = STOP? OR          \ n-th time or STOP?
+  IF DROP EXIT THEN   \ We're through.
+  TO #TIMES 0 >IN ! ; \ Increment counter..
+                      \ ..and again.
+
+) BL [rtn]
+) DUP EMIT 1+  96 TIMES DROP [rtn] ?
+</pre>
+
+  The number of times Forth should restart the line is passed on the stack to<tt> TIMES</tt>. The value<tt> #TIMES </tt>is an internal variable used by<tt> TIMES</tt>. When this variable is inadvertedly initialized to<tt> -100 </tt>or worse, to<tt> 100 </tt>...
+
+<div align=right><tt><a href="ec212a.html">&#187;&#187;</a></tt></div>
+
+</table>
+
+<h2>:;</h2>
+</center></body></html>

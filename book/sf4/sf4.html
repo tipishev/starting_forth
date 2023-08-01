@@ -1,0 +1,542 @@
+<!DOCTYPE HTML PUBLIC "-//Microsoft//DTD Internet Explorer 3.0 HTML//EN">
+<HTML>
+
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Leo Brodie's Starting Forth - Chapter 4</TITLE>
+  <META name="description" content="Starting Forth, Leo Brodie, Chapter 4.">
+  <META name="keywords" content="Forth, example code, Starting Forth, chapter 4">
+</HEAD>
+
+<BODY BGCOLOR="#F8F8F8" TEXT="#000000" LINK="#0000FF" VLINK="#007070" ALINK="#FF0000" TOPMARGIN=0>
+
+<H1>4 Decisions, Decisions, ...</H1>
+
+	<P> In this chapter we'll learn how to program the computer to make "decisions." This is the moment
+	    when you turn your computer into something more than an ordinary calculator.
+
+<H2>The Conditional Phrase</H2>
+
+	<P> Let's see how to write a simple decision-making statement in Forth. Imagine we are programming a 
+	    mechanical egg-carton packer. Some sort of mechanical device has counted the eggs on the conveyor
+	    belt, and now we have the number of eggs on the stack. The Forth phrase:
+<PRE>	12 = IF  FILL-CARTON  THEN
+</PRE>
+	    tests whether the number on the stack is <U>equal</U> to <U>12</U>, and <U>if</U> it is, the word 
+	    <TT>FILL-CARTON</TT> is executed. If it's not, execution moves right along to the words that 
+	    follow <FONT COLOR="#0000FF">THEN</FONT>.
+	
+	<P> <CENTER><IMG SRC="scale.gif" ALT="scale test" ALIGN=MIDDLE></CENTER>
+	<P> The word <FONT COLOR="#0000FF">=</FONT> takes two values of the stack and compares them to see 
+	    if they are equal. 
+	    
+	<P> <CENTER><IMG SRC="if1.gif" ALT="if statement1" ALIGN=MIDDLE></CENTER>
+	<P> If the condition is true, <FONT COLOR="#0000FF">IF</FONT> allows the flow of 
+	    execution to continue with the next word in the definition. 
+	<P> <CENTER><IMG SRC="if2.gif" ALT="if statement2" ALIGN=MIDDLE></CENTER>
+	<P> But if the condition is false, <FONT COLOR="#0000FF">IF</FONT> causes the flow of execution 
+	    to skip to <FONT COLOR="#0000FF">THEN</FONT>, from which point execution will proceed.
+
+	<P> Let's try it. Define this example word:
+<PRE>	: ?FULL  12 = IF  ." It's full "  THEN ;<U> ok </U>
+	11 ?FULL<U> ok </U>
+	12 ?FULL<U> It's full ok </U>
+</PRE>
+	<P> Notice: an <FONT COLOR="#0000FF">IF</FONT>...<FONT COLOR="#0000FF">THEN</FONT> statement must be
+	    contained within a definition. You can't just enter these words in "calculator style."
+
+	<P> Don't be misled by the traditional English meanings of the Forth words <FONT COLOR="#0000FF">IF</FONT> and 
+	    <FONT COLOR="#0000FF">THEN</FONT>. The words that follow <FONT COLOR="#0000FF">IF</FONT> are executed
+	    <U>if</U> the condition is true. The words that follow <FONT COLOR="#0000FF">THEN</FONT> are <U>always</U>
+	    executed, as though you were telling the computer, "After you make the choice, <U>then</U> continue
+	    with the rest of the definition." (In this example, the only word after <FONT COLOR="#0000FF">THEN</FONT>
+	    is <FONT COLOR="#0000FF"><B>;</B></FONT>, which ends the definition.)
+
+	<P> Let's look at another example. This definition checks whether the temperature of a laboratory boiler 
+	    is too hot. It expects to find the temperature on the stack:
+<PRE>	: ?TOO-HOT  220 > IF ." Danger -- reduce heat " THEN ;
+</PRE>
+	<P> If the temperature on the stack is <U>greater than</U> 220, the danger message will be printed at the 
+	    terminal. You can execute this one yourself, by entering the definition, then typing in a value just
+	    before the word.
+<PRE>	290 ?TOO-HOT<U> Danger -- reduce heat ok </U>
+	130 ?TOO-HOT<U> ok </U>
+</PRE>
+	<P> Remember that every <FONT COLOR="#0000FF">IF</FONT> needs a <FONT COLOR="#0000FF">THEN</FONT> to
+	    come home to. Both words must be in the same definition.
+
+	<P> Here is a partial list of comparison operators that you can use before an <FONT COLOR="#0000FF">IF</FONT>...<FONT COLOR="#0000FF">THEN</FONT>
+	    statement:
+<BR>
+<CENTER><TABLE CELLPADDING="4" WIDTH="20%" BORDER="3">
+	<TR><TD ALIGN=CENTER bgcolor="#00FF00"> <B>=</B>	<TD ALIGN=CENTER bgcolor="#EEEEEE">	<IMG SRC="bullet.gif" ALT="equal">
+	<TR><TD ALIGN=CENTER bgcolor="#00FF00"> <B>&lt;</B> 	<TD ALIGN=CENTER bgcolor="#EEEEEE">	<IMG SRC="bullet.gif" ALT="less-than">
+	<TR><TD ALIGN=CENTER bgcolor="#00FF00"> <B>&gt</B>	<TD ALIGN=CENTER bgcolor="#EEEEEE">	<IMG SRC="bullet.gif" ALT="greater-than">
+	<TR><TD ALIGN=CENTER bgcolor="#00FF00"> <B>0=</B>	<TD ALIGN=CENTER bgcolor="#EEEEEE">	<IMG SRC="bullet.gif" ALT="zero-equal">
+	<TR><TD ALIGN=CENTER bgcolor="#00FF00"> <B>0&lt;</B>	<TD ALIGN=CENTER bgcolor="#EEEEEE">	<IMG SRC="bullet.gif" ALT="zero-less-than">
+	<TR><TD ALIGN=CENTER bgcolor="#00FF00"> <B>0&gt</B>	<TD ALIGN=CENTER bgcolor="#EEEEEE">	<IMG SRC="bullet.gif" ALT="zero-greater-than">
+</TABLE></CENTER>
+
+	<P> The words <FONT COLOR="#0000FF">&lt;</FONT> and <FONT COLOR="#0000FF">&gt;</FONT> expect the same stack
+	    order as the arithmetic operators, that is:
+
+<CENTER><TABLE BORDER="0">
+	<TR><TH bgcolor="#CCCCCC"> Infix    <TH bgcolor="#CCCCCC"> &nbsp;           <TH bgcolor="#CCCCCC"> Postfix
+	<TR><TD bgcolor="#EEEEEE"> 2  <  10 <TD bgcolor="#EEEEEE"> is equivalent to <TD bgcolor="#EEEEEE"> 2 10 <
+	<TR><TD bgcolor="#EEEEEE"> 17 > -39 <TD bgcolor="#EEEEEE"> is equivalent to <TD bgcolor="#EEEEEE"> 17 -39 >
+</TABLE></CENTER>
+
+	<P> The words <FONT COLOR="#0000FF">0=</FONT>, <FONT COLOR="#0000FF">0&lt;</FONT> and <FONT COLOR="#0000FF">0&gt;</FONT> expect only one value on 
+	    the stack. The value is compared with zero.
+	
+	<P> Another word, <FONT COLOR="#0000FF">INVERT</FONT>, doesn't test any value at all; it simply reverses
+	    whatever condition has just been tested. For example, the phrase:
+<PRE>	... = INVERT IF ...
+</PRE>
+	    will execute the words after <FONT COLOR="#0000FF">IF</FONT>, if the two numbers on the stack are <U>not</U> equal. 
+
+<H2>The Alternative Phrase</H2>
+
+	<P> Forth allows you to provide an alternative phrase in an <FONT COLOR="#0000FF">IF</FONT> statement,
+	    with the word <FONT COLOR="#0000FF">ELSE</FONT>.
+
+	<P> The following example is a definition which tests whether a given number is a valid day of the 
+	    month:
+<PRE>	: ?DAY  32 < IF  ." Looks good " ELSE  ." no way " THEN ;
+</PRE>
+	<P> <IMG SRC="else1.gif" ALT="else statement" ALIGN=RIGHT>
+	<P> If the number on the stack is less than thirty-two, the message "Looks good" will be printed. 
+	    Otherwise, "no way" will be printed.
+	
+	<P> Imagine that <FONT COLOR="#0000FF">IF</FONT> pulls a railroad-track switch, depending on the outcome 
+	    of the test. Execution then takes one of two possible routes, but either way, the tracks rejoin at
+	    the word <FONT COLOR="#0000FF">THEN</FONT>.
+
+	<P> By the way, in computer terminology, this whole business of rerouting the path of execution is 
+	    called "branching."<IMG SRC="footnote.gif" ALT="For Old Hands: Forth has no GOTO statement.">
+
+	<P> Here's a more useful example. You know that dividing  any number by zero is impossible, so if you 
+	    try it on a computer, you'll get an incorrect answer. We might define a word which only performs
+	    division if the denominator is not zero. The following definition expects stack items in this 
+	    order:
+<PRE>	( numerator denominator -- quotient )
+	: /CHECK   
+	  DUP 0= IF  ." invalid " DROP  
+	       ELSE / 
+	       THEN ;<IMG SRC="footnote.gif" ALT="For Experts: There are better ways, as we'll see.">
+</PRE>
+	<P> Notice that we first have to <FONT COLOR="#0000FF">DUP</FONT> the denominator because the phrase
+<PRE>	0= IF
+</PRE>
+	    will destroy it in the process.
+	
+	<P> Also notice that the word <FONT COLOR="#0000FF">DROP</FONT> removes the denominator if division
+	    won't be performed, so that whether we divide or not, the stack effect will be the same.
+
+<H2>Nested <FONT COLOR="#0000FF">IF</FONT>...<FONT COLOR="#0000FF">THEN</FONT> Statements</H2>
+	
+	<P> It's possible to put an <FONT COLOR="#0000FF">IF</FONT>...<FONT COLOR="#0000FF">THEN</FONT> (or
+	    <FONT COLOR="#0000FF">IF</FONT>...<FONT COLOR="#0000FF">ELSE</FONT>...<FONT COLOR="#0000FF">THEN</FONT>)
+	    statement inside another <FONT COLOR="#0000FF">IF</FONT>...<FONT COLOR="#0000FF">THEN</FONT> statement.
+	    In fact, you can get as complicated as you like, so long as every <FONT COLOR="#0000FF">IF</FONT> has
+	    one <FONT COLOR="#0000FF">THEN</FONT>.
+	
+	<P> Consider the following definition, which determines the size of commercial eggs (extra large, 
+	    large, etc.) given their weight in ounces per dozen:
+<PRE>	: EGGSIZE	DUP  18 < IF  ." reject "      ELSE
+			DUP  21 < IF  ." small "       ELSE
+			DUP  24 < IF  ." medium "      ELSE
+			DUP  27 < IF  ." large "       ELSE
+			DUP  30 < IF  ." extra large " ELSE
+				      ." error "
+			THEN THEN THEN THEN THEN DROP ;				      
+</PRE>
+	<P> Once <TT>EGGSIZE</TT> has been entered, here are some results you'd get:
+<PRE>	23 EGGSIZE<U> medium ok </U>
+	29 EGGSIZE<U> extra large ok </U>
+	40 EGGSIZE<U> error ok </U>
+</PRE>
+	<P> We'd like to point out a few things about <TT>EGGSIZE</TT>:
+	<P> The entire definition is a series of "nested" <FONT COLOR="#0000FF">IF</FONT>...<FONT COLOR="#0000FF">THEN</FONT>
+	    statements. The word "nested" does not refer to the fact that we're dealing with eggs, but to the fact that the 
+	    statements nest inside one another, like a set of mixing bowls.
+
+	<P> The five <FONT COLOR="#0000FF">THEN</FONT>s at the bottom close off the five <FONT COLOR="#0000FF">IF</FONT>s in 
+	    reverse order, that is:
+	    <P> <CENTER><IMG SRC="nest.gif" ALT="nested IF THENs" ALIGN=MIDDLE></CENTER>
+
+	<P> Also notice that a <FONT COLOR="#0000FF">DROP</FONT> is necessary at the end of the definition to get
+	    rid of the original value.
+
+	<P> Finally, notice that the definition is visually organized to be read easily by human beings. Most 
+	    Forth programmers would rather waste a little space than let things get any more confused than they 
+	    have to be.
+
+<H2>A Closer Look at <FONT COLOR="#0000FF">IF</FONT></H2>
+
+	<P> <IMG SRC="scale-b.gif" ALT="scale tester" ALIGN=RIGHT>
+	    How does the comparison operator (<FONT COLOR="#0000FF">=</FONT>, <FONT COLOR="#0000FF">&lt;</FONT>, 
+	    <FONT COLOR="#0000FF">&gt;</FONT>, or whichever) let <FONT COLOR="#0000FF">IF</FONT> know whether
+	    the condition is true or false? By simply leaving <FONT COLOR="#0000FF">TRUE</FONT> or 
+	    <FONT COLOR="#0000FF">FALSE</FONT> on the stack. A <FONT COLOR="#0000FF">TRUE</FONT> (all bits high)
+	    means that the condition is true; a <FONT COLOR="#0000FF">FALSE</FONT> (all bits low) means that 
+	    the condition is false.
+
+	<P> In computer jargon, when one piece of program leaves a value as a signal for another piece of 
+	    program, that value is called a "flag."
+
+	<P> Try entering the following phrases at the terminal, letting <FONT COLOR="#0000FF"><B>.</B></FONT> 
+	    show you what's on the stack as a flag.
+<PRE>	5 4 > .<U> -1 ok </U>
+	5 4 < .<U> 0 ok </U>
+</PRE>
+	<P> (It's ok to use comparison operators directly at your terminal like this, but remember that
+	    an <FONT COLOR="#0000FF">IF</FONT>...<FONT COLOR="#0000FF">THEN</FONT> statement must be 
+	    wholly contained within a definition because it involves branching.)
+
+	<P> <FONT COLOR="#0000FF">IF</FONT> will take a <FONT COLOR="#0000FF">TRUE</FONT> as a flag that
+	    means true and a <FONT COLOR="#0000FF">FALSE</FONT> as a flag that means false. Now let's take
+	    a closer look at <FONT COLOR="#0000FF">INVERT</FONT>, which reverses the flag on the stack.
+<PRE>	FALSE INVERT .<U> -1 ok </U>
+	TRUE INVERT .<U> 0 ok </U>
+</PRE>
+	<P> Now we'll let you in on a little secret: <FONT COLOR="#0000FF">IF</FONT> will take <U>any</U>
+	    <U>non-zero</U> <U>value</U> to mean true.
+	<P> To prove it, try entering this test:
+<PRE>	: TEST  IF ." non-" THEN ." zero " ;
+</PRE>
+	<P> Even though there is no comparison operator in the above definition, you'll still get
+<PRE>	0 TEST<U> zero ok </U>
+	1 TEST<U> non-zero ok </U>
+	-400 TEST<U> non-zero ok </U>
+</PRE>
+
+	<P> So what, you ask? Well, the fact that an arithmetic zero is identical to a flag that means "false"
+	    leads to some interesting results.
+
+	<P> For one thing, if all you want to test is whether a number is zero, you don't need a comparison 
+	    operator at all. For example, a slightly simpler version of <TT>/CHECK</TT>, which we saw earlier,
+	    could be
+<PRE>	: /CHECK  DUP IF  /  ELSE  ." invalid " DROP  THEN ;
+</PRE>
+	<P> Here's another interesting result. Say you want to test whether a number is an even multiple of
+	    ten, such as 10, 20, 30, 40 etc. You know that the phrase
+<PRE>	10 MOD
+</PRE>
+	    divides by ten and returns the remainder only. An even multiple of ten would produce a zero 
+	    remainder, so the phrase 
+<PRE>	10 MOD 0=
+</PRE>
+	    gives the appropriate "true" or "false" flag.
+	
+	<P> Still another interesting result is that you can use <FONT COLOR="#0000FF">-</FONT> (minus) as a 
+	    comparison operator which tests whether two values are "not equal." When you subtract two equal
+	    numbers, you get zero (false); when you subtract two unequal numbers, you get a non-zero value.
+	    However, now we must talk a bit about "well-formed flags."
+
+	<P> If you think about it, both <FONT COLOR="#0000FF">0=</FONT> and <FONT COLOR="#0000FF">INVERT</FONT>
+	    do almost the same thing. However, <FONT COLOR="#0000FF">0=</FONT> changes the number 0 to the 
+	    number -1 and any non-zero number to 0, while <FONT COLOR="#0000FF">INVERT</FONT> changes all zero 
+	    bits in a number to one bits and the one bits in that number to zero bits. Only when the number
+	    is a "well-formed flag", i.e., either 0 or -1, the result of <FONT COLOR="#0000FF">0=</FONT> and 
+	    <FONT COLOR="#0000FF">INVERT</FONT> is the same. All comparison operators return well-formed flags,
+	    fit for either <FONT COLOR="#0000FF">0=</FONT> or <FONT COLOR="#0000FF">INVERT</FONT>. However,
+	    when you use <FONT COLOR="#0000FF">-</FONT> to compare two numbers, as we did above, the flag 
+	    will not be well-formed when the two numbers differ in value, and only 
+	    <FONT COLOR="#0000FF">0=</FONT> can be used to safely reverse the meaning of the comparison.
+
+	<P> A final result is described in the next section.
+
+<H2>A Little Logic</H2>
+	
+	<P> It's possible to take several flags from various tests and combine them into a single flag
+	    for one <FONT COLOR="#0000FF">IF</FONT> statement. You might combine them as an "either/or"
+	    decision, in which you make two comparison tests. If either or both of the tests are true, 
+	    then the computer will execute something. If neither is true, it won't. 
+
+	<P> Here's a rather simple-minded example, just to show you what we mean. Say you want to print the
+	    name "ARTICHOKE" if an input number is <U>either</U> negative <U>or</U> a multiple of ten.
+
+	<P> How do you do this in Forth? Consider the phrase:
+<PRE>	DUP 0<  SWAP 10 MOD 0=  +
+</PRE>	
+	Here's what happens when the input number is say, 30:
+
+<BR>
+<CENTER><TABLE CELLPADDING="4" WIDTH="80%" BORDER="0">
+	<TR><TH bgcolor="#CCCCCC"> Operator      	<TH bgcolor="#CCCCCC"> Contents of stack     		<TH bgcolor="#CCCCCC"> Operation
+	<TR><TD bgcolor="#EEEEEE"> <TT>&nbsp;</TT> 	<TD bgcolor="#EEEEEE" ALIGN=CENTER><TT>    30</TT>	<TD bgcolor="#EEEEEE" ALIGN=LEFT> &nbsp;
+	<TR><TD bgcolor="#EEEEEE"> <TT>DUP</TT> 	<TD bgcolor="#EEEEEE" ALIGN=CENTER><TT> 30 30</TT>	<TD bgcolor="#EEEEEE" ALIGN=LEFT> Duplicates it so we can test it twice.
+	<TR><TD bgcolor="#EEEEEE"> <TT>0&lt;</TT>	<TD bgcolor="#EEEEEE" ALIGN=CENTER><TT> 30  0</TT>	<TD bgcolor="#EEEEEE" ALIGN=LEFT> Is it negative? No (zero).
+	<TR><TD bgcolor="#EEEEEE"> <TT>SWAP</TT>	<TD bgcolor="#EEEEEE" ALIGN=CENTER><TT>  0 30</TT>	<TD bgcolor="#EEEEEE" ALIGN=LEFT> Swaps the flag with the number.
+	<TR><TD bgcolor="#EEEEEE"> <TT>10 MOD 0=</TT>	<TD bgcolor="#EEEEEE" ALIGN=CENTER><TT>  0 -1</TT>	<TD bgcolor="#EEEEEE" ALIGN=LEFT> Is it evenly divisible by 10? Yes (true).
+	<TR><TD bgcolor="#EEEEEE"> <TT>+</TT>		<TD bgcolor="#EEEEEE" ALIGN=CENTER><TT>    -1</TT>	<TD bgcolor="#EEEEEE" ALIGN=LEFT> Add the flags.
+</TABLE></CENTER>
+
+	<P> Adds the flags? What happens when you add flags? Here are four possibilities:
+	<P> <CENTER><IMG SRC="flagsum.jpg" ALT="add flags?" ALIGN=MIDDLE></CENTER>
+	<P> Lo and behold, the result flag is true if either or both conditions are true. In this example,
+	    the result is -1, which means "true." If the input number had been -30, then both condition would
+	    have been true and the sum would have been minus two. Minus two is, of course, non-zero. So as far as
+	    <FONT COLOR="#0000FF">IF</FONT> is concerned, -2 is as true as -1.
+	    
+	<P> Our simple-minded definition, then would be:
+<PRE>	: VEGETABLE  DUP 0<  SWAP 10 MOD 0= +
+		IF  ." ARTICHOKE "  THEN ;
+</PRE>
+	<P> Here is an improved version of a previous example called <TT>?DAY</TT>.
+
+	<P> The old <TT>?DAY</TT> only caught entries over thirty-one. But negative numbers shouldn't be allowed 
+	    either. How about this:
+<PRE>	: ?DAY  DUP 1 <  SWAP 31 > +
+		IF ." No way " ELSE ." Looks good " THEN ;
+</PRE>
+	<P> The above two examples will always work because any "true" flags will always be exactly "-1."
+	    In some cases, however, a flag may be any non-zero value, not just "-1," in which case it's 
+	    dangerous to add them with <FONT COLOR="#0000FF">+</FONT>. For example:
+<PRE>	1 -1 + .<U> 0 ok </U>
+</PRE>
+	    gives us a mathematically correct answer, but not the answer we want if 1 and -1 are flags.
+	
+	<P> For this reason, Forth supplies a word called <FONT COLOR="#0000FF">OR</FONT>, which will
+	    return the correct flag even in case of 1 and -1. An "or decision" is the computer term for the
+	    kind of flag we've been discussing. For example, if either the front door <U>or</U> the back door
+	    is open (or both), flies will come in.
+
+	<P> Another kind of decision is called an "and" decision. In an "and" decision, <U>both</U> conditions
+	    must be true for the result to be true. For example, the front door <U>and</U> the back door must 
+	    both be open for a breeze to come through. If there are three or more conditions, they must
+	    <U>all</U> be true.
+<BLOCKQUOTE>
+<FONT SIZE=-1>
+	<I>For the Curious Newcomer</I><BR><BR>
+
+	The use of words like "or" and "and" to structure part of an application is called "logic." A form of
+	notation for logical statements was developed in the nineteenth century by George Boole; it is now
+	called Boolean algebra. Thus the term "a Boolean flag" (or even just "a Boolean") simply refers to a
+	flag that will be used in a logical statement.
+</FONT>
+</BLOCKQUOTE>
+	
+	<P> How can we do this "and decision" in Forth? By using the handy word <FONT COLOR="#0000FF">AND</FONT>. Here's
+	    what <FONT COLOR="#0000FF">AND</FONT> would do with the four possible combinations of flags we
+	    saw earlier:
+	<P> <CENTER><IMG SRC="flagand.jpg" ALT="AND flags" ALIGN=MIDDLE></CENTER>
+
+	<P> In other words, only the combination "-1 -1 AND" produces a result of "true." Let's say we're
+	    looking for a cardboard box that's big enough to fit a disk drive which measures:
+<PRE>	height  6"
+	width  19"
+	length 22"
+</PRE>
+
+	<P> The height, width, <U>and</U> length requirements all must be satisfied for the box to be big
+	    enough. If we have the dimensions on the stack, then we can define:
+<PRE> 	: BOXTEST ( length width height -- )
+		6 >  ROT 22 >  ROT 19 >  AND AND 
+		IF ." Big enough " THEN ;
+</PRE>
+	<P> Notice that we've put a comment inside the definition, to remind us of stack effects. This is 
+	    particularly wise when the stack order is potentially confusing or hard to remember.
+
+	<P> You can test <TT>BOXTEST</TT> with the following phrase:
+<PRE>	23 20 7 BOXTEST<U> Big enough ok </U>
+</PRE>
+	<P> As your applications become more sophisticated, you will be able to write statements in Forth
+	    that look like postfix English and are very easy to read. Just define the individual words 
+	    within the definition to check some condition somewhere, then leave a flag on the stack.
+
+	<P> An example is:
+<PRE>	: SNAPSHOT  LIGHT? FILM? AND IF  PHOTOGRAPH  THEN ;
+</PRE>
+	    which checks that there is available light <U>and</U> that there is film in the camera before 
+	    taking the picture. Another example, which might be used in a computer-dating application, is:
+<PRE>	: MATCH 
+	   HUMOROUS SENSITIVE AND
+	   ART.LOVING MUSIC.LOVING OR AND
+	   SMOKING 0= AND
+	   IF  ." I have someone you should meet " THEN ;
+</PRE>
+	   where words like <TT>HUMOROUS</TT> and <TT>SENSITIVE</TT> have been defined to check a record
+	   in a disk file that contains information on other applicants of the appropriate sex.
+
+<H2>Two Words with Built-in <FONT COLOR="#0000FF">IF</FONT></H2>
+
+	<P> <FONT COLOR="#0000FF">?DUP</FONT>
+	<P> The word <FONT COLOR="#0000FF">?DUP</FONT> duplicates the top stack value only if it is non-zero.
+	    This can eliminate a few surplus words. For example, the definition:
+<PRE>	: /CHECK  DUP IF  /  ELSE DROP  THEN ;
+</PRE>
+	    can be shortened to
+<PRE>	: /CHECK  ?DUP IF  /  THEN ;
+</PRE>
+
+	<P> <FONT COLOR="#0000FF">ABORT"</FONT>
+	<P> It may happen that somewhere in a complex application an error might occur (such as a division by
+	    zero), way down in one of the low-level words. When this happens you don't just want the computer
+	    to keep on going, and you also don't want it to leave anything on the stack.
+
+	<P> If you think such an error might occur, you can use the word <FONT COLOR="#0000FF">ABORT"</FONT>.
+	    <FONT COLOR="#0000FF">ABORT"</FONT> expects a flag on the stack: a "true" flag tells it to "abort,"
+	    which in turn clears the stacks and returns execution to the terminal, waiting for someone to type
+	    something. <FONT COLOR="#0000FF">ABORT"</FONT> also prints the name of the last interpreted word,
+	    as well as whatever message you want.
+
+	<P> Let's illustrate. We hope you're not sick of <TT>/CHECK</TT> by now, because here is yet another 
+	    version:
+<PRE>	: /CHECK  DUP 0= ABORT" zero denominator " / ;
+</PRE>
+	
+	<P> In this version, if the denominator is zero, any numbers that happen to be on the stack will be 
+	    dropped and the terminal will show:
+<PRE>	8 0 /CHECK
+	Error -2
+	zero denominator  ?
+</PRE>
+	<P> Just as an experiment, try putting <TT>/CHECK</TT> inside another definition:
+<PRE>	: ENVELOPE  /CHECK ." The answer is " . ;
+</PRE>
+	    and try
+<PRE>	8 4 ENVELOPE<U> The answer is 2 ok </U>
+	8 0 ENVELOPE
+	Error -2
+	zero denominator  ?
+</PRE>
+	<P> The point is that when <TT>/CHECK</TT> aborts, the rest of <TT>ENVELOPE</TT> is skipped.
+	
+	<P> A useful word to use in conjunction with <FONT COLOR="#0000FF">ABORT"</FONT> is 
+	    <FONT COLOR="#0000FF">?STACK</FONT>, which checks for stack underflow and returns a true flag
+	    if it finds it. Thus the phrase:
+<PRE>	?STACK ABORT" stack empty "
+</PRE>
+	    aborts if the stack has underflowed.
+	
+	<P> Forth uses the identical phrase, in fact. But it waits until all your definitions have stopped
+	    executing before it performs the <FONT COLOR="#0000FF">?STACK</FONT> test, because checking 
+	    continuously throughout execution would needlessly slow down the computer. You're free to insert
+	    a <FONT COLOR="#0000FF">?STACK</FONT> <FONT COLOR="#0000FF">ABORT"</FONT> phrase at any critical
+	    or not-yet-tested portion of your application.
+
+<BLOCKQUOTE>
+<FONT SIZE=-1>
+	<I>For Computer Philosophers</I><BR><BR>
+
+	Forth provides certain error checking automatically. But because the Forth operating system is
+	so easy to modify, users can readily control the amount of error checking their system will do.
+	This flexibility lets users make their own tradeoffs between convenience and execution speed.
+</FONT>
+</BLOCKQUOTE>
+
+
+
+	<P> Here's a list of the Forth words we've covered in this chapter:
+<P><TABLE WIDTH="100%" BORDER="0">
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>IF&nbsp;&nbsp;&nbsp;xxx<BR>ELSE yyy<BR>THEN zzz</TT> <TD bgcolor="#EEEEEE" nowrap> <TT>IF:</TT> ( f -- )	<TD bgcolor="#EEEEEE"> If <I>f</I> is true (non-zero) executes <I>xxx</I>; otherwise executes <I>yyy</I>; continues execution with <I>zzz</I> regardless. The phrase <TT>ELSE</TT> <I>yyy</I> is optional.
+	<TR><TD bgcolor="#EEEEEE"> <TT>=</TT> 	 <TD bgcolor="#EEEEEE" nowrap> ( n1 n2 -- f )		<TD bgcolor="#EEEEEE"> Returns true if n1 and n2 are equal.
+	<TR><TD bgcolor="#EEEEEE"> <TT>-</TT> 	 <TD bgcolor="#EEEEEE" nowrap> ( n1 n2 -- n-diff )	<TD bgcolor="#EEEEEE"> Returns true (i.e., the non-zero difference) if n1 and n2 are not equal.
+	<TR><TD bgcolor="#EEEEEE"> <TT>&lt;</TT> <TD bgcolor="#EEEEEE" nowrap> ( n1 n2 -- f )		<TD bgcolor="#EEEEEE"> Returns true if n1 is less than n2.
+	<TR><TD bgcolor="#EEEEEE"> <TT>&gt;</TT> <TD bgcolor="#EEEEEE" nowrap> ( n1 n2 -- f )		<TD bgcolor="#EEEEEE"> Returns true if n1 is greater than n2.
+	<TR><TD bgcolor="#EEEEEE"> <TT>0=</TT> 	 <TD bgcolor="#EEEEEE" nowrap> ( n -- f )		<TD bgcolor="#EEEEEE"> Returns true if n is zero (i.e., reverse the truth value).
+	<TR><TD bgcolor="#EEEEEE"> <TT>0&lt;</TT><TD bgcolor="#EEEEEE" nowrap> ( n -- f )		<TD bgcolor="#EEEEEE"> Returns true if n is negative.
+	<TR><TD bgcolor="#EEEEEE"> <TT>0&gt;</TT><TD bgcolor="#EEEEEE" nowrap> ( n -- f )		<TD bgcolor="#EEEEEE"> Returns true if n is positive.
+	<TR><TD bgcolor="#EEEEEE"> <TT>AND</TT>  <TD bgcolor="#EEEEEE" nowrap> ( n1 n2 -- and )		<TD bgcolor="#EEEEEE"> Returns the logical AND.
+	<TR><TD bgcolor="#EEEEEE"> <TT>OR</TT> 	 <TD bgcolor="#EEEEEE" nowrap> ( n1 n2 -- or )		<TD bgcolor="#EEEEEE"> Returns the logical OR.
+	<TR><TD bgcolor="#EEEEEE"> <TT>?DUP</TT> <TD bgcolor="#EEEEEE" nowrap> ( n -- n n ) or<BR>( 0 -- 0 )<TD bgcolor="#EEEEEE"> Duplicates only if n is non-zero.
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>ABORT" xx"</TT> 	<TD bgcolor="#EEEEEE" nowrap> ( f -- ) 	<TD bgcolor="#EEEEEE"> If the flag is true, types out an error message, followed by the text. Also clears the stacks and returns control to the terminal. If false, takes no action.
+	<TR><TD bgcolor="#EEEEEE"> <TT>?STACK</TT>		<TD bgcolor="#EEEEEE" nowrap> ( -- f ) 	<TD bgcolor="#EEEEEE"> Returns true if a stack underflow condition has occurred.
+</TABLE>
+
+<P>	
+<TABLE WIDTH="100%" BORDER="0">
+	<CAPTION><I>Review of Terms</I></CAPTION>
+	<TR> <TH> <HR NOSHADE SIZE="6"> <TH> <HR NOSHADE SIZE="6">
+	<TR> <TD bgcolor="#EEEEEE"> Abort			    <TD bgcolor="#EEEEEE"> as a general computer term, to abruptly cease execution if a condition occurs which the program  is not designed to handle, in order to avoid producing nonsense or possibly doing damage.
+	<TR> <TD bgcolor="#EEEEEE"> "And" decision	  	    <TD bgcolor="#EEEEEE"> two conditions that are combined such that if <U>both</U> of them are true, the result is true.
+	<TR> <TD bgcolor="#EEEEEE"> Branching 	 		    <TD bgcolor="#EEEEEE"> breaking the normally straightforward flow of execution, depending on conditions in effect at the time of execution. Branching allows the computer to respond differently to different conditions.
+	<TR> <TD bgcolor="#EEEEEE"> Comparison operator	  	    <TD bgcolor="#EEEEEE"> in general, a command that compares one value with another (for example, determines whether one is greater than the other), and sets a flag accordingly, which normally will be checked by a conditional operator. In Forth, a comparison operator leaves the flag on the stack.
+	<TR> <TD bgcolor="#EEEEEE"> Flag		  	    <TD bgcolor="#EEEEEE"> as a general computer term, a value stored in memory which serves as a signal as to whether some known condition is true or false. Once the "flag is set," any number of routines in various parts of a program may check (or reset) the flag, as necessary.
+	<TR> <TD bgcolor="#EEEEEE"> Logic			    <TD bgcolor="#EEEEEE"> in computer terminology, the system of representing conditions in the form of "logical variables," which can be either true or false, and combining these variables using such "logical operators" as "and," "or," and "not," to form statements which may be true or false.
+	<TR> <TD bgcolor="#EEEEEE"> Nesting			    <TD bgcolor="#EEEEEE"> placing a branching structure within an outer branching structure.
+	<TR> <TD bgcolor="#EEEEEE"> "Or" decision		    <TD bgcolor="#EEEEEE"> two conditions that are combined such that if <U>either</U> one of them is true, the result is true.
+	<TR> <TH> <HR NOSHADE SIZE="6"> <TH> <HR NOSHADE SIZE="6">
+</TABLE>
+
+<H2>Problems -- Chapter 4</H2>
+			<CENTER><IMG SRC="felix.gif" ALIGN=MIDDLE ALT="problems"></CENTER>
+
+<OL>
+	<LI> What will the phrase 
+<PRE>	0= 0=
+</PRE>	
+	     leave on the stack when the argument is<BR> 
+<BLOCKQUOTE>
+	     -1?<BR>
+	     0?<BR>
+	     200?<BR>
+</BLOCKQUOTE>
+	     <A HREF="4-1.forth.html">[answer]</A>
+	<LI> Explain what an artichoke has to do with any of this.
+	<LI> Define a word called <TT>CARD</TT> which, given a person's age on the stack, prints out 
+	     either of these two messages (depending on the relevant laws in your area):
+<PRE>	ALCOHOLIC BEVERAGES PERMITTED  or
+	UNDER AGE
+</PRE>	<A HREF="4-3.forth.html">[answer]</A>
+	<LI> Define a word called <TT>SIGN.TEST</TT> that will test a number on the stack and print out one of 
+	     three messages:
+<PRE>	POSITIVE   or
+	ZERO	   or
+	NEGATIVE
+</PRE>	<A HREF="4-4.forth.html">[answer]</A>
+	<LI> In Chap. 1, we defined a word called <TT>STARS</TT> in such a way that it always prints at least one star,
+	     even if you say
+<PRE>	0 STARS<U> * ok </U>
+</PRE>
+	     Using the word <TT>STARS</TT>, define a new version of <TT>STARS</TT> that corrects this problem.
+	     <A HREF="4-5.forth.html">[answer]</A>
+	<LI> Write the definition for the word <FONT COLOR="#0000FF">WITHIN</FONT> which expects three arguments:
+<PRE>	( n lo-limit hi-limit -- )
+</PRE>
+	     and leaves a "true" flag only if "n" is within the range
+<PRE>	low-limit <= n < hi-limit
+</PRE>	<A HREF="4-6.forth.html">[answer]</A>
+	<LI> Here's a number-guessing game (which you may enjoy writing more than anyone will enjoy playing).
+	     First you secretly enter a number onto the stack (you can hide your number after entering it by
+	     executing the word <FONT COLOR="#0000FF">PAGE</FONT>, which clears the terminal screen). Then you
+	     ask another player to enter a guess followed by the word <TT>GUESS</TT>, as in
+<PRE>	100 GUESS
+</PRE>
+	<P> The computer will either respond "TOO HIGH," "TOO LOW," or "CORRECT!" Write the definition of 
+	    <TT>GUESS</TT>, making sure that the answer-number will stay on the stack through repeated guessing
+	    until the correct answer is guessed, after which the stack should be clear. 
+	    <A HREF="4-7.forth.html">[answer]</A>
+	<LI> Using nested tests and <FONT COLOR="#0000FF">IF</FONT>..<FONT COLOR="#0000FF">ELSE</FONT>...<FONT COLOR="#0000FF">THEN</FONT>
+	     statements, write a definition called <TT>SPELLER</TT> which will spell out a
+	     number on the stack, from -4 to 4. If the number is outside this range, it will print the message
+	     "OUT OF RANGE." For example:
+<PRE>	2 SPELLER<U> two ok </U>
+	-4 SPELLER<U> negative four ok </U>
+	7 SPELLER<U> OUT OF RANGE ok </U>
+</PRE>
+	<P> Make it as short as possible. (Hint: The Forth word <FONT COLOR="#0000FF">ABS</FONT> gives the 
+	    absolute value of a number on the stack.) <A HREF="4-8.forth.html">[answer]</A>
+
+	<LI> Using your definition of <FONT COLOR="#0000FF">WITHIN</FONT> from Prob. 6, write another 
+	     number-guessing game, called <TT>TRAP</TT>, in which you first enter a secret value, then a
+	     second player tries to home in on it by trapping it between two numbers, as in this dialogue:
+<PRE>	0 1000 TRAP<U> BETWEEN ok </U>
+	330 660 TRAP<U> BETWEEN ok </U>
+	440 550 TRAP<U> NOT BETWEEN ok </U>
+	330 440 TRAP<U> BETWEEN ok </U>
+</PRE>
+	     and so on, until the player guesses the answer:
+<PRE>	391 391 TRAP<U> YOU GOT IT! ok </U>
+</PRE>
+	<P> Hint: you may have to modify the arguments to <FONT COLOR="#0000FF">WITHIN</FONT> so that 
+	    <TT>TRAP</TT> does not say "BETWEEN" when only one of the arguments is equal to the hidden
+	    value. <A HREF="4-9.forth.html">[answer]</A>
+</OL>
+
+<A HREF="http://validator.w3.org"><IMG SRC="http://validator.w3.org/images/vh32.gif" HEIGHT=31 WIDTH=88 ALIGN=RIGHT BORDER=0 ALT="Valid HTML 3.5"></A>
+</BODY>
+
+</HTML>

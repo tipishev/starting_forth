@@ -1,0 +1,10 @@
+\ -----------------------------------------------------------------------
+\ 4-7.forth -------------------------------------------------------------
+\ -----------------------------------------------------------------------
+\ Code from Starting Forth, Chapter 4
+\ ANSized by Benjamin Hoyt in 1997
+
+( problem 4-7 )
+: GUESS  ( answer guess -- answer )
+   2DUP = IF ." Correct! " 2DROP EXIT THEN
+   OVER > IF ." Too high " ELSE ." Too low " THEN ;

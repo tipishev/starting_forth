@@ -1,0 +1,594 @@
+<!DOCTYPE HTML PUBLIC "-//Microsoft//DTD Internet Explorer 3.0 HTML//EN">
+<HTML>
+
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Leo Brodie's Starting Forth - Chapter 2</TITLE>
+  <META name="description" content="Starting Forth, Leo Brodie, Chapter 2.">
+  <META name="keywords" content="Forth, example code, Starting Forth, chapter 2">
+</HEAD>
+
+<BODY BGCOLOR="#F8F8F8" TEXT="#000000" LINK="#0000FF" VLINK="#007070" ALINK="#FF0000" TOPMARGIN=0>
+
+<H1>2 How To Get Results</H1>
+
+	<P> In this chapter, we'll dive right into some specifics that you need to know before we go on. 
+	    Specifically, we'll introduce some of the arithmetic instructions besides <FONT COLOR="#0000FF">+</FONT>
+	    and some special operators for rearranging the order of numbers on the stack, so that you'll
+	    be able to write mathematical equations in Forth.
+
+<H2>Forth Arithmetic -- Calculator Style</H2>
+	
+	<P> Here are the four simplest integer-arithmetic operators in Forth:
+<P><TABLE WIDTH="100%" BORDER="0">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>+</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( n1 n2 -- sum )	<TD bgcolor="#EEEEEE"> Adds.
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>-</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( n1 n2 -- diff )	<TD bgcolor="#EEEEEE"> Subtracts (n1-n2).
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>*</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( n1 n2 -- prod )	<TD bgcolor="#EEEEEE"> Multiplies.
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>/</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( n1 n2 -- quot )	<TD bgcolor="#EEEEEE"> Divides (n1/n2).
+</TABLE>
+
+	<P> Unlike calculators, computer terminals don't have special keys for multiplication or division. Instead
+	    we use <FONT COLOR="#0000FF">*</FONT> and <FONT COLOR="#0000FF">/</FONT><B>.</B><IMG SRC="footnote.gif" ALT="If Math Is Not Your Thing: We'd like to remind you that integers are whole numbers, such as ... -3, -2, -1, 0, 1, 2, 3, ... Integer arithmetic (logically enough) is arithmetic that concerns itself only with integers, not with decimal-point numbers, such as 2.71.">
+	
+	<P> In the first chapter, we learned that we can add two numbers by putting them both on the stack, 
+	    then executing the word <FONT COLOR="#0000FF">+</FONT>, then finally executing the word 
+	    <FONT COLOR="#0000FF"><B>.</B></FONT> (dot) to get the result printed at our terminal.
+<PRE>	17 5 + .<U> 22 ok </U>
+</PRE>
+	<P> We can use this method with all of Forth's arithmetic operators. In other words, we can use Forth 
+	    like a calculator to get answers, even without writing a "program." Try a multiplication problem:
+<PRE>	7 8 * .<U> 56 ok </U>
+</PRE>
+	<P> By now we've seen that the operator comes after the numbers. In the case of subtraction and division,
+	    though, we must also consider the <U>order</U> <U>of</U> <U>numbers</U> ("7 - 4" is not the same as "4 - 7"). 
+
+	<P> Just remember this rule:
+
+<BLOCKQUOTE>
+	To convert to postfix, simply move the operator to the end of the expression:
+</BLOCKQUOTE>
+<P><TABLE WIDTH="50%" BORDER="0">
+	<TR><TH bgcolor="#EEEEEE"> Infix	   <TH bgcolor="#EEEEEE" nowrap> Postfix
+	<TR><TD ALIGN=CENTER bgcolor="#EEEEEE"> 3 + 4 	   <TD bgcolor="#EEEEEE" ALIGN=CENTER nowrap> 3 4 +
+	<TR><TD ALIGN=CENTER bgcolor="#EEEEEE"> 500 - 300  <TD bgcolor="#EEEEEE" ALIGN=CENTER nowrap> 500 300 -
+	<TR><TD ALIGN=CENTER bgcolor="#EEEEEE"> 6 x 5 	   <TD bgcolor="#EEEEEE" ALIGN=CENTER nowrap> 6 5 *
+	<TR><TD ALIGN=CENTER bgcolor="#EEEEEE"> 20 / 4 	   <TD bgcolor="#EEEEEE" ALIGN=CENTER nowrap> 20 4 /
+</TABLE>
+
+	<P> So to do the subtraction problem:
+<PRE>	7 - 4 =
+</PRE>
+	    simply type in
+<PRE>	7 4 - .<U> 3 ok </U>
+</PRE>
+	
+<P><TABLE WIDTH="100%" CELLPADDING="36" ALIGN=CENTER BORDER="1">
+	<CAPTION><I>For Adventuresome Newcomers Sitting at a Terminal</I></CAPTION>
+	<TR><TD bgcolor="#EEEEEE"> If you're one of those people who like to fool around and figure things out
+	for themselves without reading this book, then you're bound to discover a couple of weird things. First
+	off, as we told you, these operators are <U>integer</U> <U>operators</U>. That not only means that you 
+	can't do calculations with decimal values, like
+<PRE>	10.00 2.25 +
+</PRE>
+	it also means that you can only get integer results, as in
+<PRE>	21 4 / .<U> 5 ok </U> instead of <U> 5.25 ok </U>
+</PRE>
+	<P> Another thing is that if you try to multiply:
+<PRE>	10000000 1000 * .
+</PRE>
+	or some such large numbers, you'll get a crazy answer. So we're telling you up front that with the
+	operators introduced so far and with <FONT COLOR="#0000FF"><B>.</B></FONT> to print the results, you can't
+	have any numbers that are higher than  +2147483647 or lower than -2147483648. Numbers within this
+	range are called "single-length signed numbers."
+
+	<P> Notice, in the list of Forth words a few pages back, the letter "n," which stands for "number." Since
+	    Forth uses single-length numbers more often than other types of numbers, the "n" signifies that the
+	    number must be single-length. And yes, there are other operators that extend this range 
+	    ("double-length" operators, which are indicated by "d").
+
+	<P> All of these mysteries will be explained in time, so stay tuned.
+</TABLE>
+	
+	<P> The order of numbers stays the same. Let's try a division problem:
+<PRE>	20 4 / .<U> 5 ok </U>
+</PRE>
+	<P> The word <FONT COLOR="#0000FF">/</FONT> is defined to divide the second number on the stack by the 
+	    top number.
+
+	<P> What do you do if you have more than one operator in an expression, like:
+<PRE>	4 + (17 * 12)
+</PRE>
+	    you ask? Let's take it step-by-step: the parentheses tell you to first multiply seventeen by twelve,
+	    <U>then</U> add four. So in Forth you would write:
+<PRE>	17 12 * 4 + .<U> 208 ok </U>
+</PRE>
+	    and here's why:
+
+	<P> <IMG SRC="2ops.gif" ALIGN=LEFT ALT="17 * 12 + 4">
+	    17 and 12 go onto the stack. <FONT COLOR="#0000FF">*</FONT> multiplies them and returns the result.
+
+	<P> Then the four goes onto the stack, on top of 204. <FONT COLOR="#0000FF">+</FONT> rolls out the 
+	    adding machine and adds them together, returning only the result.
+
+	<P> Or suppose you want to add five numbers. You can do it in Forth like this:
+<PRE>	17 20 + 132 + 3 + 9 + . 181 ok
+</PRE>
+	<P> <IMG SRC="stackmul.gif" ALIGN=RIGHT ALT="(3+9) * (4+6)">
+	    Now here's an interesting problem:
+<PRE>	(3 + 9) * (4 + 6)
+</PRE>
+	<P> To solve it we have to add three to nine first, then add four to six, then finally multiply the two
+	    sums. In Forth, we can write
+<PRE>	3 9 +  4 6 +  * .<U> 120 ok </U>
+</PRE>
+	    The picture at the right is showing what happens.
+
+	<P> Notice that we very conveniently saved the sum twelve on the stack while we went on about the business
+	    of adding four to six.
+
+	<P> Remember that we're not concerned yet with writing definitions. We are simply using Forth as a 
+	    calculator. 
+
+	<P> If you're like most beginners, you probably would like to try your hand at a few practice problems 
+	    until you feel more comfortable with postfix.
+
+<H2>Postfix Practice Problems (Quizzie 2-a)</H2>  
+	
+	<P> Convert the following infix equations to postfix "calculator style." For example,
+<PRE>	ab + c
+</PRE>
+	    would become
+<PRE>	a b * c +
+</PRE>
+	<OL>
+	  <LI> c(a+b)
+	  <LI> (3a - b) / 4 + c
+	  <LI> (0.5 ab) / 100
+	  <LI> (n + 1) / n 
+	  <LI> x(7x + 5)<BR><BR>
+		Convert the following postfix expressions to infix:<BR><BR>
+	  <LI> a b - b a + /
+	  <LI> a b 10 * /
+	</OL> <A HREF="quizzie&#32;2-a.forth.html">[answer]</A>
+
+<H2>Forth Arithmetic -- Definition Style</H2>
+	
+	<P> <IMG SRC="4way.gif" ALIGN=RIGHT ALT="+-/*">
+	    In Chap. 1 we saw that we could define new words in terms of numbers and other pre-defined words.
+	    Let's explore some further possibilities, using some of our newly-learned math operators.
+
+	<P> Let's say we want to convert various measurements to inches. We know that
+<PRE>	1 yard = 36 inches
+</PRE>
+	    and
+<PRE>	1 foot = 12 inches
+</PRE>
+	    so we can define these two words:
+<PRE>	: YARDS>IN  36 * ;<U> ok </U>
+	: FT>IN     12 * ;<U> ok </U>
+</PRE>
+	    where the names symbolize "yards-to-inches" and "feet-to-inches." Here's what they do:
+<PRE>	10 YARDS>IN .<U> 360 ok </U>
+	2 FT>IN .<U> 24 ok </U>
+</PRE>	
+	If we <U>always</U> want our result to be in inches, we can define:
+<PRE>	: YARDS  36 * ;<U> ok </U>
+	: FEET   12 * ;<U> ok </U>
+	: INCHES   ;<U> ok </U>
+</PRE>
+	<P> So that we can use the phrase
+<PRE>	10 YARDS  2 FEET +  9 INCHES +  .<U> 393 ok </U>
+</PRE>
+	<P> Notice that the word <TT>INCHES</TT> doesn't do anything except remind the human user what the nine
+	    is for. If we really want to get fancy, we can add these three definitions:
+<PRE>	: YARD   YARDS ;<U> ok </U>
+	: FOOT   FEET ;<U> ok </U>
+	: INCH   ;<U> ok </U>
+</PRE>
+	   so that the user can enter the singular form of any of the nouns and still get the same result:
+<PRE>	1 YARD  2 FEET +  1 INCH +  .<U> 61 ok </U>
+	2 YARDS  1 FOOT + .<U> 84 ok </U>
+</PRE>
+
+<P><TABLE WIDTH="50%" CELLPADDING="12" ALIGN=RIGHT BORDER="1">
+	<CAPTION><I>For Semantic Freaks</I></CAPTION>
+	<TR><TD bgcolor="#EEEEEE"> 
+	In mathematics, the word "argument" refers to an independent variable of a function. Computer linguists
+	have borrowed this term to refer to numbers being operated on by operators. They have also borrowed the
+	word "parameters" to describe pretty much the same thing.
+</TABLE>
+
+	<P> So far we have only defined words whose definitions contain a single math operator. But it's
+	    perfectly possible to put many operators inside a definition, if that's what you need to do.
+
+	<P> Let's say we want a word that computes the sum of five numbers on the stack. A few pages back
+	    we summed five numbers like this:
+<PRE>	17 20 + 132 + 3 + 9 + .<U> 181 ok </U>
+</PRE>
+	<P> But we can also enter
+<PRE>	17 20 132 3 9 + + + + .<U> 181 ok </U>
+</PRE>
+	<P> We get the same answer, even though we've clustered all the numbers into one group and all
+	    the operators into another group. We can write our definition like this:
+<PRE>	: 5#SUM  + + + + ;<U> ok </U>
+</PRE>
+	    and execute it like this:
+<PRE>	17 20 132 3 9 5#SUM .<U> 181 ok </U>
+</PRE>
+
+	<P> If we were going to keep <TT>5#SUM</TT> for future use, we could enter it into our ever-growing 
+	    glossary, along with a note that it "expects five arguments" on the stack, which it will add 
+	    together.
+
+<P><TABLE WIDTH="50%" CELLPADDING="12" ALIGN=RIGHT BORDER="1">
+	<CAPTION><I>For Beginners Who Like Word Problems</I></CAPTION>
+	<TR><TD bgcolor="#EEEEEE"> 
+	<IMG SRC="tail.gif" ALIGN=RIGHT ALT="tail wind">
+	If a jet plane flies at an average air speed of 600 mph and if it flies with a tail wind of 
+	25 mph, how far will it travel in five hours?<BR>
+	If we define
+<PRE>	: FLIGHT-DISTANCE   + * ;
+</PRE>
+	we could enter
+<PRE>	5 600 25 FLIGHT-DISTANCE .<U> 3125 ok </U>
+</PRE>
+	Try it with different values, including head winds (negative values).
+</TABLE>
+
+	<P> Here is another equation to write a definition for:
+<PRE>	(a + b) * c
+</PRE>
+	<P> As we saw in Quizzie 2-a, this expression can be written in postfix as
+<PRE>	c a b + *
+</PRE>
+	<P> Thus we could write our definition
+<PRE>	: SOLUTION   + * ;<U> ok </U>
+</PRE>
+	    as long as we make sure that we enter the arguments in the proper order;
+<PRE>	c a b SOLUTION
+</PRE>
+
+
+<H2>Definition Style Practice Problems (Quizzie 2-b)</H2>
+
+	<P> Convert the following infix expressions into Forth definitions and show the stack order 
+	    required by your definitions. Since this is Quizzie 2-b, you can name your definitions 2B1,
+	    2B2, etc.
+	<OL>
+	  <LI> ab + c   would become   : 2B1 * + ;<BR>
+	       which expects this stack order: ( c b a -- result)
+	  <LI> (a - 4b) / 6 + c
+	  <LI> a / (8b)
+	  <LI> 0.5 ab / 100
+	  <LI> a(2a + 3)
+	  <LI> (a - b) / c 
+	 </OL> <A HREF="quizzie&#32;2-b.forth.html">[answer]</A>
+
+<H2>The Division Operators</H2>
+	
+	<P> The word <FONT COLOR="#0000FF">/</FONT> is Forth's simplest division operator. <U>Slash</U> 
+	    supplies only the quotient; any remainder is lost. If you type:
+<PRE>	22 4 / .<U> 5 ok </U>
+</PRE>
+	<P> You get only the quotient five, not the remainder two.
+
+	<P> <IMG SRC="percent.gif" ALIGN=RIGHT ALT="BIG %">
+	    If you're thinking of a pocket calculator's per-cent operator, then five is not the full answer.
+
+	<P> But <FONT COLOR="#0000FF">/</FONT> is only one of several division operators supplied by Forth
+	    to give you the flexibility to tell the computer exactly what you want it to do.
+
+	<P> For example, let's say you want to solve this problem: "How many dollar bills can I get in exchange
+	    for 22 quarters?" The real answer, of course, is exactly 5, not 5.5. A computerized money changer,
+	    for example, would not know how to give you 5.5 dollar bills.
+
+	<P> Here are two more Forth divsion operators:
+<P><TABLE WIDTH="100%" BORDER="0">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>/MOD</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( n1 n2 -- rem quot )	<TD bgcolor="#EEEEEE"> Divides. Returns the remainder and quotient. <TD bgcolor="#EEEEEE">	<IMG SRC="bullet.gif" ALT="slash-mod">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>MOD</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( n1 n2 -- rem )	<TD bgcolor="#EEEEEE"> Returns the remainder from division.	    <TD bgcolor="#EEEEEE">	<IMG SRC="bullet.gif" ALT="mod">
+</TABLE>
+
+	<P> These operators are both signed, and "truncating." We'll see what this means in the chapter on
+	    computer numbers.
+
+	<P> <FONT COLOR="#0000FF">/MOD</FONT> gives both the remainder and the quotient; <FONT COLOR="#0000FF">MOD</FONT>
+	    (from "modulo") gives the remainder only. (For <FONT COLOR="#0000FF">/MOD</FONT>, the stack notation
+	    in the table indicates that the quotient will be on top of the stack, and the remainder below. Remember,
+	    the <U>rightmost</U> represents the <U>topmost</U>.)
+
+	<P> Let's try the first one:
+<PRE>	22 4 /MOD . .<U> 5 2 ok</U>
+</PRE>
+	<P> <TABLE ALIGN=LEFT BORDER="0">
+	     <CAPTION><I>Samurai <B>/MOD</B> (slash's older brother)</I></CAPTION>
+	     <TR><TD><IMG SRC="samurai.jpg" ALIGN=MIDDLE ALT="Mean Samurai Slashing">
+	    </TABLE>
+	    Here <FONT COLOR="#0000FF">/MOD</FONT> performs the division and puts both the quotient and the
+	    remainder on the stack. The first dot prints the quotient because the quotient was on top.
+
+	<P> With what we've learned so far, we can easily define this word:
+<PRE>	: QUARTERS  4 /MOD . ." ones and " 
+		    . ." quarters " ;
+</PRE>
+	<P> So that you can type:
+<PRE>	22 QUARTERS
+</PRE>
+	with this result:
+<PRE>	22 QUARTERS<U> 5 ones and 2 quarters ok </U>
+</PRE>
+	<P> The second word in the table, <FONT COLOR="#0000FF">MOD</FONT>, leaves only the remainder. For 
+	    example in:
+<PRE>	22 4 MOD .<U> 2 ok </U>
+</PRE>
+	    the two is the remainder.
+
+<H2>Stack Maneuvers</H2>
+
+	<P> If you worked Prob. 6 in the last set, you discovered that the infix equation
+<PRE>	(a - b) / c
+</PRE>
+	    cannot be solved with a definition unless there is some way to rearrange values on the stack.
+
+	<P> Well, there is a way: by using a "stack manipulation operator" called <FONT COLOR="#0000FF">SWAP</FONT>.
+
+<H3> <FONT COLOR="#0000FF">SWAP</FONT></H3>
+
+	<P> <IMG SRC="swap.gif" ALIGN=RIGHT ALT="The Swap Dinosaur">
+	    The word <FONT COLOR="#0000FF">SWAP</FONT> is defined to switch the order of the top two stack items.
+
+	<P> As with the other stack manipulation operators, you can test <FONT COLOR="#0000FF">SWAP</FONT>
+	    at your terminal in "calculator style"; that is, it doesn't have to be contained within a definition.
+
+	<P> First enter
+<PRE>	1 2 . .<U> 2 1 ok </U>
+</PRE>
+	    then again, this time with <FONT COLOR="#0000FF">SWAP</FONT>:
+<PRE>	1 2 SWAP . .<U> 1 2 ok </U>
+</PRE>
+	<P> Thus Prob. 6 can be solved with this phrase:
+<PRE>	- SWAP /
+</PRE>
+	    with ( c a b -- ) on the stack.
+	
+	<P> Let's give a, b, and c these test values:
+<PRE>	a = 10	b = 4	c = 2
+</PRE>
+	    then put them on the stack and execute the phrase, like so:
+<PRE>	2 10 4 - SWAP / .<U> 3 ok </U>
+</PRE>
+	<P> Here is a list of several stack manipulation operators, including <FONT COLOR="#0000FF">SWAP</FONT>
+
+<P><TABLE WIDTH="100%" BORDER="0">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>SWAP</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( n1 n2 -- n2 n1 )	  <TD bgcolor="#EEEEEE"> Reverses the top two stack items.		    	<TD bgcolor="#EEEEEE">	<IMG SRC="bullet.gif" ALT="swap">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>DUP</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( n -- n n )		  <TD bgcolor="#EEEEEE"> Duplicates the top stack item.			    	<TD bgcolor="#EEEEEE">	<IMG SRC="bullet.gif" ALT="dupe">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>OVER</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( n1 n2 -- n1 n2 n1 )	  <TD bgcolor="#EEEEEE"> Makes a copy of the second item and pushes it on top. 	<TD bgcolor="#EEEEEE">	<IMG SRC="bullet.gif" ALT="over">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>ROT</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( n1 n2 n3 -- n2 n3 n1 ) <TD bgcolor="#EEEEEE"> Rotates the third item to the top.		 	<TD bgcolor="#EEEEEE">	<IMG SRC="bullet.gif" ALT="rote">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>DROP</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( n -- )		  <TD bgcolor="#EEEEEE"> Discards the top stack item. 				<TD bgcolor="#EEEEEE">	<IMG SRC="bullet.gif" ALT="drop">
+</TABLE>
+
+<H3><FONT COLOR="#0000FF">DUP</FONT></H3>
+
+	<P> <IMG SRC="dup.gif" ALIGN=RIGHT ALT="Copy machine DUPping">
+	    The next stack manipulation operator on the list, <FONT COLOR="#0000FF">DUP</FONT>, simply makes a 
+	    second copy (duplicate) of the top stack item.
+	
+	<P> For example, if we have "a" on the stack, we can compute:
+<PRE>	a<SUP>2</SUP>
+</PRE>
+	    as follows:
+<PRE> 	DUP *
+</PRE>
+	    in which the following steps occur:
+
+<P><TABLE WIDTH="30%" BORDER="1">
+	<TR><TH> Operation 				   <TH> Contents<BR> of stack
+	<TR><TD align=center bgcolor="#EEEEEE"> &nbsp; 	   <TD bgcolor="#EEEEEE" nowrap> a
+	<TR><TD align=center bgcolor="#EEEEEE"> DUP 	   <TD bgcolor="#EEEEEE" nowrap> a a
+	<TR><TD align=center bgcolor="#EEEEEE"> * 	   <TD bgcolor="#EEEEEE" nowrap> a<SUP>2</SUP>
+</TABLE>
+
+<H3><FONT COLOR="#0000FF">OVER</FONT></H3>
+
+	<P> Now somebody tells you to evaluate the expression:
+<PRE>	a * (a + b)
+</PRE>
+	    given the following stack order:
+<PRE>	( a b -- )
+</PRE>
+	<P> But, you say, I'm going to need a new manipulation operator: I want two copies of the "a," and the
+	    "a" is <U>under</U> the "b." Here's the word you need: <FONT COLOR="#0000FF">OVER</FONT>. 
+	    <FONT COLOR="#0000FF">OVER</FONT> simply makes a copy of the "a" and leapfrogs it <U>over</U> the "b":
+<PRE>	( a b -- a b a )
+</PRE>
+	<P> <IMG SRC="over.gif" ALIGN=RIGHT ALT="Horse jumping OVER the fence">
+	    Now the expression
+<PRE>	a * (a + b)
+</PRE>
+	    can easily be written
+<PRE>	OVER + *
+</PRE>
+	<P> Here's what happens:
+
+<P><TABLE WIDTH="30%" BORDER="1">
+	<TR><TH> Operation 				   <TH> Contents<BR> of stack
+	<TR><TD align=center bgcolor="#EEEEEE"> &nbsp; 	   <TD bgcolor="#EEEEEE" nowrap> a b
+	<TR><TD align=center bgcolor="#EEEEEE"> OVER 	   <TD bgcolor="#EEEEEE" nowrap> a b a
+	<TR><TD align=center bgcolor="#EEEEEE"> + 	   <TD bgcolor="#EEEEEE" nowrap> a (b+a)
+	<TR><TD align=center bgcolor="#EEEEEE"> * 	   <TD bgcolor="#EEEEEE" nowrap> a*(b+a)
+</TABLE>
+	<P> When writing equations in Forth, it's best to "factor them out" first. For example, if somebody
+	    asks you to evaluate:
+<PRE>	a<SUP>2</SUP> + ab
+</PRE>
+	    in Forth, you'll find it quite complicated (and maybe even impossible) using the words we've
+	    introduced so far ... unless you factor out the expression to read:
+<PRE>	a * (a + b)
+</PRE>
+	    which is the expression we just evaluated so easily.
+
+
+<H3><FONT COLOR="#0000FF">ROT</FONT></H3>
+
+	<P> The fourth stack manipulator on the list is <FONT COLOR="#0000FF">ROT</FONT> (pronounced <U>rote</U>),
+	    which is short for "rotate." <FONT COLOR="#0000FF">ROT</FONT> transforms the top three stack values
+	    from ( a b c ) to ( b c a ). 
+
+	<P> <IMG SRC="rot.gif" ALIGN=LEFT ALT="Corny juggler">
+	     For example, if we need to evaluate the expression:
+<PRE>	ab - bc
+</PRE>
+	    we should first factor out the "b"s:
+<PRE>	b * (a - c)
+</PRE>
+	<P> Now if our starting-stack order is this:
+<PRE>	( c b a -- )
+</PRE>
+	    we can use:
+<PRE>	ROT - *
+</PRE>
+	    in which the following steps will occur:
+
+<P><TABLE WIDTH="30%" BORDER="1">
+	<TR><TH> Operation 				   <TH> Contents<BR> of stack
+	<TR><TD align=center bgcolor="#EEEEEE"> &nbsp; 	   <TD bgcolor="#EEEEEE" nowrap> c b a
+	<TR><TD align=center bgcolor="#EEEEEE"> ROT 	   <TD bgcolor="#EEEEEE" nowrap> b a c
+	<TR><TD align=center bgcolor="#EEEEEE"> - 	   <TD bgcolor="#EEEEEE" nowrap> b (a-c)
+	<TR><TD align=center bgcolor="#EEEEEE"> * 	   <TD bgcolor="#EEEEEE" nowrap> b*(a-c)
+</TABLE>
+
+<H3><FONT COLOR="#0000FF">DROP</FONT></H3>
+
+	<P> The final stack manipulation operator on the list is <FONT COLOR="#0000FF">DROP</FONT>. All it does
+	    is discard the top stack value.
+
+	<P> Pretty simple, huh? We'll see some good uses for <FONT COLOR="#0000FF">DROP</FONT> later on.
+
+<P><TABLE CELLPADDING="12" WIDTH="100%" BORDER="1">
+	<CAPTION><I>A Handy Hint<BR><BR>A Non-destructive Stack Print</I></CAPTION>
+	<TR><TD bgcolor="#EEEEEE"> 
+	<P> Beginners who are just learning to manipulate numbers on the stack in useful ways very often find themselves
+	typing a series of dots to see what's on the stack after their manipulations. The problem with dots, though,
+	is that they don't leave the numbers on the stack for future manipulation.
+
+	<P> The Forth word <FONT COLOR="#0000FF">.S</FONT> prints out all the values that happen to be on the stack
+	    "non-destructively"; that is, without removing them. Let's test it, first with nothing on the stack:
+<PRE>	.S &lt;0&gt;  ok
+</PRE>
+	As you can see, in this version of <FONT COLOR="#0000FF">.S</FONT>, we see at least one number.
+	This is the number of items actually on the stack.
+
+	<P> Now let's try with numbers on the stack:
+<PRE>	1 2 3 .S<U> &lt;3&gt; 1 2 3  ok </U>
+	
+	ROT .S<U> &lt;3&gt; 2 3 1  ok </U>
+</PRE>
+</TABLE>
+
+<H2>Stack Manipulation and Math Definitions  (Quizzie 2-c)</H2>
+
+	<P> 
+	<OL>
+	  <LI> Write a phrase which flips three items on the stack, leaving the middle number in the middle; 
+	       that is,
+<PRE>	a b c 	becomes	c b a
+</PRE>
+	  <LI> Write a phrase that does what <FONT COLOR="#0000FF">OVER</FONT> does, without using <FONT COLOR="#0000FF">OVER</FONT>.
+	  <LI> Write a definition called <FONT COLOR="#0000FF">-ROT</FONT>, which rotates the top three stack 
+	       items in the opposite direction from <FONT COLOR="#0000FF">ROT</FONT>; that is,
+<PRE>	a b c 	becomes	c a b
+</PRE><BR>
+	Write definitions for the following equations, given the stack effects shown:<BR><BR>
+	  <LI> <CODE>  (n+1) / n   ( n -- result )</CODE>
+	  <LI> <CODE>  x(7x + 5)   ( x -- result )</CODE>
+	  <LI> <CODE>  9a<SUP>2</SUP> - ba     ( a b -- result )</CODE>
+	</OL> <A HREF="quizzie&#32;2-c.forth.html">[answer]</A>
+
+<H2>Playing Doubles</H2>
+	
+	<P> The next four stack manipulation operators should look vaguely familiar:
+
+<P><TABLE WIDTH="100%" BORDER="0">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>2SWAP</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( d1 d2 -- d2 d1 )	  <TD bgcolor="#EEEEEE"> Reverses the top two pairs of numbers.		    		  <TD bgcolor="#EEEEEE">	<IMG SRC="bullet.gif" ALT="two-swap">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>2DUP</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( d -- d d )		  <TD bgcolor="#EEEEEE"> Duplicates the top pair of numbers.		    		  <TD bgcolor="#EEEEEE">	<IMG SRC="bullet.gif" ALT="two-dupe">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>2OVER</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( d1 d2 -- d1 d2 d1 )	  <TD bgcolor="#EEEEEE"> Makes a copy of the second pair of numbers and pushes it on top. <TD bgcolor="#EEEEEE">	<IMG SRC="bullet.gif" ALT="two-over">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>2DROP</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( d -- )		  <TD bgcolor="#EEEEEE"> Discards the top pair of numbers. 				  <TD bgcolor="#EEEEEE">	<IMG SRC="bullet.gif" ALT="two-drop">
+</TABLE>
+
+	<P> <IMG SRC="2swap.gif" ALIGN=LEFT ALT="4-headed dinosaur">
+	    The prefix "2" indicates that these stack manipulation operators handle numbers in pairs.<IMG SRC="footnote.gif" ALT="For Old Hands: They can also be used to handle double-length (64-bit) numbers."> 
+	    The letter "d" in the stack effects column stands for "double."
+	    "Double" has a special significance that we will discuss when we talk about "n" and "u."
+
+	<P> The "2"-manipulators listed above are so straightforward, we won't even bore you with examples.
+
+	<P> One more thing: there are still some stack manipulators we haven't talked about yet, so don't 
+	    go crazy by trying too much fancy footwork on the stack.
+
+	<P> Here's a list of the Forth words we've covered in this chapter:
+
+<P><TABLE WIDTH="100%" BORDER="0">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>+</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( n1 n2 -- sum )	<TD bgcolor="#EEEEEE"> Adds.
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>-</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( n1 n2 -- diff )	<TD bgcolor="#EEEEEE"> Subtracts (n1-n2).
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>*</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( n1 n2 -- prod )	<TD bgcolor="#EEEEEE"> Multiplies.
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>/</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( n1 n2 -- quot )	<TD bgcolor="#EEEEEE"> Divides (n1/n2).
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>/MOD</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( n1 n2 -- rem quot )	<TD bgcolor="#EEEEEE"> Divides. Returns the remainder and quotient.
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>MOD</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( n1 n2 -- rem )	<TD bgcolor="#EEEEEE"> Returns the remainder from division.
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>SWAP</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( n1 n2 -- n2 n1 )	  <TD bgcolor="#EEEEEE"> Reverses the top two stack items.
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>DUP</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( n -- n n )		  <TD bgcolor="#EEEEEE"> Duplicates the top stack item.
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>OVER</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( n1 n2 -- n1 n2 n1 )	  <TD bgcolor="#EEEEEE"> Makes a copy of the second item and pushes it on top.
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>ROT</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( n1 n2 n3 -- n2 n3 n1 ) <TD bgcolor="#EEEEEE"> Rotates the third item to the top.
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>DROP</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( n -- )		  <TD bgcolor="#EEEEEE"> Discards the top stack item.
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>2SWAP</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( d1 d2 -- d2 d1 )	  <TD bgcolor="#EEEEEE"> Reverses the top two pairs of numbers.
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>2DUP</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( d -- d d )		  <TD bgcolor="#EEEEEE"> Duplicates the top pair of numbers.
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>2OVER</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( d1 d2 -- d1 d2 d1 )	  <TD bgcolor="#EEEEEE"> Makes a copy of the second pair of numbers and pushes it on top.
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>2DROP</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( d -- )		  <TD bgcolor="#EEEEEE"> Discards the top pair of numbers.
+</TABLE>
+
+<P>	
+<TABLE WIDTH="100%" BORDER="0">
+	<CAPTION><I>Review of Terms</I></CAPTION>
+	<TR> <TH> <HR NOSHADE SIZE="6"> <TH> <HR NOSHADE SIZE="6">
+	<TR> <TD bgcolor="#EEEEEE"> Double-length numbers	    <TD bgcolor="#EEEEEE"> integers which encompass a range of over -18,446,744,073,709,551,615 to +18,446,744,073,709,551,615 (and which we'll introduce officially in Chap. 7).
+	<TR> <TD bgcolor="#EEEEEE"> Single-length numbers  	    <TD bgcolor="#EEEEEE"> integers which fall within the range of -2 billion to +2 billion: the only numbers which are valid as the arguments or results of any of the operators we've discussed so far.
+	<TR> <TH> <HR NOSHADE SIZE="6"> <TH> <HR NOSHADE SIZE="6">
+</TABLE>
+
+<H2>Problems -- Chapter 2</H2>
+			<IMG SRC="felix.gif" ALIGN=MIDDLE ALT="problems">
+
+<OL>
+	<LI> What's the difference between <FONT COLOR="#0000FF">DUP</FONT> <FONT COLOR="#0000FF">DUP</FONT> and <FONT COLOR="#0000FF">2DUP</FONT>?
+	     <A HREF="2-1.forth.html">[answer]</A>
+	<LI> Write a phrase which will reverse the order of the top four items on the stack; that is,
+<PRE>	( 1 2 3 4 -- 4 3 2 1 )
+</PRE>  <A HREF="2-2.forth.html">[answer]</A>
+	<LI> Write a definition called <TT>3DUP</TT> which will duplicate the top three numbers on the stack; for example,
+<PRE>	( 1 2 3 -- 1 2 3 1 2 3 )
+</PRE>  <A HREF="2-3.forth.html">[answer]</A> <BR><BR>
+
+	Write definitions for the following infix equations, given the stack effects shown:
+
+	<LI> a<SUP>2</SUP> + ab + c	( c a b -- result )  <A HREF="2-4.forth.html">[answer]</A> <BR><BR>
+	<LI> (a-b) / (a+b)		( a b -- result )    <A HREF="2-5.forth.html">[answer]</A> <BR><BR>
+	<LI> Write a set of words to compute prison sentences for hardened criminals such that the judge can enter:
+<PRE>	CONVICTED-OF ARSON HOMICIDE TAX-EVASION<U> ok </U>
+	WILL-SERVE<U> 35 years ok </U>
+</PRE>
+	     or any series of crime beginning with the word <TT>CONVICTED-OF</TT> and ending with <TT>WILL-SERVE</TT>. Use
+	     these sentences
+<PRE>	HOMICIDE	20 years
+	ARSON		10 years
+	BOOKMAKING	 2 years
+	TAX-EVASION	 5 years
+</PRE>  <A HREF="2-6.forth.html">[answer]</A>
+
+	<LI> You're the inventory programmer at Maria's Egg Ranch. Define a word called <TT>EGG.CARTONS</TT>
+	     which expects on the stack the total number of eggs laid by the chickens today and prints out the
+	     number of cartons that can be filled with a dozen each, as well as the number of left-over eggs.
+		<A HREF="2-7.forth.html">[answer]</A>
+</OL>
+
+<A HREF="http://validator.w3.org"><IMG SRC="http://validator.w3.org/images/vh32.gif" HEIGHT=31 WIDTH=88 ALIGN=RIGHT BORDER=0 ALT="Valid HTML 3.5"></A>
+</BODY>
+
+</HTML>

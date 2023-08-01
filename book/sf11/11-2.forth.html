@@ -1,0 +1,8 @@
+\ Starting Forth Chapter 11, Problem 11-2
+
+: BASED. ( compile: new_base -- ) ( run: n -- ) 
+	CREATE  , 
+   	DOES>  	@ 	     ( new_base )    
+		BASE @ >R    ( save old BASE )
+		BASE !  .
+		R> BASE ! ;  ( restore BASE )	

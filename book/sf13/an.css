@@ -1,0 +1,22 @@
+
+body { font: 10pt verdana, sans-serif ; color: #014 ;
+       margin-left: 8%; margin-right: 8%; background-color: #ffe ;}
+table { width: 100% ;}
+td   { font: 10pt verdana, sans-serif ; color: #014 ; text-align : justify }
+.r   { font:  8pt verdana, sans-serif ; color: #080 ; text-align : right }
+
+h1   { font: 36pt "courier new" ; color: #c00 }
+h2   { font: 10pt verdana, sans-serif ; color: #f80 ; padding : 6; }
+h5   { font: 14pt verdana, sans-serif ; color: #c00 ; }
+h6   { font:  8pt verdana, sans-serif ; color: #c00 ; }
+
+
+a    { font: 11pt "andale mono","courier new" ; color: #080 }
+
+.g   { font: 12pt verdana, sans-serif ; color: #f80 ; }
+
+pre  { font: 11pt "andale mono","courier new" ; color: #020 }
+tt   { font: 11pt "andale mono","courier new" ; color: #020 }
+
+hr   { font-weight: 100 ; color: #080  }
+ol   { font: 10pt  verdana, sans-serif ; color: #014 ; }

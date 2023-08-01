@@ -1,0 +1,609 @@
+<!DOCTYPE HTML PUBLIC "-//Microsoft//DTD Internet Explorer 3.0 HTML//EN">
+<HTML>
+
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Leo Brodie's Starting Forth - Chapter 6</TITLE>
+  <META name="description" content="Starting Forth, Leo Brodie, Chapter 6.">
+  <META name="keywords" content="Forth, example code, Starting Forth, chapter 6">
+</HEAD>
+
+<BODY BGCOLOR="#F8F8F8" TEXT="#000000" LINK="#0000FF" VLINK="#007070" ALINK="#FF0000" TOPMARGIN=0>
+
+<H1>6 Throw it for a Loop</H1>
+
+        <P> In Chap. 4 we learned to program the computer to make "decisions" by branching to different
+            parts of a definition depending on the outcome of certain tests. Conditional branching is one
+            of the things that make computers as useful as they are.
+        
+        <P> In this chapter, we'll see how to write definitions in which execution can conditionally branch
+            back to an earlier part of the same definition, so that some segment will repeat again and again.
+            This type of control construct is called a "loop." The ability to perform loops is probably the 
+            most significant thing that makes computers as powerful as they are. If we can program the computer
+            to make out one payroll check, we can program it to make out a thousand of them.
+
+        <P> For now we'll write loops that do simple things like printing numbers at your terminal. In later
+            chapters, we'll learn to do much more with them.
+
+<H2>Definite Loops -- <FONT COLOR="#0000FF">DO</FONT>...<FONT COLOR="#0000FF">LOOP</FONT></H2>
+
+        <P> One type of loop structure is called a "definite loop." You, the programmer, specify the number
+            of times the loop will loop. In Forth, you do this by specifying a beginning number and an
+            ending number (in reverse order) before the word <FONT COLOR="#0000FF">DO</FONT>. Then you put
+            the words which you want to have repeated between the words <FONT COLOR="#0000FF">DO</FONT> and
+            <FONT COLOR="#0000FF">LOOP</FONT>. For example
+<PRE>   : TEST   10 0 DO  CR ." Hello "  LOOP ;
+</PRE>
+            will print a carriage return and "Hello" ten times, because zero from ten is ten.
+<PRE>
+        TEST
+        <U>Hello</U>
+        <U>Hello</U>
+        <U>Hello</U>
+        <U>Hello</U>
+        <U>Hello</U>
+        <U>Hello</U>
+        <U>Hello</U>
+        <U>Hello</U>
+        <U>Hello</U>
+        <U>Hello ok </U>
+</PRE>
+        <P> Like an <FONT COLOR="#0000FF">IF</FONT>...<FONT COLOR="#0000FF">THEN</FONT> statement, which also
+            involves branching, a <FONT COLOR="#0000FF">DO</FONT>...<FONT COLOR="#0000FF">LOOP</FONT> statement
+            must be contained within a (single) definition.
+
+        <P> The ten is called the "limit" and the zero is called the "index."
+<PRE>   
+        FORMULA:
+                limit index DO ... LOOP
+</PRE>
+
+        <P> Here is what happens inside a <FONT COLOR="#0000FF">DO</FONT>...<FONT COLOR="#0000FF">LOOP</FONT>:
+        <P> First <FONT COLOR="#0000FF">DO</FONT><IMG SRC="footnote.gif" ALT="half-brother of the DODO bird.">
+            puts the index and the limit on the loop control stack.
+        <P> <CENTER><TABLE WIDTH="100%" BORDER="0"> 
+              <TR> <TD> <IMG SRC="dodoleft.gif"  ALIGN=LEFT  ALT="dodo pushing">
+                   <TD> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                   <TD> <IMG SRC="dodoright.gif" ALIGN=RIGHT ALT="dodo finished"> 
+            </TABLE></CENTER>
+        <P> <CENTER><TABLE WIDTH="50%" BORDER="0">
+            <TR><TD>Then execution proceeds<BR> to the words inside the loop,
+                <TD>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                <TD>up till the word <FONT COLOR="#0000FF">LOOP</FONT>.
+            </TABLE></CENTER>   
+        <P> <CENTER><IMG SRC="doloop.gif"  ALIGN=MIDDLE  ALT="do execute loop"></CENTER>
+
+	<P> First <FONT COLOR="#0000FF">LOOP</FONT> adds one to the loop index.  If the loop index is 
+	    then equal to ten, it lets execution move on to the next word in the definition.  Otherwise, 
+	    <FONT COLOR="#0000FF">LOOP</FONT> reroutes execution back to <FONT COLOR="#0000FF">DO</FONT>.
+        <P> <CENTER><IMG SRC="dolater.gif"  ALIGN=MIDDLE  ALT="exit loop"></CENTER>
+
+        <P> Remember that the Forth word <FONT COLOR="#0000FF">I</FONT> copies the top of the loop control
+            stack onto the parameter stack. You can use <FONT COLOR="#0000FF">I</FONT> to get hold of the 
+            current value of the <U>index</U> each time around. Consider the definition
+<PRE>   
+        : DECADE  10 0 DO  I .  LOOP ;
+</PRE>
+            which executes like this:
+<PRE>   
+        DECADE<U> 0 1 2 3 4 5 6 7 8 9 ok </U>
+</PRE>
+        <P> Of course, you could pick any range of numbers (within the range of -2147483648 to +2147483647):
+<PRE>   
+        : SAMPLE  -243 -250 DO  I .  LOOP ;
+        SAMPLE<U> -250 -249 -248 -247 -246 -245 -244 ok </U>
+</PRE>
+
+        <P> Notice that even negative numbers increase by one each time. The limit is always higher than 
+            the index.
+
+        <P> You can leave a number on the stack to serve as an argument to something inside a <FONT COLOR="#0000FF">DO</FONT>
+            loop. For instance,
+
+<PRE>   
+        : MULTIPLICATIONS  CR 11 1 DO  DUP I * .  LOOP  DROP ;
+</PRE>  
+            will produce the following results:
+<PRE>   
+        7 MULTIPLICATIONS
+        <U>7 14 21 28 35 42 49 56 63 70 ok </U>
+</PRE>
+        <P> Here we're simply multiplying the current value of the index by seven each time around. Notice
+            that we have to <FONT COLOR="#0000FF">DUP</FONT> the seven inside the loop so that a copy will
+            be available each time and that we have to <FONT COLOR="#0000FF">DROP</FONT> it after we come
+            out of the loop.
+
+        <P> A compound interest problem gives us the opportunity to demonstrate some trickier stack 
+            manipulations inside a <FONT COLOR="#0000FF">DO</FONT> loop.
+
+        <P> Given a starting balance, say $1000, and an interest rate, say 6%, let's write a definition to
+            compute and print a table like this:
+
+<PRE>   
+        1000 6 COMPOUND
+        YEAR 1  BALANCE 1060
+        YEAR 2  BALANCE 1124
+        YEAR 3  BALANCE 1191
+                                etc.
+</PRE>
+            for twenty years.
+        <P> First we'll load <TT>R%</TT>, our previously-defined word from Chap. 5, then we'll define
+<PRE>   
+        : COMPOUND  ( amt int -- )
+                CR SWAP 21 1 DO  ." YEAR " I . 3 SPACES
+                                 2DUP R% +  DUP ." BALANCE " . CR 
+                           LOOP  2DROP ;
+</PRE>
+        <P> Each time through the loop, we do a <FONT COLOR="#0000FF">2DUP</FONT> so that we always
+            maintain a running balance and an unchanged interest rate for the next go-round. When we're
+            finally done, we <FONT COLOR="#0000FF">2DROP</FONT> them.
+
+<H2>Getting <FONT COLOR="#0000FF">IF</FONT> fy</H2>
+
+        <P> The index can also serve as a condition for an <FONT COLOR="#0000FF">IF</FONT> statement. In
+            this way you can make something special happen on certain passes through the loop but not on 
+            others. Here's a simple example:
+<PRE>   
+        : RECTANGLE  256 0 DO   I 16 MOD 0= IF  CR  THEN
+                                ." *"
+                         LOOP ;
+</PRE>
+        <P> RECTANGLE will print 256 stars, and at every sixteenth star it will also perform a 
+            carriage return at your terminal. The result should look like this:
+<PRE>   
+        ****************
+        ****************
+        ****************
+        ****************
+        ****************
+        ****************
+        ****************
+        ****************
+        ****************
+        ****************
+        ****************
+        ****************
+        ****************
+        ****************
+        ****************
+        ****************
+</PRE>
+        <P> And here's an example from the world of nursery rhymes. We'll let you figure this one out.
+<PRE>   
+        : POEM  CR 11 1 DO  I . ." Little " 
+                            I 3 MOD 0= IF ." indians " CR THEN  
+                      LOOP
+                ." indian boys. " ;
+</PRE>
+
+<H2>Nested Loops</H2>
+        
+        <P> In the last section we defined a word called <TT>MULTIPLICATIONS</TT>, which contains a <FONT COLOR="#0000FF">DO</FONT>...<FONT COLOR="#0000FF">LOOP</FONT>.
+            If we wanted to, we could put <TT>MULTIPLICATIONS</TT> inside another <FONT COLOR="#0000FF">DO</FONT>...<FONT COLOR="#0000FF">LOOP</FONT>, like this:
+<PRE>   
+        : TABLE  CR 11 1 DO  I MULTIPLICATIONS  LOOP ;
+</PRE>
+        <P> Now we'll get a multiplication table that looks like this:
+
+<PRE>   
+        1 2 3 4 5 6 7 8 9 10    
+        2 4 6 8 10 12 14 16 18 20
+        3 6 9 12 15 18 21 24 27 30
+                                        etc.
+        10 20 30 40 50 60 70 80 90 100
+</PRE>
+            because the <FONT COLOR="#0000FF">I</FONT> in the outer loop supplies the argument for <TT>MULTIPLICATIONS</TT>.
+
+        <P> You can also nest <FONT COLOR="#0000FF">DO</FONT> loops inside one another all in the same
+            definition:
+<PRE>   
+        : TABLE  CR 11 1 DO   
+                            11 1 DO  I J *  5 U.R  LOOP
+                    CR LOOP ;
+</PRE>
+        <IMG SRC="indexlimit.gif"  ALIGN=RIGHT ALT="index limit position">
+        <P> Notice this phrase in the inner loop:
+<PRE>   I J *
+</PRE>
+        <P> In Chap. 5 we mentioned that the word <FONT COLOR="#0000FF">J</FONT> copies the third item on
+            the loop control stack onto the parameter stack. It so happens that in this case the third item
+            on the loop control stack is the index of the <U>outer</U> loop.
+
+        <P> Thus the phrase <TT>"I J *"</TT> multiplies the two indexes to create the value in the table.
+
+        <P> Now what about this phrase?
+<PRE>   5 U.R
+</PRE>
+
+        <P> This is nothing more than a fancy <FONT COLOR="#0000FF"><B>.</B></FONT> that is used to print numbers
+            in table form so that they line up vertically. The five represents the number of spaces we've 
+            decided each column in the table should be. The output of the new table will look like this:
+<PRE>   
+            1    2    3    4    5    6    7    8    9   10      
+            2    4    6    8   10   12   14   16   18   20
+            3    6    9   12   15   18   21   24   27   30   etc.
+</PRE>
+        <P> Each number takes five spaces, no matter how many digits it contains. (<FONT COLOR="#0000FF">U.R</FONT>
+            stands for "<U>unsigned</U> number-print, <U>right</U> justified." The term "unsigned," you may
+            recall, means you cannot use it for negative numbers.)
+
+<H2><FONT COLOR="#0000FF">+LOOP</FONT></H2>
+
+        <P> If you want the index to go up by some number other than one each time around, you can use the
+            word <FONT COLOR="#0000FF">+LOOP</FONT> instead of <FONT COLOR="#0000FF">LOOP</FONT>. 
+            <FONT COLOR="#0000FF">+LOOP</FONT> expects on the stack the number by which you want the index to 
+            change. For example, in the definition
+<PRE>   
+        : PENTAJUMPS  50 0 DO  I .  5 +LOOP ;
+</PRE>
+            the index will go up by five each time, with this result:
+<PRE>   
+        PENTAJUMPS<U> 0 5 10 15 20 25 30 35 40 45 ok </U> 
+</PRE>
+            while in
+<PRE>   
+        : FALLING  -10 0 DO  I .  -1 +LOOP ;
+</PRE>
+            the index will go down by one each time, with this result:
+<PRE>   
+        FALLING<U> 0 -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 ok </U> 
+</PRE>
+        <P> The argument for <FONT COLOR="#0000FF">+LOOP</FONT>, which is called the "increment," can come
+            from anywhere, but it must be put on the stack each time around. Consider this experimental 
+            example:
+<PRE>   
+        : INC-COUNT  DO  I . DUP +LOOP  DROP ;
+</PRE>
+        <P> There is no increment inside the definition; instead, it will have to be on the stack when 
+            <TT>INC-COUNT</TT> is executed, along with the limit and index. Watch this:
+        <P> Step up by one:
+<PRE>   
+        1 5 0 INC-COUNT<U> 0 1 2 3 4 ok </U>
+</PRE>
+        <P> Step up by two:
+<PRE>   
+        2 5 0 INC-COUNT<U> 0 2 4 ok </U>
+</PRE>
+        <P> Step down by three:
+<PRE>   
+        -3 -10 10 INC-COUNT<U> 10 7 4 1 -2 -5 -8 ok </U>
+</PRE>
+        <P> Our next example demonstrates an increment that changes each time through the loop.
+<PRE>   : DOUBLING   32767 1 DO  I . I +LOOP ;
+</PRE>
+        <P> Here the index itself is used as the increment (<TT>I +LOOP</TT>), so that starting with one,
+            the index doubles each time, like this:
+<PRE>   
+        DOUBLING
+        <U>1 2 4 8 16 32 64 128 256 512 1024 2048 4096 8192 16384 ok </U>
+</PRE>
+        <P> <IMG SRC="loophelp.gif"  ALIGN=RIGHT  ALT="infinite loop">
+            Notice that in this example we don't ever want the argument for <FONT COLOR="#0000FF">+LOOP</FONT>
+            to be zero, because if it were we'd never come out of the loop. We would have created what is
+            known as an "infinite loop."
+        
+        
+<H2><FONT COLOR="#0000FF">DO</FONT>ing it -- Forth Style</H2>
+
+        <P> There are a few things to remember before you go off and write some <FONT COLOR="#0000FF">DO</FONT>
+            loops of your own.
+        
+        <P> First, keep this simple guide in mind:
+        
+        <P><CENTER><B>Reasons for termination</B></CENTER>
+
+        <P> Execution makes its exit from a loop when, in going up, the index has <U>reached</U> or <U>passed</U> the limit.
+        <P> <CENTER><IMG SRC="reasons.gif" ALT="reasons for termination"></CENTER>
+        <P> Or, when in going down, the index has passed the limit--not when it has merely reached it.
+
+        <P> But a <FONT COLOR="#0000FF">DO</FONT> loop always executes <U>at least once</U> (this example will
+        loop millions of times on a true ANS Forth system, so be prepared):
+<PRE>   
+        : TEST  100 10 DO  I . -1 +LOOP ;
+        TEST<U> 10 9 8 7 ...</U>
+</PRE>
+        <P> Second, remember that the words <FONT COLOR="#0000FF">DO</FONT> and <FONT COLOR="#0000FF">LOOP</FONT>
+            are branching commands and that therefore they can only be executed inside a definition. This means
+            that you cannot design/test your loop definitions in "calculator style" unless you simulate the 
+            loop yourself.
+
+        <P> Let's see how a fledgling Forth programmer might go about design/testing the definition of 
+            <TT>COMPOUND</TT> (from the first section of this chapter). Before adding the <FONT COLOR="#0000FF">."</FONT>
+            messages, the programmer might begin by jotting down this version on a piece of paper:
+<PRE>   
+        : COMPOUND  ( amt int -- )
+                SWAP 21 1 DO  I . 2DUP R% + DUP . CR LOOP  2DROP ;
+</PRE>
+        <P> The programmer migh test this version at the terminal, using <FONT COLOR="#0000FF"><B>.</B></FONT>
+            or <TT>.S</TT> to check the result of each step. The "conversation" might look like this:
+        <P><CENTER><IMG SRC="debug.jpg" ALT="debugging"></CENTER>
+
+<TABLE WIDTH="100%" BORDER="0">
+        <CAPTION><I>A Handy Hint<BR>How to Clear the Stack</I></CAPTION>
+        <TR><TD bgcolor="#EEEEEE"> Sometimes a beginner will unwittingly write a loop which leaves a whole lot of numbers on the stack. 
+        For example
+<PRE>   
+        : FIVES  100 0 DO  I 5 . LOOP ;
+</PRE>
+           instead of
+<PRE>   
+        : FIVES  100 0 DO  I 5 * . LOOP ;
+</PRE>
+        <P> If you see this happen to anyone (surely it will never happen to you!) and if you see the beginner
+            typing in an endless succession of dots to clear the stack, recommend typing in
+<PRE>   
+        XX
+</PRE>
+        <P> <TT>XX</TT> is not a Forth word, so the text interpreter will execute the word <FONT COLOR="#0000FF">ABORT"</FONT>, 
+            which among other things clears all stacks. The beginner will be endlessly grateful.
+</TABLE>
+
+
+<H2>Indefinite Loops</H2>
+        
+        <P> While <FONT COLOR="#0000FF">DO</FONT> loops are called definite loops, Forth also supports 
+            "indefinite" loops. This type of loop will repeat indefinitely or until some event occurs.
+            A standard form of indefinite loop is 
+<PRE>   BEGIN ... UNTIL
+</PRE>
+        <P> The <FONT COLOR="#0000FF">BEGIN</FONT>...<FONT COLOR="#0000FF">UNTIL</FONT> loop repeats until a
+            condition is "true."
+
+        <P> The useage is
+<PRE>   BEGIN xxx f UNTIL
+</PRE>
+           where "xxx" stands for the words that you want to be repeated, and "f" stands for a flag.
+        As long as the flag is zero (false), the loop will continue to loop, but when the flag becomes 
+        non-zero (true), the loop will end.
+        <P><CENTER><IMG SRC="indefinite.gif"  ALIGN=MIDDLE  ALT="indefinite loop"></CENTER>
+
+        <P> An example of a definition that uses a <FONT COLOR="#0000FF">BEGIN</FONT>...<FONT COLOR="#0000FF">UNTIL</FONT>
+            statement is one we mentioned earlier, in our washing machine example:
+<PRE>   : TILL-FULL  BEGIN ?FULL UNTIL ;
+</PRE>
+          which we used in the higher-level definition
+<PRE>   : FILL  FAUCETS OPEN  TILL-FULL  FAUCETS CLOSE ;
+</PRE>
+        <P> <TT>?FULL</TT> will be defined to electronically check a switch in the washtub that indicates when
+            the water reaches the correct level. It will return zero  if the switch is not activated and a one
+            if it is. <TT>TILL-FULL</TT> does nothing but repeatedly make this test over and over (millions of 
+            times per second) until the switch is finally activated, at which time execution will come out of
+            the loop. Then the <FONT COLOR="#0000FF">;</FONT> in <TT>TILL-FULL</TT> will return the flow of 
+            execution to the remaining words in <TT>FILL</TT>, and the water faucets will be turned off.
+
+        <P> Sometimes a programmer will deliberately want to create an infinite loop. In Forth, the best way
+            is with the form
+<PRE>   : BEGIN xxx 0 UNTIL
+</PRE>
+        <P> The zero supplies a "false" flag to the word <FONT COLOR="#0000FF">UNTIL</FONT>, so the loop will 
+            repeat eternally.
+
+        <P> Beginners usually want to avoid infinite loops, because executing one means that they lose
+            control of the computer (in the sense that only the words inside the loop are being executed). But
+            infinite loops do have their uses. For instance, the text interpreter is part of an infinite 
+            loop called <FONT COLOR="#0000FF">QUIT</FONT>, which waits for input, interprets it, executes it,
+            prints "ok," then waits for input once again. In most microprocessor-controlled machines, the 
+            highest-level definition contains an infinite loop that defines the machine's behavior.
+
+        <P> Another form of indefinite loop is used in this format:
+<PRE>   BEGIN xx f WHILE yyy REPEAT
+</PRE>
+        <P> Here the test occurs halfway through the loop rather than at the end. As long as the test is true,
+            the flow of execution continues with the rest of the loop, then returns to the beginning again. If
+            the test is false, the loop ends.
+        <P><CENTER><IMG SRC="repeat.gif"  ALIGN=MIDDLE  ALT="indefinite loop"></CENTER>
+
+        <P> Notice that the effect of the test is opposite that in the <FONT COLOR="#0000FF">BEGIN</FONT>...<FONT COLOR="#0000FF">UNTIL</FONT>
+            construction. Here the loop repeats <U>while</U> something is true (rather than <U>until</U> it's true).
+
+        <P> The indefinite loop structures lend themselves best to cases in which you're waiting for some 
+            external event to happen, such as the closing of a switch or thermostat, or the setting of a 
+            flag by another part of an application that is running simultaneously. So for now, instead of 
+            giving examples, we just want you to remember that the indefinite loop structures exist.
+          
+<H2>The Indefinitely Definite Loop</H2>
+
+        <P> There is a way to write a definite loop so that it stops short of the prescribed limit if a 
+            truth condition changes state, by using the word <FONT COLOR="#0000FF">LEAVE</FONT>. 
+            <FONT COLOR="#0000FF">LEAVE</FONT> causes the loop to end immediately.
+
+        <P> Watch how we rewrite our earlier definition of <TT>COMPOUND</TT>. Instead of just letting the
+            loop run twenty times, let's get it to quit after twenty times or as soon as our money has doubled,
+            whichever occurs first.
+        
+        <P> We'll simply add this phrase:
+<PRE>   2000 > IF  LEAVE  THEN
+</PRE>
+            like this:
+<PRE>   : DOUBLED   
+          6 1000 21 1 DO  CR ." YEAR " I 2 U.R
+                          2DUP R% +  DUP ."    BALANCE " .
+                          DUP 2000 > IF  CR CR ." more than doubled in " 
+                                            I . ." years " LEAVE  
+                                   THEN
+                     LOOP 2DROP ;
+</PRE>
+            The result will look like this:
+<PRE>   DOUBLED
+        YEAR  1   BALANCE 1060
+        YEAR  2   BALANCE 1124
+        YEAR  3   BALANCE 1191
+        YEAR  4   BALANCE 1262
+        YEAR  5   BALANCE 1338
+        YEAR  6   BALANCE 1418
+        YEAR  7   BALANCE 1503
+        YEAR  8   BALANCE 1593
+        YEAR  9   BALANCE 1689
+        YEAR 10   BALANCE 1790
+        YEAR 11   BALANCE 1897
+        YEAR 12   BALANCE 2011
+
+        more than doubled in 12 years ok
+</PRE>
+        <P> One of the problems at the end of this chapter asks you to rework <TT>DOUBLED</TT>
+            so that it expects the parameters of interest and starting balance, and computes by itself the 
+            double balance that <FONT COLOR="#0000FF">LEAVE</FONT> will try to reach.
+
+<P>
+<TABLE WIDTH="100%" BORDER="0">
+        <CAPTION><I>Two Handy Hints: <FONT COLOR="#0000FF">PAGE</FONT> and <FONT COLOR="#0000FF">QUIT</FONT></I></CAPTION>
+        <TR><TD bgcolor="#EEEEEE"> To give a neater appearance to your loop outputs (such as tables and geometric shapes), you might want to
+                 clear the screen first by using the word <FONT COLOR="#0000FF">PAGE</FONT>. You can execute
+                 <FONT COLOR="#0000FF">PAGE</FONT> interactively like this:
+<PRE>
+        PAGE RECTANGLE
+</PRE>
+            which will clear the screen before printing the rectangle that we defined earlier in this chapter.
+        Or you could put <FONT COLOR="#0000FF">PAGE</FONT> at the beginning of the definition. like this:
+<PRE>   
+        : RECTANGLE  PAGE 256 0 DO  I 16 MOD 0= IF  CR  THEN  ." *"  LOOP ;
+</PRE>
+        <P> If you don't want the "ok" to appear upon completion of execution, use the word <FONT COLOR="#0000FF">QUIT</FONT>.
+            Again, you can use <FONT COLOR="#0000FF">QUIT</FONT> interactively:
+<PRE>   
+        RECTANGLE QUIT
+</PRE>
+            or you can make <FONT COLOR="#0000FF">QUIT</FONT> the last word in the definition (just before
+            the semicolon).
+</TABLE>
+
+
+
+<BR>    <P> Here's a list of the Forth words we've covered in this chapter:
+<TABLE WIDTH="100%" BORDER="0">
+        <TR><TD nowrap bgcolor="#EEEEEE"> <TT>DO&nbsp;...&nbsp;&nbsp;LOOP</TT>  <TD nowrap bgcolor="#EEEEEE"> DO: ( limit index -- )<BR>LOOP: ( -- ) 
+                                                        <TD bgcolor="#EEEEEE"> Sets up a finite loop, given the index range.
+        <TR><TD nowrap bgcolor="#EEEEEE"> <TT>DO ... +LOOP</TT>         <TD nowrap bgcolor="#EEEEEE"> DO: ( limit index -- )<BR>+LOOP: ( -- ) 
+                                                        <TD bgcolor="#EEEEEE"> Like <TT>DO ... LOOP</TT> except adds the value of n (instead of always one) to the index.
+        <TR><TD nowrap bgcolor="#EEEEEE"> <TT>LEAVE</TT>                <TD nowrap bgcolor="#EEEEEE"> ( -- )            <TD bgcolor="#EEEEEE"> Terminate the loop immediately.
+        <TR><TD nowrap bgcolor="#EEEEEE"> <TT>BEGIN ... UNTIL</TT>      <TD nowrap bgcolor="#EEEEEE"> UNTIL: ( f -- )
+                                                        <TD bgcolor="#EEEEEE"> Sets up an indefinite loop which ends when <EM>f</EM> is true.
+        <TR><TD nowrap bgcolor="#EEEEEE"> <TT>BEGIN&nbsp;xxx<BR>
+                     WHILE&nbsp;yyy&nbsp;<BR>
+                     REPEAT</TT>                        <TD nowrap bgcolor="#EEEEEE"> WHILE: ( f -- )
+                                                        <TD bgcolor="#EEEEEE"> Sets up an indefinite loop which always executes xxx and also yyy if <EM>f</EM> is true. Ends when <EM>f</EM> is false.
+        <TR><TD bgcolor="#EEEEEE"> <TT>U.R</TT>         <TD nowrap bgcolor="#EEEEEE"> ( u width -- )    
+                                                        <TD bgcolor="#EEEEEE"> Prints the unsigned single-length number, right-justified within the field width.
+        <TR><TD bgcolor="#EEEEEE"> <TT>PAGE</TT>        <TD nowrap bgcolor="#EEEEEE"> ( -- )    
+                                                        <TD bgcolor="#EEEEEE"> Clears the terminal screen and resets the terminal's cursor to the upper left-hand corner.
+        <TR><TD bgcolor="#EEEEEE"> <TT>QUIT</TT>        <TD nowrap bgcolor="#EEEEEE"> ( -- )    
+                                                        <TD bgcolor="#EEEEEE"> Terminates execution for the current task and returns control to the terminal.
+</TABLE>
+
+<BR>
+<TABLE WIDTH="100%" BORDER="0">
+        <CAPTION><I>Review of Terms</I></CAPTION>
+        <TR><TD bgcolor="#EEEEEE"> definite loop        <TD bgcolor="#EEEEEE">  a loop structure in which the words contained within the loop repeat a 
+                                                                                definite number of times. In Forth, this number depends on the starting
+                                                                                and ending counts (index and limit) which are placed on the stack prior
+                                                                                to the execution of the word <FONT COLOR="#0000FF">DO</FONT>.
+        <TR><TD bgcolor="#EEEEEE"> Infinite loop        <TD bgcolor="#EEEEEE">  a loop structure in which the words contained within the loop continue to 
+                                                                                repeat without any chance of an external event stopping them, except for
+                                                                                closing the Forth window or shutting down or resetting the computer.    
+        <TR><TD bgcolor="#EEEEEE"> Indefinite loop      <TD bgcolor="#EEEEEE">  a loop structure in which the words contained within the loop continue to 
+                                                                                repeat until some truth condition changes state (true-to-false or 
+                                                                                false-to-true). In Forth, the indefinite loops begin with the word 
+                                                                                <FONT COLOR="#0000FF">BEGIN</FONT>.     
+</TABLE>
+
+
+<H2>Problems -- Chapter 6</H2>
+                        <IMG SRC="felix.gif" ALIGN=MIDDLE ALT="problems">
+        <P> In Problems 1 trough 6, you will create several words which will print out patterns of stars
+            (asterisks). These will involve the use of <FONT COLOR="#0000FF">DO</FONT> loops and 
+            <FONT COLOR="#0000FF">BEGIN</FONT>...<FONT COLOR="#0000FF">UNTIL</FONT> loops.
+
+<OL>
+        <LI> First create a word named <TT>STARS</TT> which will print out n stars on the same line, given 
+             n on the stack:
+<PRE>   10 STARS <IMG SRC="enterkey.gif" ALIGN=MIDDLE  ALT="return"><U> ********** ok </U>
+</PRE>       <A HREF="6-1.forth.html">[answer]</A>
+        <LI> Next define <TT>BOX</TT> which prints out a rectangle of stars, given the width and height 
+             (number of lines), using the stack order ( width height -- ).
+<PRE>   10 3 BOX
+        **********
+        **********
+        ********** ok
+</PRE>
+             <A HREF="6-2.forth.html">[answer]</A>
+        <LI> Now create a word named <TT>\STARS</TT> which will print a skewed array of stars (a rhomboid), given
+             the height on the stack. Use a <FONT COLOR="#0000FF">DO</FONT> loop and, for simplicity, make the 
+             width a constant ten stars.
+<PRE>   3 \STARS
+         **********
+          **********
+           ********** ok
+</PRE>
+             <A HREF="6-3.forth.html">[answer]</A>
+
+        <LI> Now create a word which slants the stars the other direction: call it <TT>/STARS</TT>. It should
+             take the height as a stack input and use a constant ten width. Use a <FONT COLOR="#0000FF">DO</FONT> loop.
+             <A HREF="6-4.forth.html">[answer]</A>
+        
+        <LI> Now redefine this last word, using a <FONT COLOR="#0000FF">BEGIN</FONT>...<FONT COLOR="#0000FF">UNTIL</FONT> 
+             loop. <A HREF="6-5.forth.html">[answer]</A>
+        
+        <LI> Write a definition called <TT>DIAMONDS</TT> which will print out the given number of diamond shapes,
+             as shown in this example.
+<PRE>   2 DIAMONDS
+                      *
+                     ***
+                    *****
+                   *******
+                  *********
+                 ***********
+                *************
+               ***************
+              *****************
+             *******************
+             *******************
+              *****************
+               ***************
+                *************
+                 ***********
+                  *********
+                   *******
+                    *****
+                     ***
+                      *
+                      *
+                     ***
+                    *****
+                   *******
+                  *********
+                 ***********
+                *************
+               ***************
+              *****************
+             *******************
+             *******************
+              *****************
+               ***************
+                *************
+                 ***********
+                  *********
+                   *******
+                    *****
+                     ***
+                      *
+</PRE>  <A HREF="6-6.forth.html">[answer]</A>
+        <LI> In our discussion of <FONT COLOR="#0000FF">LEAVE</FONT> we gave an example which computed 6%
+             compound interest on a starting balance of $1000 for 20 years or until the balance had doubled,
+             whichever came first. Rewrite this definition so that it will expect a starting balance and 
+             interest rate on the stack and will <FONT COLOR="#0000FF">LEAVE</FONT> when this starting balance
+             has doubled. <A HREF="6-7.forth.html">[answer]</A>
+        
+        <LI> Define a word called <TT>**</TT> that will compute exponential values, like this:
+<PRE>   7 2 ** .<U> 49 ok </U>
+</PRE>  (seven squared)
+<PRE>   2 4 ** .<U> 16 ok </U>
+</PRE>  (two to the fourth power)
+        <P> For simplicity, assume positive exponents only (but make sure <TT>**</TT> works correctly when the
+            exponent is one--the result should be the number itself). <A HREF="6-8.forth.html">[answer]</A>
+</OL>
+
+
+<A HREF="http://validator.w3.org"><IMG SRC="http://validator.w3.org/images/vh32.gif" HEIGHT=31 WIDTH=88 ALIGN=RIGHT BORDER=0 ALT="Valid HTML 3.5"></A>
+</BODY>
+
+</HTML>

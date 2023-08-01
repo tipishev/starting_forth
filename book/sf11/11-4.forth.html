@@ -1,0 +1,6 @@
+\ Starting Forth Chapter 11, Problem 11-4
+
+: TOURNE      POSTPONE DO ; IMMEDIATE
+: RETOURNE    POSTPONE LOOP ; IMMEDIATE
+: French-loop 10 0 TOURNE  I .  RETOURNE ;
+

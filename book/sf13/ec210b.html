@@ -1,0 +1,69 @@
+<HTML><HEAD><TITLE> ec 210b many times </TITLE>
+<link rel="stylesheet" type="text/css" href="an.css">
+</HEAD>
+<BODY><center>
+
+<table><tr><td><center>210b
+<br><tt>
+<a href="ec210a.html"> &#171;&#171; </a> &nbsp;
+<a href="ec200.html"> &#171;&#187; </a> &nbsp;
+<a href="ec210c.html"> &#187;&#187; </a>
+</tt>
+</center></table>
+
+<br> &nbsp;
+
+<table width="80%"><tr><td>
+
+<H2>Forth programmer at work</H2>
+
+<pre>
+: MANY ( -- ) >IN @ STOP? AND >IN ! ;
+</pre>
+
+Wait a minute,<tt> STOP? </tt>is not a standard Forth word. Let's focus on that first.
+
+<pre>Forth file: <a href="ec210.frt.html" target="_blank"> ec210.frt</a>
+\ MANY TIMES (Albert Nijhof)
+
+FORTH DEFINITIONS   DECIMAL
+: STOP? ( -- true/false )
+  KEY?
+  DUP IF   DROP KEY
+           BL OVER = IF DROP KEY THEN
+           27 OVER = IF -28 THROW THEN
+           BL &lt;>
+      THEN ;
+
+) 1000 MS STOP? . [rtn] ?
+</pre>
+
+   Gives zero. But enter the same again, and press another key immediately after the<tt> [rtn]</tt>. Three possibilities.
+<ol>
+ <li> You've pressed<tt> [Esc]</tt>: Forth protests and reacts with an error message. 
+ <li> You pressed some other key, not<tt> [Esc]</tt>, not<tt> [Space]</tt>: Forth prints<tt> -1 </tt>(TRUE).
+ <li> You pressed<tt> [Space]</tt>: Forth pauses, stops all action, and waits for another key.  Is this key a<tt> [Space] </tt>again, then the result is<tt> 0 </tt>(FALSE). After<tt> [Esc] </tt>Forth protests, and all other keys produce<tt> -1 </tt>(TRUE).
+</ol>
+<br> This seems terribly complicated, but it's quite natural when you get the hang of it. <tt>STOP? </tt>(as mentioned, not a standard Forth word) is used a lot in words like<tt> WORDS</tt>,<tt> SEE</tt>,<tt> DUMP</tt>, etc., words that produce text that can run off the screen. With<tt> STOP? </tt>it is possible to toggle output (temporarily) on and off, or to abort output completely.
+
+<pre>
+: MANY ( -- ) >IN @ STOP? AND >IN ! ;
+</pre>
+
+As long as<tt> STOP? </tt>produces zero,<tt> >IN </tt>is made zero: Forth is fooled, and 'thinks' it hasn't yet read the line, starting at the very first character again.
+<br>
+<br> With<tt> MANY</tt>, interactive loops are possible:
+<pre>
+) 888 . MANY DROP [rtn] ?
+</pre>
+
+   Utterly useless, but:
+
+<pre>
+) BL [rtn]
+) DUP EMIT 1+ MANY DROP [rtn] ?
+<div align=right><tt><a href="ec210c.html">&#187;&#187;</a></tt></div>
+</pre>
+</table>
+
+</center></body></html>

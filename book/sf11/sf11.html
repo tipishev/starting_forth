@@ -1,0 +1,915 @@
+<!DOCTYPE HTML PUBLIC "-//Microsoft//DTD Internet Explorer 3.0 HTML//EN">
+<HTML>
+
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Leo Brodie's Starting Forth - Chapter 11</TITLE>
+  <META name="description" content="Starting Forth, Leo Brodie, Chapter 11.">
+  <META name="keywords" content="Forth, defining words, compiling words">
+</HEAD>
+
+<BODY BGCOLOR="#F8F8F8" TEXT="#000000" LINK="#0000FF" VLINK="#007070" ALINK="#FF0000" TOPMARGIN=0>
+
+<H1>11 Extending the compiler: Defining words and Compiling words</H1>
+
+	<P> In comparison with conventional languages, Forth's compiler is completely backwards. Traditional compilers 
+	are huge programs designed to translate any foreseeable, legal combination of available operators into machine 
+	language. In Forth, however, most of the work of compilation is done by a single definition, only a few lines 
+	long. Special structures like conditionals and loops are not compiled by the compiler but by the words being 
+	compiled (<FONT COLOR="#0000FF">IF</FONT>, <FONT COLOR="#0000FF">DO</FONT>, etc.)
+
+	<P> Lest you scoff at Forth's simple ways, notice that Forth is unique among languages in the ease with which 
+	you can extend the compiler. Defining new, specialized compilers is as easy as defining any other word, as you 
+	will soon see.
+
+	<P> When you've got an extensible compiler, you've got a very powerful language!
+
+<H2>Just a question of time</H2>
+
+	<P> Before we get fully into this chapter, let's review one particular concept that can be a problem to 
+	    beginning Forth programmers. It's a question of time.
+
+	<P> We have used the term "run time" when referring to things that occur when a word is <U>executed</U> 
+	    and "compile time" when referring to things that happen when a word is <U>compiled</U>. So far so good. 
+	    But things get a little confusing when a single word has both a run-time and a compile-time behavior.
+
+	<P> In general there are two classes of words which behave in both ways. For purposes of this discussion, 
+	    we'll call these two classes "defining words" and "compiling words."
+
+	<P> A defining word is a a word which, when executed, compiles a new definition. A defining word specifies 
+	    the compile-time and run-time behavior of each member of the "family" of words that it defines. Using 
+	    the defining word <FONT COLOR="#0000FF">CONSTANT</FONT> as an example, when we say
+	<PRE>
+	      80 CONSTANT MARGIN
+	</PRE>
+	    we are executing the <U>compile-time behavior</U> of <FONT COLOR="#0000FF">CONSTANT</FONT>; that is, 
+	    <FONT COLOR="#0000FF">CONSTANT</FONT> is compiling a new constant-type dictionary entry called 
+	    <CODE>MARGIN</CODE> and storing the value 80 into its parameter field. But when we say
+	<PRE>
+	      MARGIN
+	</PRE>
+	    we are executing the <U>run-time behavior</U> of <FONT COLOR="#0000FF">CONSTANT</FONT>; that is, 
+	    <FONT COLOR="#0000FF">CONSTANT</FONT> is pushing the value 80 onto the stack. We'll pursue defining 
+	    words further in the next few sections.
+
+	<P> The other type of word which possesses dual behavior is the "compiling word." A compiling word is 
+	    a word that we use <U>inside</U> a colon definition and that actually does something during compilation 
+	    of that definition.
+
+	<P> One example is the word <FONT COLOR="#0000FF">."</FONT>, which at compile time compiles a text string 
+	    into the dictionary entry with the count in front, and at run time types it. Other examples are 
+	    control-structure words like <FONT COLOR="#0000FF">IF</FONT> and <FONT COLOR="#0000FF">LOOP</FONT>, 
+	    which also have compile-time behaviors distinct from their run-time behaviors. We'll explore compiling 
+	    words after we've discussed defining words.
+
+<H2>How to Define a Defining Word</H2>
+
+	<P> Here are the standard Forth defining words we've covered so far:
+	<PRE>
+	   :
+	   VARIABLE
+	   2VARIABLE
+	   CONSTANT
+	   2CONSTANT
+	   CREATE
+	</PRE>
+
+	<P> What do they all have in common? Each of them is used to define a set of words with similar 
+	    compile-time and run-time characteristics.
+
+	<P> And how are all these defining words <U>defined</U>? First we'll answer this question metaphorically.
+		<IMG SRC="shakers.jpg" ALIGN=LEFT ALT="salt shaker">
+	<P> Let's say you're in the ceramic salt-shaker business. If you plan to make enough salt shakers, 
+	    you'll find it's easiest to make a mold first. A mold will guarantee that all your shakers will be 
+	    of the same design, while allowing you to make each shaker a different color. 
+	    In making the mold, you must consider two things:
+	<OL>
+	  <LI> How the <U>mold</U> will work. (E.g., how will you get the clay into and out of the mold without 
+	       breaking the mold or letting the seams show?)
+	  <LI> How the <U>shaker</U> will work. (E.g., how many holes should there be? How much salt should it 
+	       hold? Etc.)
+	</OL>
+
+	<P> To bring this analogy back to Forth, the definition of a defining word must specify two things: the 
+	    compile-time behavior <U>and</U> the run-time behavior for that type of word.
+
+	<P> Hold that thought a moment while we look at the most basic of the defining words in the above list: 
+	    <FONT COLOR="#0000FF">CREATE</FONT>. At compile time, <FONT COLOR="#0000FF">CREATE</FONT> takes a 
+	    name from the input stream and creates a dictionary heading for it.
+
+<P>    	<TABLE CELLPADDING=6 CELLSPACING=1 BORDER=0 ALIGN=LEFT>
+	     <TR><TD> <TABLE CELLPADDING=6 CELLSPACING=1 BORDER=2 ALIGN=LEFT>	
+			<TR> <TD>7<TD> <B>E</B> <TD> <B>X</B> <TD> <B>A</B> <TD> <B>M</B> <TD> <B>P</B> <TD> <B>L</B> <TD> <B>E</B>
+		      </TABLE>
+	     <TR><TD> <TABLE CELLPADDING=6 CELLSPACING=1 BORDER=2 ALIGN=LEFT>
+			<TR> <TD ALIGN=CENTER>     link
+			<TR> <TD ALIGN=CENTER> execution token
+			<TR> <TD ALIGN=CENTER> <I>(body)</I>
+		      </TABLE> 
+	</TABLE>
+
+	<P> At run time, <FONT COLOR="#0000FF">CREATE</FONT> pushes the body address of EXAMPLE onto the stack.
+
+	<P> What happens if we use <FONT COLOR="#0000FF">CREATE</FONT> inside a definition? Consider this example, 
+	    which is the definition for <FONT COLOR="#0000FF">VARIABLE</FONT>:
+	<PRE>
+	   : VARIABLE  CREATE  0 , ;
+	</PRE>
+	    When we execute <FONT COLOR="#0000FF">VARIABLE</FONT> as in 
+	<PRE>
+	   VARIABLE ORANGES 
+	</PRE>
+	<P> We are indirectly using <FONT COLOR="#0000FF">CREATE</FONT> to create a dictionary head with the name 
+	    <TT>ORANGES</TT> and an xt that points to <FONT COLOR="#0000FF">CREATE</FONT>'s run-time code. Then we are 
+	    allotting a cell for the variable itself (with "0 <FONT COLOR="#0000FF">,</FONT>").
+
+	<P> Since the run-time behavior of a variable is identical to that of a word defined by <FONT COLOR="#0000FF">CREATE</FONT>,
+	    <FONT COLOR="#0000FF">VARIABLE</FONT> does not need to have run-time code of its own, it can use 
+	    <FONT COLOR="#0000FF">CREATE</FONT>'s run-time code.
+
+	<P> How do we specify a different run-time behavior in a defining word? By using the word 
+	    <FONT COLOR="#0000FF">DOES&gt;</FONT>, as shown here:
+	<PRE>
+	   : DEFINING-WORD  CREATE  (compile-time operations)
+	                    DOES>   (run-time operations) ;
+	</PRE>
+	
+	<P> To illustrate, the following could be a valid definition for <FONT COLOR="#0000FF">CONSTANT</FONT>
+	(although in fact <FONT COLOR="#0000FF">CONSTANT</FONT> is usually defined in machine code):
+	<PRE>
+	   : CONSTANT  CREATE  ,  DOES> @ ;
+	</PRE>
+	
+	<P> To see how this definition works, imagine we're using it to define a constant named <TT>TROMBONES</TT>, like this:
+	<PRE>
+	   76 CONSTANT TROMBONES
+	</PRE>
+
+
+<TABLE CELLPADDING=6 CELLSPACING=1 WIDTH="100%">
+	<TR>
+	  <TD> compile-time portion 
+	  <TD> <TABLE CELLPADDING=6 CELLSPACING=1 WIDTH="100%" BORDER=2> 
+	          <TR>  <TD> <CODE> CREATE  </CODE> <TD> Create a new dictionary entry (e.g., <TT>TROMBONES</TT>)
+		  <TR>  <TD> <CODE>   ,     </CODE> <TD> Compiles the value (e.g., 76) for the constant from the stack into the constant's parameter field.
+	       </TABLE>
+	<TR>
+	  <TD> run-time portion
+	  <TD> <TABLE CELLPADDING=6 CELLSPACING=1 WIDTH="100%" BORDER=2> 
+	          <TR>  <TD> <CODE> DOES>   </CODE> <TD> Marks the end of the compile-time behavior and the beginning of the run-time behavior. At run time, <FONT COLOR="#0000FF">DOES&gt;</FONT> will leave the body address of the word being defined on the stack.
+		  <TR>  <TD> <CODE>   @     </CODE> <TD> Fetches the contents of the constant, using the body address that will be on the stack at run time.
+	       </TABLE>
+</TABLE>
+
+	<P> The words that <U>precede</U> <FONT COLOR="#0000FF">DOES&gt;</FONT> specify what the mold will do; the words that <U>follow</U> <FONT COLOR="#0000FF">DOES&gt;</FONT> specify what the product of the mold will do.
+
+<P>
+<TABLE CELLPADDING=6 CELLSPACING=1 WIDTH="100%" BORDER=2>
+	<TR><TD> <CODE> DOES> </CODE>
+	    <TD> run&nbsp;time:<BR>(&nbsp;--&nbsp;addr&nbsp;) 
+	    <TD> Used in creating a defining word; marks the end of its compile-time portion and the beginning of its run-time portion. The run-time operations are stated in higher-level Forth. At run time, the body address of the defined word will be on the stack.
+</TABLE> <IMG SRC="frenchie_does.gif" ALIGN=RIGHT ALT="does&gt;">
+
+
+<H2>Defining Words You Can define Yourself</H2>
+	<P> Here are some examples of defining words that you can create yourself.
+	
+	<P> Recall that in our discussion of "String Input Commands" in Chap. 10, we gave an example that employed 
+	    character-string arrays called <TT>NAME</TT>, <TT>EYES</TT>, and <TT>ME</TT>. Every time we used one of 
+	    these names, we followed it with a character count. In the input definition, we wrote
+	<P> <PRE>      ... PAD NAME 14 MOVE</PRE>
+	<P> and in the output definition we wrote
+	<P> <PRE>      ... NAME 14 -TRAILING TYPE ...</PRE>
+	<P> and so on.
+
+	<P> Let's eliminate the count by creating a defining word called <TT>CHARACTERS</TT>, whose product definitions 
+	    will leave the address <U>and</U> count on the stack when executed.
+
+	<P> We'll use it like this: if we say
+	<P> <PRE>	20 CHARACTERS ME</PRE>
+	<P> we will create an array called <TT>ME</TT>, with twenty characters available for the character string.
+
+	<P> When we execute <TT>ME</TT>, we'll get the address of the array and the count on the stack. Now we can write
+	<P> <PRE>	PAD ME MOVE</PRE>
+	<P> instead of
+	<P> <PRE>	PAD ME 20 MOVE</PRE>
+	<P> or
+	<P> <PRE>	ME -TRAILING TYPE</PRE>
+	<P> instead of 
+	<P> <PRE>	ME 20 -TRAILING TYPE</PRE>
+
+	<P> Here's how we might define <TT>CHARACTERS</TT>:
+
+
+<TABLE CELLPADDING=6 CELLSPACING=1 WIDTH="100%">
+	<TR> 
+	  <TD> 
+	  <TD> <TABLE>
+	    	  <TR>
+		    <TD> <CODE>: CHARACTERS</CODE> 
+		    <TD>
+	       </TABLE>
+	<TR>
+	  <TD> compile-time portion 
+	  <TD> <TABLE CELLPADDING=6 CELLSPACING=1 WIDTH="100%" BORDER=2> 
+	          <TR>  <TD nowrap> <CODE> CREATE	</CODE> <TD> Create a new dictionary entry (e.g., ME)
+		  <TR>  <TD nowrap> <CODE> DUP , ALLOT  </CODE> <TD> Compiles the count (e.g., twenty) into the first cell of the array for future reference. Then allots an additional twenty bytes beyond the count for the string.
+	       </TABLE>
+	<TR>
+	  <TD> run-time portion
+	  <TD> <TABLE CELLPADDING=6 CELLSPACING=1 WIDTH="100%" BORDER=2> 
+	          <TR>  <TD> <CODE> DOES>	</CODE> <TD> Marks the beginning of run-time code, leaving the body address of the product-word on the stack at run-time.
+		  <TR>  <TD> <CODE> DUP         </CODE> <TD> Copies the body address.
+		  <TR>  <TD> <CODE> CELL+       </CODE> <TD> Advances the address to point past the count, to the start of the character string.
+		  <TR>  <TD> <CODE> SWAP @      </CODE> <TD> Swaps the string address with the count address and fetches the count. The stack now holds ( addr count -- ).
+	       </TABLE>
+	<TR> 
+	  <TD> 
+	  <TD> <TABLE>
+	    	  <TR>
+		    <TD> <CODE>;</CODE> 
+		    <TD>
+	       </TABLE>
+</TABLE>
+
+	<P> We have just extended our compiler! Our new word <TT>CHARACTERS</TT> is a defining word that creates a data structure and procedure that 
+	    we find useful. <TT>CHARACTERS</TT> not only simplifies our input and output definitions, it also allows us to change the length of any
+	    string, should the need arise, in one place only (i.e., where we define it).
+	
+	<P> Our next example could be useful in an application where a large number of byte (not <FONT COLOR="#0000FF">CHAR</FONT>!) arrays are needed. Let's 
+	    create a defining word called <TT>STRING</TT> as follows:
+	<P> <PRE>	: STRING   CREATE ALLOT  DOES> + ; </PRE>
+	<P> to be used in the form
+	<P> <PRE>	30 STRING VALVE </PRE>
+	<P> to create an array thirty bytes in length. To access any byte in this array, we merely say:
+	<P> <PRE>	6 VALVE C@ </PRE>
+	<P> which would give us the current setting of hydraulic valve 6 at an oil-pumping station. At run time, 
+	    <TT>VALVE</TT> will add the argument 6 to the body address left by <FONT COLOR="#0000FF">DOES&gt;</FONT>, producing the correct 
+	    byte address.
+
+	<P> If our application requires a large number of arrays to be initialized to zero, we might include the 
+	    initialization in an alternate defining word called <TT>0STRING</TT>:
+	<P> <PRE>	: ERASED  HERE OVER  ERASE ALLOT ; </PRE>
+	    <PRE>	: 0STRING  CREATE ERASED DOES> + ; </PRE>
+
+	<P> First we define <TT>ERASED</TT> to <FONT COLOR="#0000FF">ERASE</FONT> the given number of bytes, starting at
+	    <FONT COLOR="#0000FF">HERE</FONT>, before <FONT COLOR="#0000FF">ALLOT</FONT>ing the given number of bytes.
+
+        <P> Then we simply substitute <TT>ERASED</TT> for <FONT COLOR="#0000FF">ALLOT</FONT> in our new version.
+
+	<P> By changing the definition of a defining word, you can change the characteristics of all the member words 
+	    of that family. This ability makes program development much easier. For instance, you can incorporate certain
+	    kinds of error checking while you are developing the program, then eliminate them after you are sure that the 
+	    program runs correctly.
+
+	<P> Here is a version of <TT>STRING</TT> which, at run time, guarantees that the index into the array is valid:
+<P> <PRE>
+	: STRING  CREATE  DUP , ALLOT 
+	          DOES>   2DUP @ U< 0= ABORT" Range error "  + CELL+ ;
+</PRE>
+	<P> which breaks down as follows:
+
+
+<TABLE CELLPADDING=6 CELLSPACING=1 WIDTH="100%" BORDER=4>
+	<TR>  <TD> <CODE> DUP&nbsp;,&nbsp;ALLOT </CODE> <TD> Compiles the count and allots the given number of bytes.
+	<TR>  <TD> <CODE> DOES>	 2DUP @		</CODE> <TD> At run time, given the argument on the stack, produces ( arg pfa arg count&nbsp;--&nbsp;).
+	<TR>  <TD> <CODE> U< 0=        		</CODE> <TD> Tests that the argument is not less than the maximum, i.e., the stored count. Since <FONT COLOR="#0000FF">U&lt;</FONT> is an unsigned compare, negative arguments will appear as very high numbers and thus will also fail the test.
+	<TR>  <TD> <CODE> ABORT"&nbsp;Range&nbsp;error&nbsp;" </CODE> <TD> Check if the comparison test fails.
+	<TR>  <TD> <CODE> + CELL+     		</CODE> <TD> Otherwise adds the argument to the body address, plus an additional cell to skip the count.
+</TABLE>
+
+
+	<P> Here's another way that the use of defining words can help during development. Let's say you suddenly decide
+	    that all of the arrays you've defined with <TT>STRING</TT> are too large to be kept in computer memory and should be 
+	    kept on disk instead. All you have to do is redefine the run-time portion of <TT>STRING</TT>. This new 
+	    <TT>STRING</TT> will compute which record on the disk a given byte would be contained in, read the record into a buffer using 
+	    <FONT COLOR="#0000FF">INCLUDED</FONT>, and return the address of the desired byte within the buffer. A string
+	    defined in this way could span many consecutive records (using the same technique as in Prob. 5, Chap. 10).
+
+	<P> You can use defining words to create all kinds of data structures. Sometimes, for instance, it's useful
+  	    to create multi-dimensional arrays. Here's an example of a defining word which creates two-dimensional
+	    byte arrays of given size:
+
+<TABLE BORDER=1 ALIGN=RIGHT WIDTH="20%">
+	<TR> <TH> &nbsp; <TH> c0     <TH>  c1     <TH>  c2     <TH> c3 
+	<TR> <TH> r0     <TD> &nbsp; <TD>  &nbsp; <TD>  &nbsp; <TD> &nbsp;
+	<TR> <TH> r1     <TD> &nbsp; <TD>  &nbsp; <TD>  &nbsp; <TD> &nbsp;
+	<TR> <TH> r2     <TD> &nbsp; <TD>  <CENTER>?</CENTER>  <TD>  &nbsp; <TD> &nbsp;
+	<TR> <TH> r3     <TD> &nbsp; <TD>  &nbsp; <TD>  &nbsp; <TD> &nbsp;
+</TABLE>
+
+<P> <PRE>
+	: ARRAY	( #rows #cols -- )
+		CREATE	DUP , * ALLOT 
+		DOES>	( member: row col -- addr ) 
+			ROT OVER @ * + +  CELL+ ;
+
+</PRE>
+	<P> To create an array four bytes by four bytes, we would say
+<PRE>
+	4 4 ARRAY BOARD
+</PRE>
+	<P> To access, say, the byte in row 2, column 1, we could say
+<PRE>
+	2 1 BOARD C@
+</PRE>
+	<P> Here's how our <TT>ARRAY</TT> works in general terms. Since the computer only allows us to have one-dimensional
+	    arrays, we must simulate the second dimension. While our imaginary array looks like this 
+<TABLE BORDER=1 CELLPADDING=1 WIDTH="20%">
+	<TR> <TH> &nbsp; <TH> c0     <TH>  c1     <TH>  c2     <TH> c3     
+	<TR> <TH> r0     <TD> 0      <TD>  1      <TD>   2     <TD>  3
+	<TR> <TH> r1     <TD> 4      <TD>  5      <TD>   6     <TD>  7
+	<TR> <TH> r2     <TD> 8      <TD>  9      <TD>  10     <TD> 11
+	<TR> <TH> r3     <TD> 12     <TD>  13     <TD>  14     <TD> 15
+</TABLE>
+	<P> our real array looks like this
+<TABLE BORDER=1 WIDTH="70%">
+    <TR><TH> row# <TD> <CENTER> 0</CENTER> <TD> <CENTER> 1</CENTER> <TD> <CENTER> 2</CENTER> <TD> <CENTER> 3</CENTER>
+    <TR><TH> offs <TD> <CENTER> 0  1  2  3</CENTER> </TD>
+	          <TD> <CENTER> 4  5  6  7</CENTER> </TD> 
+	          <TD> <CENTER> 8  9 10 11</CENTER> </TD>
+	          <TD> <CENTER>12 13 14 15</CENTER> </TD>  
+</TABLE> 
+
+	<P> If you want the address of the byte in row 2, column 1, it can
+	    be computed by multiplying your row number (2) by the number of columns in each row (4) and then adding
+	    your column number (1), which indicates that you want the ninth byte in the real array. This calculation is
+	    what members of <TT>ARRAY</TT> must do at run time. You'll notice that, to perform this calculation, each member 
+	    word needs to know how many columns are in each row of its particular array. For this reason, <TT>ARRAY</TT> must 
+	    store this value into the beginning of the array at compile time.
+
+	<P> For the curious, here are the stack effects of the run-time portion of array:
+
+<CENTER>
+<TABLE CELLPADDING=6 CELLSPACING=1 WIDTH="50%" BORDER=4>
+	<TR>  <TH> Operation 			<TH> Contents of stack  
+	<TR>  <TD> <CODE> ...		</CODE>	<TD> row col pfa
+	<TR>  <TD> <CODE> ROT  		</CODE> <TD> col pfa row
+	<TR>  <TD> <CODE> OVER @	</CODE> <TD> col pfa row #cols
+	<TR>  <TD> <CODE> *     	</CODE> <TD> col pfa row-index
+	<TR>  <TD> <CODE> + + 		</CODE> <TD> address
+	<TR>  <TD> <CODE> CELL+		</CODE> <TD> corrected address
+</TABLE>
+</CENTER>
+
+	<P> It is necessary to add a cell to the computed address because the first cell of the array
+	    contains the number of columns.
+
+	<P> Our final example is the most visually exciting, if not the most useful.
+<PRE>
+	\ <A HREF="shapes.forth.html">Shapes</A>, using a defining word.
+
+	DECIMAL
+
+	: star  [CHAR] * EMIT ;
+
+	: .row  CR 8 0 DO  
+			   DUP 128 AND IF  star 
+				     ELSE  SPACE
+				     THEN
+			   1 LSHIFT
+		     LOOP  DROP ;
+
+	: SHAPE CREATE  8 0 DO  C,  LOOP
+		DOES>	DUP 7 + DO  I C@ .row  -1 +LOOP  CR ;
+
+	HEX	18 18 3C 5A 99 24 24 24  SHAPE man 
+		81 42 24 18 18 24 24 81  SHAPE equis
+		AA AA FE FE 38 38 38 FE  SHAPE castle
+	DECIMAL
+</PRE>
+
+	<P> <TT>.ROW</TT> prints a pattern of stars and spaces that correspond to the 8-bit number
+	    on the stack. For instance:
+<PRE>
+	2 BASE !<U> ok</U>
+	00111001 .ROW 
+	<U>  ***  * ok</U>
+	DECIMAL<U> ok</U>
+</PRE>
+
+	<P> The defining word <TT>SHAPE</TT> takes eight arguments from the stack and defines a shape which, 
+	    when executed, prints an 8-by-8 grid that corresponds to the eight arguments. For example:
+<PRE>
+	MAN
+	   **
+	   **
+	  ****
+	 * ** *
+	*  **  *
+	  *  *
+	  *  *
+	  *  *
+	ok
+</PRE>
+	<P> In summary, defining words can be extremely powerful tools. When you create a new defining word, you extend 
+	    your compiler. Traditional languages like Fortran or BASIC do not provide this flexibility because these 
+	    traditional compilers and interpreters are inflexible packages that say, "Use my instruction set or forget it!"
+
+	<P> The real power of defining words is that they can simplify your problem. Using them well, you can shorten your 
+	    programming time, reduce the size of your program, and improve readability. Forth's flexibility in this regard 
+	    is so radical in comparison with traditional languages that many people don't even believe it. Well, now you've 
+	    seen it.
+
+	<P> The next section introduces still another way to extend the ability of Forth's compiler.
+
+
+<H2>How to Control the Colon Compiler</H2>
+	
+	<P> Compiling words are words used inside colon definitions to do something at compile time. The most obvious
+	    examples of compiling words are control-structure words such as <FONT COLOR="#0000FF">IF</FONT>, 
+	    <FONT COLOR="#0000FF">THEN</FONT>, <FONT COLOR="#0000FF">DO</FONT>, <FONT COLOR="#0000FF">LOOP</FONT>, etc.
+	    Because Forth programmers don't often change the way these particular words work, we're not going to study 
+	    them any further. Instead we'll examine the group of words that control the colon compiler and thus can be
+	    used to create <U>any</U> type of compiling word.
+
+	<P> Recall that the colon compiler ordinarily looks up each word of a source definition and compiles each word's 
+	    address into the dictionary entry--that's all. But the colon compiler does <U>not</U> compile the address 
+	    of a compiling word--it executes it.
+
+	<P> How does the colon compiler know the difference? By checking the definition's "precedence bit." If the bit is 
+	    "off," the address of the word is compiled. If the bit is "on," the word is executed immediately; such words 
+	    are called "immediate" words.
+
+	<P> The word <FONT COLOR="#0000FF">IMMEDIATE</FONT> makes a word "immediate." It is used in the form:
+<PRE>
+	: name	definition ; IMMEDIATE
+</PRE>
+	<P> that is, it is executed right after the compilation of the definition.
+
+	<P> To give an immediate example, let's define
+<PRE>
+	: SAY-HELLO  ." Hello" ; IMMEDIATE
+</PRE>
+	<P> We can execute <TT>SAY-HELLO</TT> interactively, just as we could if it were <U>not</U> immediate.
+<PRE>
+	SAY-HELLO<U> Hello ok</U> 
+</PRE>	
+	<P> But if we put <TT>SAY-HELLO</TT> inside another definition, it will execute at <U>compile</U> time:
+<PRE>
+	: GREET	SAY-HELLO ." I speak Forth " ;<U> Hello ok</U>
+</PRE>
+	<P> rather than at <U>execution</U> time: 
+<PRE>
+	GREET<U> I speak Forth ok</U>
+</PRE>
+	<P> Before we go on, let's clarify our terminology. Forth folks adhere to a convention regarding the terms
+	    "run time" and "compile time." In this example, the terms are defined relative to <TT>GREET</TT>. Thus we would 
+	    say that <TT>SAY-HELLO</TT> has a "compile-time behavior" but no "run-time behavior." Clearly, <TT>SAY-HELLO</TT>
+	    does have a run-time behavior of its own, but relative to <TT>GREET</TT> it does not.
+
+	<P> To keep our levels straight, let's call <TT>GREET</TT> in this example the "compilee"; that is, the definition 
+	    whose compilation we're referring to. <TT>SAY-HELLO</TT> has no run-time behavior in relation to its compilee.
+
+	<P> Here's an example of an immediate word that you're familiar with: the definition of the compiling word
+	    <FONT COLOR="#0000FF">BEGIN</FONT>. It's simpler than you might have thought:
+<PRE>
+	: BEGIN	HERE ; IMMEDIATE
+</PRE>
+	<P> <FONT COLOR="#0000FF">BEGIN</FONT> simply saves the address of <FONT COLOR="#0000FF">HERE</FONT> at compile
+	    time on the stack. Why? Because sooner or later an <FONT COLOR="#0000FF">UNTIL</FONT> or 
+	    <FONT COLOR="#0000FF">REPEAT</FONT> is going to come along, and either has to know what address in the 
+	    dictionary to return to in the event that it must repeat. This is the address that 
+	    <FONT COLOR="#0000FF">BEGIN</FONT> left on the stack.
+
+	<P> <FONT COLOR="#0000FF">BEGIN</FONT>'s compile-time behavior is leaving <FONT COLOR="#0000FF">HERE</FONT>
+	    on the stack. But <FONT COLOR="#0000FF">BEGIN</FONT> compiles nothing into the compilee; there is no
+	    run-time behavior for <FONT COLOR="#0000FF">BEGIN</FONT>.
+
+	<P> Unlike <FONT COLOR="#0000FF">BEGIN</FONT>, most compiling words <U>do</U> have a run-time behavior.
+	    To have a run-time behavior, a word has to compile into the compilee the address of the run-time behavior, 
+	    which must already have been defined as a word.
+
+	<P> A good example is <FONT COLOR="#0000FF">DO</FONT>. Like <FONT COLOR="#0000FF">BEGIN</FONT>, 
+	    <FONT COLOR="#0000FF">DO</FONT> must provide, at compile time, a <FONT COLOR="#0000FF">HERE</FONT> for
+	    <FONT COLOR="#0000FF">LOOP</FONT> or <FONT COLOR="#0000FF">+LOOP</FONT> to return to. But unlike
+	    <FONT COLOR="#0000FF">BEGIN</FONT>, <FONT COLOR="#0000FF">DO</FONT> also has a run-time behavior: it 
+	    must push the limit and index onto the return stack.
+
+	<P> The run-time behavior of <FONT COLOR="#0000FF">DO</FONT> is defined by a lower-level word, sometimes 
+	    called <FONT COLOR="#0000FF">(DO)</FONT> or <FONT COLOR="#0000FF">2&gt;R</FONT>. The definition of 
+	    <FONT COLOR="#0000FF">DO</FONT> is this:
+
+<TABLE BORDER=1 ALIGN=RIGHT>
+	<TR> <TD> <CENTER> ... </CENTER>
+	<TR> <TD> <CENTER>2>R</CENTER>
+	<TR> <TD> <CENTER> ...<BR> </CENTER>
+	<TR> <TD> <CENTER> compilee definition </CENTER>
+</TABLE>
+
+<PRE>
+	: DO  POSTPONE 2>R  HERE ; IMMEDIATE
+</PRE>
+	<P> The word <FONT COLOR="#0000FF">POSTPONE</FONT> finds the address of the next word in the definition
+	    (in this case <FONT COLOR="#0000FF">2&gt;R</FONT>) and compiles its address into the compilee 
+	    definition, so that at run-time <FONT COLOR="#0000FF">2&gt;R</FONT> will be executed.
+
+<BLOCKQUOTE>
+<FONT SIZE="-1">
+	<P> Another example is the definition of <FONT COLOR="#0000FF">;</FONT>. At compile time, semicolon must do
+	    the following things:
+	    <OL>
+	     <LI> compile the address of <FONT COLOR="#0000FF">EXIT</FONT> into the dictionary entry being compiled, 
+	     <LI> expose the new word to the colon compiler, and
+	     <LI> leave compilation mode.
+	    </OL>
+	<P> Here's the definition of semicolon:
+<PRE>
+	: ;  POSTPONE EXIT  REVEAL POSTPONE [ ; IMMEDIATE
+</PRE>
+	<P> The first phrase compiles <FONT COLOR="#0000FF">EXIT</FONT>, providing the run-time behavior.
+	    The second phrase, which is the compile-time behavior, first exposes the word being compiled and
+	    then gets out of the compiler. 
+	    
+	<P> What is the reason for <FONT COLOR="#0000FF">REVEAL</FONT>? When words are in the process of being 
+	    compiled, they are not yet findable by the colon compiler. This is done to make it possible to redefine
+	    existing words in terms of the old definition plus additional code, for example:
+<PRE>
+	: CR  CR SPACE ;
+</PRE>
+	<P> If during the compilation of the new CR its name were findable, the name of the original
+	    <FONT COLOR="#0000FF">CR</FONT> would be blocked, and we would have had to do, e.g.:
+<PRE>
+	: _cr_  CR ;
+	: CR  _cr_ SPACE ;
+</PRE>
+</FONT>
+</BLOCKQUOTE>
+
+	<P> The word <FONT COLOR="#0000FF">POSTPONE</FONT> can also be used to compile an immediate word as though it 
+	    were not immediate. Given our previous example, in which <TT>SAY-HELLO</TT> is an immediate definition, 
+	    we might define
+<PRE>
+	: GREET  POSTPONE SAY-HELLO ." I speak Forth " ;<U> ok</U>
+</PRE>
+	<P> to force <TT>SAY-HELLO</TT> to be compiled rather than executed at compile time. Thus:
+<PRE>
+	GREET<U> Hello I speak Forth ok</U>
+</PRE>
+	<P> Be sure to note the "intelligence" built into <FONT COLOR="#0000FF">POSTPONE</FONT>. <FONT COLOR="#0000FF">POSTPONE</FONT>
+	    parses the next word in the input stream, decides if it is immediate or not, and proceeds accordingly.
+	    If the word was not immediate, <FONT COLOR="#0000FF">POSTPONE</FONT> compiles the address of the word into
+	    a compilee definition; think of it as deferred compilation. If the word is immediate, <FONT COLOR="#0000FF">POSTPONE</FONT>
+	    compiles the address of this word into the definition <U>currently being defined;</U> this is ordinary
+	    compilation, but of an immediate word which otherwise would have been executed.
+
+	<P> To review, here are the two words which are useful in creating new compiling words:
+
+<TABLE CELLPADDING=6 CELLSPACING=1 WIDTH="100%" BORDER=4>
+	<TR>  <TD> <CODE> IMMEDIATE    (&nbsp;--&nbsp;) </CODE> <TD> Marks the most recently defined word as one which, when encountered during compilation, will be executed rather than being compiled.
+	<TR>  <TD> <CODE> POSTPONE <I>xxx</I> (&nbsp;--&nbsp;) </CODE> <TD> <OL>
+							    		<LI> Used in the definition of a compiling word. When the compiling word, in turn, is used in a source definition, the execution token of <I>xxx</I> will be compiled into the dictionary entry so that when the new definition is executed, <I>xxx</I> will be executed.
+							    		<LI> Used in a colon definition, causes the immediate word <I>xxx</I> to be compiled as though it were <U>not</U> immediate; <I>xxx</I> will be executed when the definition is executed.
+							   	     </OL>
+</TABLE>
+<IMG SRC="frenchie_postpone.gif" ALIGN=RIGHT ALT="bracket-compile-bracket">
+
+<H2>More Compiler-controlling Words</H2>
+
+	<P> There are two other compiler control words you should know. The words <FONT COLOR="#0000FF">[</FONT> and
+	    <FONT COLOR="#0000FF">]</FONT> can be used inside a colon definition to stop compilation and start it again,
+	    respectively. Whatever words appear between them will be executed "immediately", i.e., at compile time.
+	<P> Consider this example:
+<PRE>
+	: SAY-HELLO  ." Hello " ;
+	: GREET  [ SAY-HELLO ] ." I speak Forth " ;<U> Hello ok</U>
+	GREET<U> I speak Forth ok</U>
+</PRE>
+	<P> In this example, <TT>SAY-HELLO</TT> is <U>not</U> an immediate word, yet when we compile <TT>GREET</TT>, 
+	    <TT>SAY-HELLO</TT> executes "immediately."
+	<P> For a better example we first need to introduce the word <FONT COLOR="#0000FF">LITERAL</FONT>.
+
+	<P> As you may recall, a number that appears in a colon definition is called a "literal." An example is the "4"
+	    in the definition
+<PRE>
+	: FOUR-MORE  4 + ;
+</PRE>
+
+<TABLE BORDER=0 WIDTH="25%" ALIGN=RIGHT>
+	<TR><TD>
+	<TABLE CELLPADDING=1 CELLSPACING=1 BORDER=2>	
+			<TR> <TD>9<TD> <B>F</B> <TD> <B>O</B> <TD> <B>U</B> <TD> <B>R</B> <TD> <B>-</B> <TD> <B>M</B> <TD> <B>O</B> <TD> <B>R</B> <TD> <B>E</B>
+	</TABLE>
+	<TABLE CELLPADDING=1 CELLSPACING=1 BORDER=2>
+			<TR> <TD> <CENTER>link</CENTER>
+			<TR> <TD> <CENTER>execution token</CENTER>
+			<TR> <TD> <CENTER><B>(LITERAL)</B></CENTER>
+			<TR> <TD> <CENTER>4</CENTER>
+			<TR> <TD> <CENTER><B>+</B></CENTER>
+			<TR> <TD> <CENTER><B>EXIT</B></CENTER>
+	</TABLE> 
+</TABLE>
+
+	<P> The use of a literal in a colon definition requires two cells. The first contains the execution token of
+	    a routine which, when executed, will push the contents of the second cell (the number itself) onto the
+	    stack.
+
+	<P> The name of this routine may vary; let's call it the "run-time code for a literal," or simply 
+	    <FONT COLOR="#0000FF">(LITERAL)</FONT>. When the colon compiler encounters a number, it first compiles
+	    the run-time code for a literal, then compiles the number itself.
+
+	<P> The word you will use most often to compile a literal is <FONT COLOR="#0000FF">LITERAL</FONT> (no parentheses).
+	    <FONT COLOR="#0000FF">LITERAL</FONT> compiles both the run-time code and the value itself. To illustrate:
+<PRE>
+	: FOUR-MORE  [ 4 ] LITERAL + ; 
+</PRE>
+	<P> Here the word <FONT COLOR="#0000FF">LITERAL</FONT> will compile as a literal the "4" that we put on the stack 
+	    between the square brackets. We get a dictionary entry that is identical to the one shown above.
+
+	<P> For a more useful application of <FONT COLOR="#0000FF">LITERAL</FONT>, recall that in Chap. 8 we created an 
+	    array called <TT>LIMITS</TT> that consisted of five cells, each of which contained the temperature limit for a 
+	    different burner. To simplify access to this array, we created a word called <TT>LIMIT</TT>. The two definitions
+	    looked like this:
+<PRE>
+	VARIABLE LIMITS 4 CELLS ALLOT
+	: LIMIT ( index -- addr ) CELLS LIMITS + ; 
+</PRE>
+	<P> Now let's assume we will only access the array through the word <TT>LIMIT</TT>. We can eliminate the head of the 
+	    array (some bytes and one cell) by using this construction instead:
+<PRE>
+	HERE  5 CELLS ALLOT  BASE !
+	: LIMIT ( index -- addr ) CELLS [ BASE @ ] LITERAL + ;  
+	DECIMAL
+</PRE>
+	<P> In the first line we put the address of the beginning of the array (<FONT COLOR="#0000FF">HERE</FONT>) in
+	    the system variable <FONT COLOR="#0000FF">BASE</FONT> (any other scratch variable will work). In the second 
+	    line, we compile this address as a literal into the definition of <TT>LIMIT</TT>.
+
+	
+	<TABLE CELLPADDING=6 CELLSPACING=1 BORDER=2 ALIGN=RIGHT>
+			<TR> <TH> Old version<BR>
+			<TR> <TD> <CENTER>head for LIMITS</CENTER>
+			<TR> <TD> <CENTER>5<BR>CELLS</CENTER>
+			<TR> <TD> <CENTER>head for LIMIT</CENTER>
+			<TR> <TD> <CENTER><B>CELLS</B></CENTER>
+			<TR> <TD> <CENTER>LIMITS</CENTER>
+			<TR> <TD> <CENTER><B>+</B></CENTER>
+			<TR> <TD> <CENTER><B>EXIT</B></CENTER>
+	</TABLE> 
+	<TABLE CELLPADDING=6 CELLSPACING=1 BORDER=2 ALIGN=RIGHT>	
+			<TR> <TH> New version
+			<TR> <TD> <CENTER>5<BR>CELLS</CENTER>
+			<TR> <TD> <CENTER>head for LIMIT</CENTER>
+			<TR> <TD> <CENTER><B>CELLS</B></CENTER>
+			<TR> <TD> <CENTER><B>(LITERAL)</B></CENTER>
+			<TR> <TD> <CENTER>addr</CENTER>
+			<TR> <TD> <CENTER><B>+</B></CENTER>
+			<TR> <TD> <CENTER><B>EXIT</B></CENTER>
+	</TABLE>
+
+	<P> Now we know all there is to know about <FONT COLOR="#0000FF">LITERAL</FONT>, we can also give a better 
+	    example of <FONT COLOR="#0000FF">[</FONT> and <FONT COLOR="#0000FF">]</FONT>. Imagine a colon definition 
+	    in which we need to type the byte from row 2, column 3, of the array <TT>BOARD</TT> we defined in the 
+	    previous section. To get the address of this byte, we could use the phrase
+<PRE>
+	BOARD  2 8 ( #cols) * 3 +  CELL+  +
+</PRE>
+	<P> but it's time consuming to execute 
+<PRE>
+	2 8 * 3 +
+</PRE>
+	<P> every time we use this definition. Alternatively, we could write
+<PRE>
+	BOARD  19 CELL+ +
+</PRE>
+	<P> but it's unclear to human readers exactly what 19 means, and it is irritating that, for portability, 
+	    we still have to write <FONT COLOR="#0000FF">CELL+</FONT> although 1 <FONT COLOR="#0000FF">CELLS</FONT>
+	    is just a constant.
+
+<TABLE BORDER=3 ALIGN=LEFT>
+	<TR> <TD> <CENTER> ... </CENTER>
+	<TR> <TD> <CENTER>(LITERAL)</CENTER>
+	<TR> <TD> <CENTER>23</CENTER>
+	<TR> <TD> <CENTER> ... </CENTER>
+</TABLE>
+
+	<P> The best solution is to write
+<PRE>
+	BOARD [ 2 8 ( #cols) * 3 +  CELL+ ] LITERAL +
+</PRE>
+	<P> Here the arithmetic is performed only once, at compile time, and the result is compiled as a literal.
+
+	<P> Here's a silly example which may give you some ideas for more practical applications. This definition
+	    let's you peek into the innards of the word itself:
+<PRE>	
+	: DUMP-THIS  [ HERE ] LITERAL  32 DUMP ." DUMP-THIS" ;
+</PRE>
+	<P> When you execute <TT>DUMP-THIS</TT>, you will dump the memory into which <TT>DUMP-THIS</TT> was defined. 
+	    You should see how your Forth compiles the literal value of "here," the literal "32," the execution token of 
+	    <FONT COLOR="#0000FF">DUMP</FONT>, and then how it inlines the string "DUMP-THIS." (At compile-time, 
+	    <FONT COLOR="#0000FF">HERE</FONT> points to the address of the next free code byte. 
+	    <FONT COLOR="#0000FF">LITERAL</FONT> compiles this number into the definition as a literal, so that it 
+	    will serve as the argument for <FONT COLOR="#0000FF">DUMP</FONT> at run-time.)
+
+	<P> By the way, here's the definition of <FONT COLOR="#0000FF">LITERAL</FONT>:
+<PRE>	
+	: LITERAL  POSTPONE (LITERAL) , ; IMMEDIATE
+</PRE>
+	<P> First it compiles the address of the run-time code, then it compiles the value itself (using comma).
+
+	<P> To summarize, here are the additional compiler control words we introduced in this section:
+
+<CENTER>
+<TABLE CELLPADDING=6 CELLSPACING=1 WIDTH="100%" BORDER=4>
+	<TR>  	<TD> <CODE> LITERAL </CODE> 
+		<TD> compile-time&nbsp;(&nbsp;--&nbsp;)<BR>
+		     run-time     (&nbsp;--&nbsp;n&nbsp;) 
+		<TD> Used only inside a colon definition. At compile time, compiles a value from the stack into the definition as a literal. At run time, the value will be pushed on the stack.
+	<TR>    <TD> <CODE> [       </CODE> 
+		<TD> (&nbsp;--&nbsp;) 
+		<TD> Leaves compilation mode.
+	<TR>    <TD> <CODE> ]       </CODE> 
+		<TD> (&nbsp;--&nbsp;) 
+		<TD> Enters compilation mode.
+</TABLE>
+</CENTER> <IMG SRC="frenchie_lb_rb.gif" ALIGN=RIGHT ALT="left-bracket right-bracket">
+
+	   <BR><BR><BR><BR>
+	   <BR><BR><BR><BR>
+	   <BR><BR><BR><BR>
+
+<H2>Curtain calls</H2>
+	
+<IMG SRC="goodbye.jpg" ALIGN=LEFT BORDER="8" ALT="goodbye">
+<IMG SRC="monk.jpg" ALIGN=RIGHT ALT="monk waves">
+	<P> This section gives us a chance to say "Goodbye" to the text interpreter and the colon compiler and perhaps
+	    to see them in a new light. 
+
+	<P> Here is a definition of <FONT COLOR="#0000FF">INTERPRET</FONT> that will work in most Forth systems:
+<PRE>	
+	: INTERPRET ( -- )
+		BEGIN
+		   BL WORD FIND IF  EXECUTE ?STACK ABORT" Stack empty"
+			      ELSE  NUMBER
+			      THEN 
+		AGAIN ;
+</PRE>
+	<P> We've covered each of the words contained in this definition; we can describe <FONT COLOR="#0000FF">INTERPRET</FONT>
+	    in English by simply "translating" its definition, like this:
+
+<BLOCKQUOTE>
+	<P> <FONT SIZE="-1"> Begin a loop. Within the loop, try to look up the next word from the input stream. If it's 
+	    not defined, try to convert it to a number. If it <U>is</U> defined, execute it, then check to see whether 
+	    the stack is empty. (If it is, exit the loop and print "STACK EMPTY.") Then repeat the infinite loop.
+	    </FONT>
+</BLOCKQUOTE>
+
+	<P> As you can see, the Forth text interpreter is a simple yet powerful structure. Now let's compare its structure
+	    with that of the colon compiler:
+
+<PRE>
+	: ]  ( -- )
+		BEGIN 
+		  BL WORD FIND DUP IF -1 = IF  EXECUTE ?STACK ABORT" Stack empty"
+					 ELSE  , 
+					 THEN
+				 ELSE DROP (NUMBER) POSTPONE LITERAL
+				 THEN
+		AGAIN ;  
+</PRE>
+	<P> The first thing you probably noticed is that the name of the colon compiler is not <FONT COLOR="#0000FF">:</FONT>,
+	    but <FONT COLOR="#0000FF">]</FONT>. The definition of <FONT COLOR="#0000FF">:</FONT> invokes <FONT COLOR="#0000FF">]</FONT>
+	    after creating the dictionary head and performing a few other odd jobs.
+	
+	<P> The next thing you may have noticed is that the compiler is somewhat similar to the interpreter. Let's translate
+	    the definition into English:
+
+<BLOCKQUOTE>
+	<P> <FONT SIZE="-1"> Begin a loop. Within the loop, try to look up the next word from the input stream. If it's 
+	    not defined, try to convert it to a number and, if it's a number, compile it as a literal. 
+
+	<P> If it <U>is</U> defined, <FONT COLOR="#0000FF">FIND</FONT> has tested the word's precedence bit. If the word is 
+	    immediate, then execute it and check to see whether the stack is empty. If it is <U>not</U> immediate, 
+	    <FONT COLOR="#0000FF">FIND</FONT> returned an execution token that can be compiled. Then repeat the infinite 
+	    loop. </FONT>
+</BLOCKQUOTE>
+
+	<P> Compare this to <FONT COLOR="#0000FF">INTERPRET</FONT> and you'll see that <FONT COLOR="#0000FF">]</FONT>
+	    could be called an interpreter with the ability to decide whether to execute or compile any given word. It is
+	    the simplicity of this design that let's you add new compiling words so easily.
+
+	<P> In summary, we've shown two ways to extend the Forth compiler:
+		<OL>
+		  <LI> Add new, specialized compilers, by creating new defining words.
+		  <LI> Extend the existing colon compiler by creating new compiling words.
+		</OL>
+
+	<P> While traditional compilers try to be universal tools, the Forth compiler is a collection of separate, simple
+	   tools ... with room for more. 
+	<P>Which approach seems more useful:<BR><CENTER><IMG SRC="tools.jpg" ALIGN=MIDDLE ALT="tools"></CENTER>
+
+	<P> Here is a summary of the words we've covered in this chapter:
+
+<TABLE CELLPADDING=6 CELLSPACING=1 WIDTH="100%" BORDER="2">
+	<TR> <TD bgcolor="#EEEEEE"> <CODE> DOES> </CODE>
+	     <TD bgcolor="#EEEEEE" nowrap> run time: <BR>( -- addr ) 
+	     <TD bgcolor="#EEEEEE"> Used in creating a defining word; marks the end of its compile-time portion and the beginning of its run-time portion. The run-time operations are stated in higher-level Forth. At run time, the body address of the defined word will be on the stack.
+	<TR>  	<TD bgcolor="#EEEEEE"> <CODE> IMMEDIATE </CODE> 
+		<TD nowrap bgcolor="#EEEEEE"> ( -- ) 
+		<TD bgcolor="#EEEEEE"> Marks the most recently defined word as one which, when encountered during compilation, will be executed rather than being compiled.
+	<TR>  	<TD bgcolor="#EEEEEE"> <CODE> POSTPONE&nbsp;<I>xxx</I> </CODE>
+		<TD bgcolor="#EEEEEE" nowrap> ( -- ) 
+		<TD bgcolor="#EEEEEE"> 
+		     <OL>
+	    		<LI> Used in the definition of a compiling word. When the compiling word, in turn, is used in a source definition, the execution token of <I>xxx</I> will be compiled into the dictionary entry so that when the new definition is executed, <I>xxx</I> will be executed.
+	    		<LI> Used in a colon definition, causes the immediate word <I>xxx</I> to be compiled as though it were <U>not</U> immediate; <I>xxx</I> will be executed when the definition is executed.
+	   	     </OL>
+	<TR>  	<TD bgcolor="#EEEEEE"> <CODE> LITERAL </CODE> 
+		<TD bgcolor="#EEEEEE" nowrap> compile-time ( -- )<BR>run-time ( -- n ) 
+		<TD bgcolor="#EEEEEE"> Used only inside a colon definition. At compile time, compiles a value from the stack into the definition as a literal. At run time, the value will be pushed on the stack.
+	<TR>    <TD bgcolor="#EEEEEE"> <CODE> [       </CODE> 
+		<TD bgcolor="#EEEEEE" nowrap> ( -- ) 
+		<TD bgcolor="#EEEEEE"> Leaves compilation mode.
+	<TR>    <TD bgcolor="#EEEEEE"> <CODE> ]       </CODE> 
+		<TD bgcolor="#EEEEEE" nowrap> ( -- ) 
+		<TD bgcolor="#EEEEEE"> Enters compilation mode.
+</TABLE>
+
+<H2>Review of Terms</H2>
+	 
+<TABLE CELLPADDING="6" CELLSPACING="1" WIDTH="100%" BORDER="2">
+	<TR> 	<TD bgcolor="#EEEEEE"> Compile-time behavior 
+		<TD bgcolor="#EEEEEE"> 
+		  <OL> 
+		   <LI> when referring to <U>defining</U> words: the sequence of instructions which will be carried out when the 
+		   	defining word is executed--these instructions perform the compilation of the member words;
+		   <LI> when referring to <U>compiling</U> words: the behavior of a compiling word, contained within a colon 
+		        definition, during compilation of the definition.
+		  </OL>
+	<TR>  	<TD bgcolor="#EEEEEE"> Compilee
+		<TD bgcolor="#EEEEEE"> a definition being compiled. In relation to a compiling word, the compilee is the definition whose 
+		     compilation the compiling word affects.
+	<TR>  	<TD bgcolor="#EEEEEE"> Compiling word
+		<TD bgcolor="#EEEEEE"> a word used inside a colon definition to take some action during the compilation process.
+	<TR>  	<TD bgcolor="#EEEEEE"> Defining word
+		<TD bgcolor="#EEEEEE"> a word which, when executed, compiles a new dictionary entry. A defining word specifies the compile-time 
+		     and run-time behavior of each member of the "family" of words that it defines.
+	<TR>    <TD bgcolor="#EEEEEE"> Precedence bit
+		<TD bgcolor="#EEEEEE"> In Forth dictionary entries, a bit which indicates whether a word should be executed rather than be 
+		     compiled when it is encountered during compilation.
+	<TR>    <TD bgcolor="#EEEEEE"> Run-time behavior
+		<TD bgcolor="#EEEEEE">
+		  <OL> 
+		   <LI> when referring to <U>defining</U> words: the sequence of instructions which will be carried out when 
+		   	any member is executed;
+		   <LI> when referring to <U>compiling</U> words: a routine which will be executed when the compilee is
+		        executed. Not all compiling words have run-time behavior.
+		  </OL>
+</TABLE>
+
+
+<H2>Problems -- Chapter 11</H2>
+			<IMG SRC="felix.gif" ALIGN=MIDDLE ALT="problems">
+
+<OL>
+	<LI> Define a defining word named <TT>LOADED-BY</TT> that will define words which include a file when 
+	     they are executed. Example:
+<PRE>
+	S" mail.forth" LOADED-BY CORRESPONDENCE
+</PRE>
+     	     would define the word <TT>CORRESPONDENCE</TT>. When <TT>CORRESPONDENCE</TT> is executed, the file 
+	     <TT>mail.forth</TT> is included (Hint: <FONT COLOR="#0000FF">SLITERAL</FONT> is NOT useful here).
+	     <A HREF="11-1.forth.html">[answer]</A>
+	<P>
+	<LI> Define a defining word <TT>BASED</TT>. which will create number output words for specific bases. For example,
+<PRE>
+	16 BASED. H.
+</PRE>	     would define H. to be a word which prints the top of the stack in hex but does not permanently 
+             change <FONT COLOR="#0000FF">BASE</FONT>.
+<PRE>
+	DECIMAL
+	17 DUP H. .<IMG SRC="enterkey.gif" ALIGN=MIDDLE ALT="enter"><U> 11 17 ok</U>
+</PRE>
+	<A HREF="11-2.forth.html">[answer]</A>
+	<P>
+	<LI> Define a defining word called <TT>PLURAL</TT> which will take the address of a word such as 
+	     <FONT COLOR="#0000FF">CR</FONT> or <TT>STAR</TT> and create its plural form, such as <TT>CRS</TT> 
+	     or <TT>STARS</TT>. You'll provide <TT>PLURAL</TT> with the execution token of the singular word 
+	     by using tick. For instance, the phrase
+<PRE>
+	' CR PLURAL CRS
+</PRE>
+	will define <TT>CRS</TT> in the same way as though you had defined it
+<PRE>
+	: CRS ( times -- )  0 ?DO  CR  LOOP ;
+</PRE>
+	<A HREF="11-3.forth.html">[answer]</A>
+	<P>
+	<LI> The French words for <FONT COLOR="#0000FF">DO</FONT> and <FONT COLOR="#0000FF">LOOP</FONT> are TOURNE and RETOURNE.
+	     Using the words <FONT COLOR="#0000FF">DO</FONT> and <FONT COLOR="#0000FF">LOOP</FONT>, define <TT>TOURNE</TT> 
+	     and <TT>RETOURNE</TT> as French "aliases." Now test them by writing yourself a french loop.
+
+	<A HREF="11-4.forth.html">[answer]</A>
+	<P>
+	<LI> Write a word called <TT>LOOPS</TT> which will cause the remainder of the input stream, up to the carriage 
+	     return, to be executed the number of times specified by the value on the stack. For example,
+<PRE>
+	7 LOOPS CHAR * EMIT SPACE<IMG SRC="enterkey.gif" ALIGN=MIDDLE ALT="enter"><U> * * * * * * * ok</U>
+</PRE>
+	<A HREF="11-5.forth.html">[answer]</A>	  
+</OL>
+
+<A HREF="http://validator.w3.org"><IMG SRC="http://validator.w3.org/images/vh20.gif" HEIGHT=31 WIDTH=88 ALIGN=RIGHT BORDER=0 ALT="Valid HTML 3.0"></A>
+</BODY>
+
+</HTML>

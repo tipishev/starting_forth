@@ -1,0 +1,13 @@
+\ Code from Starting Forth Chapter 6
+\ ANSized by Benjamin Hoyt in 1997
+
+: STAR   [CHAR] * EMIT ;
+: STARS  ( #stars -- )  0 ?DO  STAR  LOOP ;
+
+( problem 6-6 )
+: TRIANGLE  ( increment limit start -- )
+   DO  CR  9 I - SPACES  I 2* 1+ STARS  DUP +LOOP  DROP ;
+
+: DIAMONDS  ( #diamonds -- )
+   0 ?DO  1 10 0 TRIANGLE  -1 0 9 TRIANGLE  LOOP ;
+

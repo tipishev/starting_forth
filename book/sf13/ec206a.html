@@ -1,0 +1,72 @@
+<HTML><HEAD><TITLE>ec 206a without IF</TITLE>
+<link rel="stylesheet" type="text/css" href="an.css">
+</HEAD>
+<BODY><center>
+
+<table><tr><td><center>206a
+<br><tt>
+<a href="ec205b.html"> &#171;&#171; </a> &nbsp;
+<a href="ec200.html"> &#171;&#187; </a> &nbsp;
+<a href="ec206b.html"> &#187;&#187; </a>
+
+</tt>
+</center></table>
+
+<br> &nbsp;
+
+<table width="80%"><tr><td><h1> &nbsp; 206 </h1>
+<td class=r align=right> The programming language Forth &nbsp;
+<hr size="1">
+</table>
+
+
+<table width="80%"><tr><td>
+
+<h6>Example of a programming style that minimizes conditional branches</h6>
+
+<h5>&nbsp;Without exception</h5>
+
+ When multiplying<tt> x </tt>and<tt> y </tt>the answer is<tt> y*x</tt>, unless<tt> 0 </tt>or<tt> 1 </tt>is involved:
+
+<pre>
+: TIMES ( x y -- y*x | x | y )
+  OVER 0=  OVER 1 = OR IF DROP EXIT THEN
+  OVER 1 = OVER 0=  OR IF NIP  EXIT THEN
+  * ;
+</pre>
+
+ However, we can simplify this:
+
+<pre>
+: TIMES ( x y -- y*x ) * ;
+</pre>
+
+ This illustrates that obvious exceptions not necessarily need special treatment.  Of course, it will not always be as simple as<tt> TIMES</tt>.
+<br>The following program removes exceptions<tt> ( **) </tt>by transforming them to regular actions. Because there are no conditional branches anywhere, the program flow is very easy to follow.
+<br> The only concession is the<tt> UNTIL </tt>at the end of<tt> PLAY</tt>.
+<br>Forth file: <a href="ec206.frt.html" target="_blank"> ec206.frt</a>
+<pre>
+\ Shift game (Albert Nijhof)
+\ The player shifts the blocks to their correct position.
+
+FORTH DEFINITIONS  DECIMAL
+: CHAR-ARRAY ( amount -- )      \ Defining word
+  CREATE 255 UMIN               \ Max. length? ( **)
+  DUP C, 1+ ALLOT ALIGN
+  DOES>  ( index -- address )
+         COUNT ROT UMIN + ;     \ Range?       ( **)
+
+#16 CHAR-ARRAY board            \ 15 chars plus an empty space
+0 VALUE SPOT                    \ Position of empty space
+
+: FINAL ( -- )
+  S" VIJGEBLAD*FORTH "
+  DUP 1- TO SPOT
+  0 BOARD SWAP MOVE ;
+<div align=right><tt><a href="ec206b.html">&#187;&#187;</a></tt></div>
+</pre>
+
+</table>
+
+</center></BODY></HTML>
+

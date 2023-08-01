@@ -1,0 +1,7 @@
+\ Starting Forth Chapter 11, Problem 11-5
+
+: LOOPS  ( u -- ) 
+	>IN @ LOCALS| in |
+	0 ?DO   in >IN ! 
+		0 WORD COUNT EVALUATE  
+	 LOOP ;

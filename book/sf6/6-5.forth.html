@@ -1,0 +1,9 @@
+\ Code from Starting Forth Chapter 6
+\ ANSized by Benjamin Hoyt in 1997
+
+: STAR   [CHAR] * EMIT ;
+: STARS  ( #stars -- )  0 ?DO  STAR  LOOP ;
+
+: A/STARS  ( height -- )
+   BEGIN  CR  1- DUP SPACES  10 STARS  DUP 0= UNTIL  DROP ;
+

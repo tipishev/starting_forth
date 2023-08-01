@@ -1,0 +1,23 @@
+\ MANY TIMES (Albert Nijhof)
+
+FORTH DEFINITIONS   DECIMAL
+: STOP? ( -- true/false )
+  KEY?
+  DUP IF   DROP KEY
+           BL OVER = IF DROP KEY THEN
+           27 OVER = IF -28 THROW THEN
+           BL <>
+      THEN ;
+
+: MANY ( -- ) >IN @ STOP? AND >IN ! ;
+
+0 VALUE #TIMES        \ Counter
+: TIMES ( n -- )
+  #TIMES 1+ TUCK      ( #times+1 n #times+1 ) 
+  0 TO #TIMES         \ Let's be careful.
+  = STOP? OR          \ n-the time or STOP?
+  IF DROP EXIT THEN   \ We're through.
+  TO #TIMES 0 >IN ! ; \ Increment counter
+                      \   and again.
+
+\ ----- END -----

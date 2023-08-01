@@ -1,0 +1,72 @@
+<html>
+<head><title>ec 212a KISS</title>
+<link rel="stylesheet" type="text/css" href="an.css">
+</head>
+
+<BODY><center>
+
+<table><tr><td><center>212a
+<br><tt>
+<a href="ec210c.html"> &#171;&#171; </a> &nbsp;
+<a href="ec200.html"> &#171;&#187; </a> &nbsp;
+<a href="ec212b.html"> &#187;&#187; </a>
+</tt>
+</center></table>
+
+<br> &nbsp;
+
+<table width="80%"><tr><td><h1> &nbsp; 212 </h1>
+<td class=r align=right> The programming language Forth &nbsp;
+<hr size="1">
+</table>
+
+
+<table width="80%"><tr><td>
+
+<h6> About postfix, infix and prefix.</h6>
+
+<H2>KISS-commands in Forth</H2>
+
+  Many a Forth beginner has problems with reverse Polish notation (RPN). Not that this is an unsurmountable problem. Just do it and get used to it. Unfortunately the learning-curve can be steep, and only after a lot of practice it becomes evident what the benefits of RPN are. In other words, it can become a psychological stumbling block for impatient newbies.
+
+<br>There is hope: the program<tt><b> KISS.FRT </b></tt>enables Profane Notation in Forth. This is the solution all the world has been waiting for!
+<br>
+<br> Of course, exactly those people that need it most won't be able to read the next program. Not a problem: simply skip to <em>Defining KISS-commands</em>. Programs work regardless whether they're being understood.
+
+<pre>Forth file: <a href="ec212.frt.html" target="_blank"> ec212.frt</a>
+\ KISS COMMANDS (Albert Nijhof) -- 1 april 2003
+
+FORTH DEFINITIONS   DECIMAL
+VOCABULARY PARENTHESES
+ALSO PARENTHESES DEFINITIONS
+
+\ P-stack with relative stackpointer in cell # 0
+12 CELLS CONSTANT pq
+CREATE P   0 ,   PQ allot
+: FRESH 0 P ! ;                 \ Reset p-stack
+: ?P ( p# -- )   \ Check overflow and underflow
+  PQ 0 WITHIN
+  IF   FRESH TRUE ABORT" Syntax Error "
+  THEN ;
+: P> ( -- x ) P @ DUP CELL- DUP ?P P ! P + @ ;
+: >P ( x -- ) P @ DUP ?P CELL+ DUP P ! P + ! ;
+ALSO FORTH DEFINITIONS
+: ) ( -- ) P> 2@                   ( xt imm? )
+  0&lt; STATE @ AND
+  IF   COMPILE, EXIT
+  THEN EXECUTE ; IMMEDIATE
+
+: KISS ( ccc -- )
+  >IN @ >R ' DROP       \ Does this word exist?
+  R@ >IN ! BL WORD FIND R> >IN !      \ xt imm?
+  CREATE  HERE 2 CELLS ALLOT 2! IMMEDIATE
+  DOES>   >P
+  BL WORD COUNT EVALUATE
+  POSTPONE ) ;
+: DUMMY ; IMMEDIATE
+KISS DUMMY
+<div align=right><tt><a href="ec212b.html">&#187;&#187;</a></tt></div>
+</pre>
+
+</table></center>
+</body></html>

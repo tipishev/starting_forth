@@ -1,0 +1,70 @@
+<HTML><HEAD><TITLE> EC 204c ifthen1 </TITLE>
+<link rel="stylesheet" type="text/css" href="an.css">
+</HEAD>
+<BODY><center>
+
+<table><tr><td><center>204c
+<br><tt>
+<a href="ec204b.html"> &#171;&#171; </a> &nbsp;
+<a href="ec200.html"> &#171;&#187; </a> &nbsp;
+<a href="ec205a.html"> &#187;&#187; </a>
+</tt>
+</center></table>
+
+<br> &nbsp;
+
+<table width="80%"><tr><td>
+
+<pre>
+: UNTIL ( -- ) ?COMPILING
+  COMADMIN@ BEGINADMIN ?PAIRS
+  POSTPONE JOF
+  HERE  0 ,
+  OFFSET! ; IMMEDIATE
+</pre>
+
+Remember that<tt> IF </tt>and<tt> BEGIN </tt>leave a message for<tt> THEN </tt>and<tt> UNTIL</tt>.
+
+<H2>3. Unconditional branches</H2>
+
+<tt> IF...THEN </tt>and<tt> BEGIN...UNTIL </tt>have counterparts,<tt> AHEAD...THEN </tt>and<tt> BEGIN...AGAIN</tt>, that use unconditional jumps. These words don't consume a flag, don't do tests 
+and, at first blush, seem to be perfectly useless:
+
+<pre>
+AHEAD ??? THEN ...
+BEGIN ... AGAIN ???
+</pre>
+
+<tt>AHEAD </tt>always jumps forward to<tt> THEN </tt>and<tt> AGAIN </tt>always jumps to<tt> BEGIN</tt>. Why the unreachable code<tt> ??? </tt>after<tt> AHEAD </tt>and after<tt> AGAIN </tt>?
+
+<p> These structures only make sense when used in an unstructured way with other control structures.
+
+<p>
+<tt> ... IF ... ELSE ... THEN ... </tt>can be seen as<tt> ... IF ... AHEAD THEN ... THEN </tt> where the first<tt> THEN </tt>matches<tt> IF </tt>and the second<tt> THEN </tt>matches<tt> AHEAD</tt>. In other words: wrongly nested. This can be made 'whole' again with a trick, if desired, when, exactly between<tt> AHEAD </tt>and<tt> THEN</tt>, the two compiler administration packets are switched.
+
+<p>A standard word to do this exists:<tt> 1 CS-ROLL</tt>
+
+<pre>
+: ELSE (--)
+  POSTPONE AHEAD 1 CS-ROLL
+  POSTPONE THEN ; IMMEDIATE
+</pre>
+
+ The same trick can be used for<tt> AGAIN</tt>:
+
+<br><tt> ... BEGIN ... IF ... AGAIN THEN ... </tt>turns into
+<br><tt> ... BEGIN ... IF ... AGAIN? ... </tt>with
+<pre>
+: AGAIN? ( -- )
+  POSTPONE AGAIN 1 CS-ROLL
+  POSTPONE THEN ; IMMEDIATE
+</pre>
+
+However, a different solution for this specific problem exists. We'll tell you about it next time.
+<br>[to be continued]
+
+<div align=right><tt><a href="ec205a.html">&#187;&#187;</a></tt></div>
+
+</table>
+
+</center></body><html>

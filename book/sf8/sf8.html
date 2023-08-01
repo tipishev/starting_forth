@@ -1,0 +1,882 @@
+<!DOCTYPE HTML PUBLIC "-//Microsoft//DTD Internet Explorer 3.0 HTML//EN">
+<HTML>
+
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Leo Brodie's Starting Forth - Chapter 8</TITLE>
+  <META name="description" content="Starting Forth, Leo Brodie, Chapter 8.">
+  <META name="keywords" content="Forth, example code, Starting Forth, chapter 8">
+</HEAD>
+
+<BODY BGCOLOR="#F8F8F8" TEXT="#000000" LINK="#0000FF" VLINK="#007070" ALINK="#FF0000" TOPMARGIN=0>
+
+<H1>8 Variables, Constants, and Arrays</H1>
+
+	<P> As we have seen throughout the previous seven chapters, Forth programmers use the stack to store
+	    numbers temporarily while they perform calculations or to pass arguments from one word to another.
+	    When programmers need to store numbers more permanently, they use variables and constants.
+
+	<P> In this chapter, we'll learn how Forth treats variables and constants, and in the process we'll 
+	    see how to directly access locations in memory.
+
+<H2>Variables</H2>
+
+	<P> Let's start with an example of a situation in which you'd want to use a variable--to store the day's
+	    date. First we'll create a variable called <TT>DATE</TT>. We do this by saying
+<PRE>	VARIABLE DATE
+</PRE>	    
+	<P> If today is the twelfth, we now say
+<PRE>	12 DATE !
+</PRE>	    
+	    that is, we put twelve on the stack, then give the name of the variable, then finally execute the
+	    word <FONT COLOR="#0000FF">!</FONT>, which is pronounced <U>store</U>. This phrase stores the number
+	    twelve into the variable <TT>DATE</TT>.
+
+	<P> Conversely, we can say
+<PRE>	DATE @
+</PRE>	    
+	    that is, we can name the variable, then execute the word <FONT COLOR="#0000FF">@</FONT>, which
+	    is pronounced <U>fetch</U>. This phrase fetches the twelve and puts it on the stack. Thus the
+	    phrase
+<PRE>	DATE @ .<U> 12 ok </U>
+</PRE>	    
+	    prints the date.
+
+	<P> To make matters even easier, there is a Forth word whose definition is this:
+<PRE>	: ?   @ . ;
+</PRE>	    
+	<P> So instead of "DATE-fetch-dot," we can simply type
+<PRE>	DATE ?<U> 12 ok </U>
+</PRE>	    
+	<P> The value of <TT>DATE</TT> will be twelve until we change it. To change it, we simply store a new
+	    number
+<PRE>	13 DATE !<U> ok </U>
+	DATE ?<U> 13 ok </U>
+</PRE>	    
+	<P> Conceivably we could define additional variables for the month and year:
+<PRE>	VARIABLE DATE   VARIABLE MONTH   VARIABLE YEAR
+</PRE>	    
+	    then define a word called <TT>!DATE</TT> (for "store-the-date") like this:
+<PRE>	: !DATE  YEAR !  DATE !  MONTH ! ;
+</PRE>	    
+	    to be used like this:
+<PRE>	7 31 03 !DATE<U> ok </U>
+</PRE>	    
+	    then define a word called <TT>.DATE</TT> (for "print-the-date") like this:
+<PRE>	: .DATE  MONTH ?  DATE ?  YEAR ? ;
+</PRE>	    
+	<P> Your Forth system already has a number of variables defined; one is called <FONT COLOR="#0000FF">BASE</FONT>.
+	    <FONT COLOR="#0000FF">BASE</FONT> contains the number base that you're currently working in.
+	    In fact, the definition of <FONT COLOR="#0000FF">HEX</FONT> and <FONT COLOR="#0000FF">DECIMAL</FONT>
+	    (and <FONT COLOR="#0000FF">OCTAL</FONT>, if your system has it) are simply
+<PRE>	: DECIMAL  10 BASE ! ;
+	: HEX      16 BASE ! ;
+	: OCTAL     8 BASE ! ;
+</PRE>	    
+	<P> You can work in any number base by simply storing it into <FONT COLOR="#0000FF">BASE</FONT>.
+<BLOCKQUOTE>
+<FONT SIZE=-1>
+	<I>For Experts</I><BR><BR>
+	A three-letter code such as an airport terminal name, can be stored as a single-length unsigned number 
+	in base 36. For example:
+<PRE>	: ALPHA  36 BASE ! ;<U> ok </U>
+	ALPHA<U> ok </U>
+	ZAP U.<U> ZAP ok </U>
+</PRE>
+</FONT>
+</BLOCKQUOTE>
+
+	<P> Somewhere in the definitions of the system words which perform input and output number conversions,
+	    you will find the phrase
+<PRE>	BASE @
+</PRE>	    
+	    because the current value of <FONT COLOR="#0000FF">BASE</FONT> is used in the conversion process.
+	    Thus a single routine can convert numbers in <U>any</U> base. This leads us to make a formal
+	    statement about the use of variables:
+
+<CENTER><TABLE WIDTH="80%" CELLPADDING="24" BORDER="0">
+	<TR><TD bgcolor="#CCCCCC"> In Forth, variables are appropriate for any value that is used inside a definition which may
+		 need to change at any time after the definition has already been compiled. 
+</TABLE></CENTER>
+
+<H2>A Closer Look at Variables</H2>
+	
+	<P> When you create a variable such as <TT>DATE</TT> by using the phrase
+<PRE>	VARIABLE DATE
+</PRE>	    
+	    you are really compiling a new word, called <TT>DATE</TT>, into the dictionary. A simplified view
+	    would look like the view below.
+
+    	<TABLE CELLPADDING=1 CELLSPACING=6 BORDER=0 ALIGN=LEFT>
+	     <TR><TD> <TABLE CELLPADDING=6 CELLSPACING=1 BORDER=2 ALIGN=CENTER>	
+			<TR bgcolor="#00EE00"> <TD>4<TD> <B>D</B> <TD><B>A</B> <TD><B>T</B> <TD><B>E</B> </TR>
+		      </TABLE>
+	     <TR><TD> <TABLE CELLPADDING=4 CELLSPACING=1 BORDER=2 ALIGN=CENTER>
+			<TR bgcolor="#00F0F0" ALIGN=CENTER> <TD> <I>instruction code<BR>appropriate for<BR>variables </I> </TR>
+			<TR bgcolor="#00F0F0" ALIGN=CENTER> <TD> <I>space for the<BR>actual value<BR>to be stored    </I> </TR>
+		      </TABLE> 
+	</TABLE>
+
+	<P> <TT>DATE</TT> is like any other word in your dictionary except that you defined it with the word
+	    <FONT COLOR="#0000FF">VARIABLE</FONT> instead of the word <FONT COLOR="#0000FF"><B>:</B></FONT>. As a result,
+	    you didn't have to define what your definition would <U>do</U>, the word <FONT COLOR="#0000FF">VARIABLE</FONT>
+	    itself spells out what is supposed to happen. And here <U>is</U> what happens:
+
+	<P> When you say
+<PRE>	12 DATE !
+</PRE>	    
+	Twelve goes onto the stack, after which the text interpreter looks up <TT>DATE</TT> in the dictionary
+	and, finding it, points it out to <FONT COLOR="#0000FF">EXECUTE</FONT>.
+	<P> <IMG SRC="store.gif" ALT="execute !" ALIGN=RIGHT>
+	    <FONT COLOR="#0000FF">EXECUTE</FONT> executes a variable by copying the address of the variable's
+	    "empty" cell (where the value will go) onto the stack.
+	<P> <IMG SRC="storeit.gif" ALT="! does it" ALIGN=LEFT>
+	    The word <FONT COLOR="#0000FF">!</FONT> takes the address (on top) and the value (underneath), and
+	    stores the value into that location. Whatever number used to be at that address is replaced by the
+	    new number.
+
+	<P> (To remember what order the arguments belong in, think of setting down your parcel, then sticking
+	    the address label on top.)
+
+	<P> <IMG SRC="fetch.gif" ALT="execute @" ALIGN=LEFT>
+	    The word <FONT COLOR="#0000FF">@</FONT> expects one argument only: an address, which in this case
+	    is supplied by the name of the variable, as in
+<PRE>	DATE @
+</PRE>	    
+	<P> Using the value on the stack as an address, the word <FONT COLOR="#0000FF">@</FONT> pushes the 
+	    contents of that location onto the stack, "dropping" the address. (The contents of the location
+	    remain intact.)
+
+<H2>Using a Variable as a Counter</H2>
+
+	<P> In Forth, a variable is ideal for keeping a count of something. To reuse our egg-packer example,
+	    we might keep track of how many eggs go down the conveyor belt in a single day. (This example
+	    will work at your terminal, so enter it as we go.)
+
+	<P> First we can define
+<PRE>	VARIABLE EGGS
+</PRE>	    
+	    to keep the count in. To start with a clean slate every morning, we could store a zero into 
+	    <TT>EGGS</TT> by executing a word whose definition looks like this:
+<PRE>	: RESET  0 EGGS ! ;
+</PRE>	    
+	<P> Then somewhere in our egg-packing application, we would define a word which executes the following
+	    phrase every time an egg passes an electric eye on the conveyor:
+<PRE>	1 EGGS +!
+</PRE>	    
+	    The word <FONT COLOR="#0000FF">+!</FONT> adds the given value to the contents of the given address.
+	    (It doesn't bother to tell you what the contents are.) Thus the phrase
+<PRE>	1 EGGS +!
+</PRE>	    
+	    increments the count of eggs by one. For purposes of illustration, let's put this phrase inside a
+	    definition like this:
+<PRE>	: EGG  1 EGGS +! ;
+</PRE>	    
+	<P> At the end of the day, we would say 
+<PRE>	EGGS ?
+</PRE>	    
+	    to find out how many eggs went by since morning.
+
+	<P> Let's try it:
+<PRE>	RESET<U> ok </U>
+	EGG<U> ok </U>
+	EGG<U> ok </U>
+	EGG<U> ok </U>
+	EGGS ?<U> 3 ok </U>
+</PRE>	    
+	<P> Here's a review of the words we've covered in the chapter so far:
+<P><TABLE WIDTH="100%" BORDER="0">
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>VARIABLE xxx</TT><TD bgcolor="#EEEEEE" nowrap> ( -- )      <BR>xxx: ( -- addr )<TD bgcolor="#EEEEEE"> Creates a variable named <I>xxx</I>; the word <I>xxx</I> returns its address when executed.	<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="variable">
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>!</TT>	       <TD bgcolor="#EEEEEE" nowrap> ( n addr -- )		     <TD bgcolor="#EEEEEE"> Stores a single-length number into the address.						<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="store">
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>@</TT>	       <TD bgcolor="#EEEEEE" nowrap> ( addr -- n )		     <TD bgcolor="#EEEEEE"> Replaces the address with its contents.							<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="fetch">
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>?</TT>	       <TD bgcolor="#EEEEEE" nowrap> ( addr -- )	     	     <TD bgcolor="#EEEEEE"> Prints the contents of the address, followed by one space.					<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="question">
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>+!</TT>	       <TD bgcolor="#EEEEEE" nowrap> ( n addr -- )		     <TD bgcolor="#EEEEEE"> Adds a single-length number to the contents of the address.					<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="plus-store">
+</TABLE>
+
+<H2>Constants</H2>
+	
+    	<TABLE CELLPADDING=1 CELLSPACING=6 ALIGN=RIGHT BORDER=0>
+	     <TR><TD> <TABLE CELLPADDING=6 CELLSPACING=1 BORDER=2>	
+			<TR bgcolor="#00FEE0"> <TD>5<TD> <B>L</B> <TD><B>I</B> <TD><B>M</B> <TD><B>I</B> <TD><B>T</B> </TR>
+		      </TABLE>
+	     <TR><TD> <TABLE CELLPADDING=4 CELLSPACING=1 ALIGN=RIGHT BORDER=2>
+			<TR bgcolor="#E0FEFE" ALIGN=CENTER> <TD> <I>instruction code<BR>appropriate for<BR>constants </I> </TR>
+			<TR bgcolor="#E0FEFE" ALIGN=CENTER> <TD> <B>220</B> </TR>
+		      </TABLE> 
+	</TABLE>
+
+	<P>While variables are normally used for values that may change, constants are used for values that
+	   <U>won't</U> change. In Forth, we create a constant and set its value at the same time, like this:
+<PRE>	220 CONSTANT LIMIT
+</PRE>	    
+	<P> Here we have defined a constant named <TT>LIMIT</TT>, and given it the value 220. Now we can use the
+	    word <TT>LIMIT</TT> in place of the value, like this:
+<PRE>	: ?TOO-HOT  LIMIT > IF  ." Danger -- reduce heat "  THEN ;
+</PRE>	    
+	<P> If the number on the stack is greater than 220, then the warning message will be printed.
+	
+	<P> Notice that when we say
+<PRE>	LIMIT
+</PRE>	    
+	    we get the <U>value</U>, not the address. We don't need the "fetch."
+	
+	<P> This is an important difference between variables and constants. The reason for the difference is
+	    that with variables, we need the address to have the option of fetching or storing. With constants
+	    we always want the value; we absolutely never store. (If you really need to store a new value into
+	    a "constant", you should use a <FONT COLOR="#0000FF">VALUE</FONT>.)
+
+	<P> One use for constants is to name a hardware address. For example, a microprocessor-controlled
+	    portable camera application might contain this definition:
+<PRE>	: PHOTOGRAPH   SHUTTER OPEN  TIME EXPOSE  SHUTTER CLOSE ;
+</PRE>	    
+	<P> Here the word <TT>SHUTTER</TT> has been defined as a constant so that execution of <TT>SHUTTER</TT>
+	    returns the hardware address of the camera's shutter. It might, for example, be defined:
+<PRE>	HEX
+	FFFF3E27 CONSTANT SHUTTER
+	DECIMAL
+</PRE>	    
+	<P> The words <TT>OPEN</TT> and <TT>CLOSE</TT> might be defined simply as
+<PRE>	: OPEN  1 SWAP ! ;
+	: CLOSE 0 SWAP ! ;
+</PRE>
+	<P> so that the phrase 
+<PRE>	SHUTTER OPEN
+</PRE>
+	    writes a "1" to the shutter address, causing the shutter to open.
+
+	<P> Here are some situations when it's good to define numbers as constants:
+	<OL>
+	  <LI> When it's important that you make your application more readable. One of the elements
+	       of Forth style is that definitions should be self-documenting, as is the definition of
+	       <TT>PHOTOGRAPH</TT> above.
+	  <LI> When it's more convenient to use a name instead of the number. For example, if you think 
+	       you may have to change the value (because, for instance, the hardware might get changed)
+	       you will only have to change the value <U>once</U>--in the file where the constant is 
+	       defined--then recompile your application.
+	  <LI> (Only true for less sophisticated Forth compilers) When you are using the same value 
+	       many times in your application. In the compiled form of a definition, reference to a 
+	       constant requires less memory space. 
+	</OL>
+
+<P><TABLE WIDTH="100%" BORDER="0">
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>CONSTANT xxx</TT><TD bgcolor="#EEEEEE" nowrap> ( n -- )<BR>xxx: ( -- n )   <TD bgcolor="#EEEEEE"> Creates a constant named <I>xxx</I> with the value n; the word <I>xxx</I> returns n when executed.
+</TABLE>
+
+<H2>Double-length Variables and Constants</H2>
+	
+	<P> You can define a double-length variable by using the word <FONT COLOR="#0000FF">2VARIABLE</FONT>.
+	    For example,
+<PRE>	2VARIABLE DATE
+</PRE>
+	<P> Now you can use the Forth words <FONT COLOR="#0000FF">2!</FONT> (pronounced <U>two-store</U>) and 
+	    <FONT COLOR="#0000FF">2@</FONT> (pronounced  <U>two-fetch</U>) to access this double-length variable.
+	    You can store a double-length number into it by simply saying
+<PRE>	800,000 DATE 2!
+</PRE>
+	    and fetch it back with
+<PRE>	DATE 2@ D.<U> 800000 ok </U>
+</PRE>
+	<P> Or you can store the full month/date/year into it, like this:
+<PRE>	7/17/03 DATE 2!
+</PRE>
+	    and fetch it back with
+<PRE>	DATE 2@ .DATE<U> 7/17/03 ok </U>
+</PRE>
+	    assuming that you've loaded the version of <TT>.DATE</TT> we gave in the last chapter.
+	
+	<P> You can define a double-length constant by using the Forth word <FONT COLOR="#0000FF">2CONSTANT</FONT>,
+	    like this:
+<PRE>	200,000 2CONSTANT APPLES
+</PRE>
+	<P> Now the word <TT>APPLES</TT> will place the double-length number on the stack.
+<PRE>	APPLES D.<U> 200000 ok </U>
+</PRE>
+	<P> Of course, we can do:
+<PRE>	400,000 2CONSTANT MUCH
+	: MUCH-MORE  200,000 D+  MUCH D+ ;
+</PRE>
+	    in order to be able to say
+<PRE>	APPLES MUCH-MORE D.<U> 800000 ok </U>
+</PRE>
+	<P> As the prefix "2" reminds us, we can also use <FONT COLOR="#0000FF">2CONSTANT</FONT> to define
+	    a <U>pair</U> of single-length numbers. The reason for putting two numbers under the same name is
+	    a matter of convenience and of saving space in the dictionary.
+
+	<P> As an example, recall (from Chap. 5) that we can use the phrase
+<PRE>	355 113 */
+</PRE>
+	    to multiply a number by a crude approximation of <FONT FACE="symbol">p</FONT>. We could store
+	    these two integers as a <FONT COLOR="#0000FF">2CONSTANT</FONT> as follows:
+<PRE>	355 113 2CONSTANT PI
+</PRE>	
+	    then simply use the phrase
+<PRE>	PI */
+</PRE>
+	    as in
+<PRE>	10000 PI */ .<U> 31415 ok </U>
+</PRE>
+	<P> Here is a review of the double-length data-structure words:
+<P><TABLE WIDTH="100%" BORDER="0">
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>2CONSTANT xxx</TT><TD bgcolor="#EEEEEE" nowrap> ( d -- )<BR>xxx: ( -- d )   <TD bgcolor="#EEEEEE"> Creates a double-length constant named <I>xxx</I> with the value d; the word <I>xxx</I> returns d when executed. 	<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="two-constant">
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>2VARIABLE xxx</TT><TD bgcolor="#EEEEEE" nowrap> ( -- )  <BR>xxx: ( -- addr )<TD bgcolor="#EEEEEE"> Creates a double-length variable named <I>xxx</I>; the word <I>xxx</I> returns its address when executed.		<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="two-variable">
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>2!</TT>	        <TD bgcolor="#EEEEEE" nowrap> ( d addr -- )		     <TD bgcolor="#EEEEEE"> Stores a double-length number into the address.									<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="two-store">
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>2@</TT>	        <TD bgcolor="#EEEEEE" nowrap> ( addr -- d )		     <TD bgcolor="#EEEEEE"> Returns the double-length contents of the address.									<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="two-fetch">
+</TABLE>
+	
+<H2>Arrays</H2>
+
+    	<TABLE CELLPADDING=1 CELLSPACING=6 ALIGN=RIGHT BORDER=0>
+	     <TR><TD> <TABLE CELLPADDING=6 CELLSPACING=1 BORDER=2>	
+			<TR bgcolor="#E0FE00"> <TD>4<TD> <B>D</B> <TD><B>A</B> <TD><B>T</B> <TD><B>E</B> </TR>
+		      </TABLE>
+	     <TR><TD> <TABLE CELLPADDING=4 CELLSPACING=1 BORDER=2>
+			<TR bgcolor="#F0FEEE" ALIGN=CENTER> <TD> <I>code</I> </TR>
+			<TR bgcolor="#F0FEEE" ALIGN=CENTER> <TD> <I>room for a<BR>single-length value</I> </TR>
+		      </TABLE> 
+	</TABLE>
+
+	<P> As you know, the phrase
+<PRE>	VARIABLE DATE
+</PRE>
+	    creates a definition which conceptually looks like that at the right.
+
+	<P> Now if you say
+<PRE>	1 CELLS ALLOT
+</PRE>
+	    an additional cell is allotted in the definition, like this:
+	
+	<P><TABLE CELLPADDING=1 CELLSPACING=6 ALIGN=LEFT BORDER=0>
+	     <TR><TD> <TABLE CELLPADDING=6 CELLSPACING=1 BORDER=2>	
+			<TR bgcolor="#E0FE00"> <TD>4<TD> <B>D</B> <TD><B>A</B> <TD><B>T</B> <TD><B>E</B> </TR>
+		      </TABLE>
+	     <TR><TD> <TABLE CELLPADDING=4 CELLSPACING=1 BORDER=2>
+			<TR bgcolor="#F0FEEE" ALIGN=CENTER> <TD> <I>code </I> </TR>
+			<TR bgcolor="#F0FEEE" ALIGN=CENTER> <TD> <I>room for a<BR>single-length<BR>value</I> </TR>
+			<TR bgcolor="#F0FEEE" ALIGN=CENTER> <TD> <I>ditto</I> </TR>
+		      </TABLE> 
+	</TABLE>
+
+	<P> The result is the same as if you had used <FONT COLOR="#0000FF">2VARIABLE</FONT>. By changing
+	    the argument to <FONT COLOR="#0000FF">ALLOT</FONT>, however, you can define <U>any</U> <U>number</U>
+	    of variables under the same name. Such a group of variables is called an "array."
+
+	<P> For example, let's say that in our laboratory, we have not just one, but <U>five</U> burners that
+	    heat various kinds of liquids.
+
+	<P> We can make our word <TT>?TOO-HOT</TT> check that all five burners have not exceeded their individual
+	    limit if we define <TT>LIMIT</TT> using an array rather than a constant.
+
+	<P> Let's give the array the name <TT>LIMITS</TT>, like this:
+<PRE>	VARIABLE LIMITS 4 CELLS ALLOT
+</PRE>	
+	<P> The phrase "4 CELLS ALLOT" gives the array an extra four cells (five cells in all).
+
+    	<TABLE CELLPADDING=1 CELLSPACING=6 ALIGN=RIGHT BORDER=0>
+	     <TR><TD> <TABLE CELLPADDING=6 CELLSPACING=1 BORDER=2>	
+			<TR bgcolor="#00FEE0"> <TD>6<TD> <B>L</B> <TD><B>I</B> <TD><B>M</B> <TD><B>I</B> <TD><B>T</B> <TD><B>S</B>
+		      </TABLE>
+	     <TR><TD> <TABLE CELLPADDING=4 CELLSPACING=1 BORDER=2>
+			<TR bgcolor="#F8FEFE" ALIGN=CENTER> <TD> <I>code</I>
+			<TR bgcolor="#E0FEFE" ALIGN=CENTER> <TD> <I>room for burner-0's limit</I> 
+			<TR bgcolor="#E0FEFE" ALIGN=CENTER> <TD> <I>room for burner-1's limit</I> 
+			<TR bgcolor="#E0FEFE" ALIGN=CENTER> <TD> <I>room for burner-2's limit</I> 
+			<TR bgcolor="#E0FEFE" ALIGN=CENTER> <TD> <I>room for burner-3's limit</I> 
+			<TR bgcolor="#E0FEFE" ALIGN=CENTER> <TD> <I>room for burner-4's limit</I> 
+		      </TABLE> 
+  		 <TD> <TABLE CELLPADDING=4 CELLSPACING=1 BORDER=2>
+			<TR bgcolor="#E0FEFE" ALIGN=CENTER> <TD bgcolor="#E0F0F0" ALIGN=CENTER> address
+			<TR bgcolor="#E0FEFE" ALIGN=CENTER> <TD bgcolor="#E0F0F0" ALIGN=CENTER> <B>3160</B>
+			<TR bgcolor="#E0FEFE" ALIGN=CENTER> <TD bgcolor="#E0F0F0" ALIGN=CENTER> <B>3164</B>
+			<TR bgcolor="#E0FEFE" ALIGN=CENTER> <TD bgcolor="#E0F0F0" ALIGN=CENTER> <B>3168</B>
+			<TR bgcolor="#E0FEFE" ALIGN=CENTER> <TD bgcolor="#E0F0F0" ALIGN=CENTER> <B>316C</B>
+			<TR bgcolor="#E0FEFE" ALIGN=CENTER> <TD bgcolor="#E0F0F0" ALIGN=CENTER> <B>3170</B>
+		      </TABLE> 
+	</TABLE>
+
+	<P> Suppose we want the limit for burner 0 to be 220. We can store this value by simply saying
+<PRE>	220 LIMITS !
+</PRE>
+	    because <TT>LIMITS</TT> returns the address of the first cell in the array. Suppose we want the
+	    limit for burner 1 to be 340. We can store this value by adding 1 <FONT COLOR="#0000FF">CELLS</FONT> 	
+	    to the address of the original cell, like this:
+<PRE>	340 LIMITS 1 CELLS + !
+</PRE>
+	<P> We can store limits for burners 2, 3, and 4 by adding the "offsets" 2 <FONT COLOR="#0000FF">CELLS</FONT>, 3 <FONT COLOR="#0000FF">CELLS</FONT>, and 4 <FONT COLOR="#0000FF">CELLS</FONT>,
+	    respectively, to the original address. We can define the convenient word
+<PRE>	: LIMIT  ( burner# -- addr ) CELLS LIMITS + ;
+</PRE>
+	    to take a burner number on the stack and compute an address that reflects the appropriate offset.
+
+	<P> Now if we want the value 170 to be the limit for burner 2, we simply say
+<PRE>	170 2 LIMIT !
+</PRE>
+	    or similarly, we can fetch the limit for burner 2 with the phrase
+<PRE>	2 LIMIT ?<U> 170 ok </U>
+</PRE>
+	<P> This technique increases the usefulness of the word <TT>LIMIT</TT>, so that we can redefine 
+	    <TT>?TOO-HOT</TT> as follows:
+<PRE>	: ?TOO-HOT ( temp burner# -- )
+	LIMIT @ > IF  ." Danger -- reduce heat "  THEN ;
+</PRE>
+	    which works like this:
+<PRE>	210 0 ?TOO-HOT<U> ok </U>
+	230 0 ?TOO-HOT<U> Danger -- reduce heat ok </U>
+	300 1 ?TOO-HOT<U> ok </U>
+	350 1 ?TOO-HOT<U> Danger -- reduce heat ok </U>
+
+</PRE>	etc.
+	
+<H2>Another Example -- Using an Array for Counting</H2>
+
+	<P> Meanwhile, back at the egg ranch:
+
+	<P> Here's another example of an array. In this example, each element of the array is used as a separate
+	    counter. Thus we can keep track of how many cartons of "extra large" eggs the machine has packed,
+	    how many "large," and so forth.
+
+	<P> Recall from our previous definition of <TT>EGGSIZE</TT> (in Chap. 4) that we used four categories
+	    of acceptable eggs, plus two categories of "bad eggs."
+<PRE>	0 CONSTANT REJECT
+	1 CONSTANT SMALL
+	2 CONSTANT MEDIUM
+	3 CONSTANT LARGE
+	4 CONSTANT EXTRA-LARGE
+	5 CONSTANT ERROR
+</PRE>
+	<P> So let's create an array that is six cells long:
+<PRE>	VARIABLE COUNTS 5 CELLS ALLOT
+</PRE>
+	<P> The counts will be incremented using the word <FONT COLOR="#0000FF">+!</FONT>, so we must be able
+	    to set all the elements of the array to zero before we begin counting. The phrase
+<PRE>	COUNTS 6 CELLS 0 FILL
+</PRE>
+	    will fill 6 cells , starting at the address of <TT>COUNTS</TT>, with zeros. If your Forth system
+	    includes the word <FONT COLOR="#0000FF">ERASE</FONT>, it's better to use it in this situation. 
+	    <FONT COLOR="#0000FF">ERASE</FONT> fills the given number of bytes with zeroes. Use it like this:
+<PRE>	COUNTS 6 CELLS ERASE
+</PRE>
+<P><TABLE WIDTH="100%" BORDER="0">
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>FILL</TT> 	     <TD bgcolor="#EEEEEE" nowrap> ( addr n b -- ) <TD bgcolor="#EEEEEE"> Fills n bytes of memory, beginning at the address, with value b.
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>ERASE</TT> 	     <TD bgcolor="#EEEEEE" nowrap> ( addr n -- )   <TD bgcolor="#EEEEEE"> Stores zeroes into n bytes of memory, beginning at the address.
+</TABLE>
+	
+	<P> For convenience, we can put the phrase inside a definition, like this:
+<PRE>	: RESET  COUNTS 6 CELLS ERASE ;
+</PRE>
+	<P> Now let's define a word which will give us the address of one of the counters, depending on the
+	    category number it is given (0 through 5), like this:
+<PRE>	: COUNTER   CELLS COUNTS + ;
+</PRE>
+	    and another word which will add one to the counter whose number is given, like this:
+<PRE>	: TALLY  COUNTER 1 SWAP +! ;
+</PRE>
+	<P> The "1" serves as the increment for <FONT COLOR="#0000FF">+!</FONT>, and <FONT COLOR="#0000FF">SWAP</FONT>
+	    puts the arguments for <FONT COLOR="#0000FF">+!</FONT> in the order they belong, i.e., (&nbsp;n&nbsp;addr&nbsp;--&nbsp;).
+
+	<P> Now, for instance, the phrase
+<PRE>	LARGE TALLY 
+</PRE>
+	    will increment the counter that corresponds to large eggs.
+
+	<P> Now let's define a word which converts the weight per dozen into a category number:
+<PRE>	: CATEGORY ( weight -- category )
+	  DUP 18 < IF   REJECT      ELSE
+	  DUP 21 < IF   SMALL       ELSE
+	  DUP 24 < IF   MEDIUM      ELSE
+	  DUP 27 < IF   LARGE       ELSE
+	  DUP 30 < IF   EXTRA-LARGE ELSE
+			ERROR
+	THEN THEN THEN THEN THEN  NIP ;<IMG SRC="footnote.gif" ALT="We'll see a simpler definition soon.">
+</PRE>
+	<P> (By the time we'll get to the <FONT COLOR="#0000FF">NIP</FONT>, we will have two values on the stack: 
+	    the weight which we have been <FONT COLOR="#0000FF">DUP</FONT>ping and the category number, which will
+	    be on top. We want only the category number; "NIP" eliminates the weight.)
+	
+	<P> For instance, the phrase
+<PRE>	25 CATEGORY
+</PRE>
+	    will leave the number 3 (<TT>LARGE</TT>) on the stack. The above definition of <TT>CATEGORY</TT> resembles our old
+	    definition of <TT>EGGSIZE</TT>, but, in the true Forth style of keeping words as short as possible,
+	    we have removed the output messages from the definition. Instead, we'll define an additional word
+	    which expects a category number and prints an output message, like this:
+<PRE>	: LABEL ( category -- )
+	  CASE 
+	    REJECT      OF ." reject "      ENDOF
+	    SMALL       OF ." small "       ENDOF
+	    MEDIUM      OF ." medium "      ENDOF
+	    LARGE       OF ." large "       ENDOF
+	    EXTRA-LARGE OF ." extra large " ENDOF
+	    ERROR       OF ." error "       ENDOF
+	  ENDCASE ;
+</PRE>
+	<P> For example:
+<PRE>	SMALL LABEL<U> small ok </U>
+</PRE>
+	<P> Now we can define <TT>EGGSIZE</TT> using three of our own words:
+<PRE>	: EGGSIZE  CATEGORY  DUP LABEL  TALLY ;
+</PRE>
+	<P> Thus the phrase
+<PRE>	23 EGGSIZE
+</PRE>
+	    will print
+<PRE>	<U>medium ok </U>
+</PRE>
+	    at your terminal and update the counter for medium eggs.
+	
+	<P> How will we read the counters at the end of the day? We could check each cell in the array 
+	    separately with a phrase such as
+<PRE>	LARGE COUNTER ?
+</PRE>
+	    (which would tell us how many "large" cartons were packed). But let's get a little fancier and
+	    define our own word to print a table of the day's results in this format:
+<PRE>	<U>QUANTITY</U>		<U>SIZE</U>
+	    1			reject
+	  112			small
+	  132			medium
+	  143			large
+	  159			extra large
+	    0			error
+</PRE>
+	<P> Since we have already devised category numbers, we can simply use a <FONT COLOR="#0000FF">DO</FONT>
+	    and index on the category number, like this:
+<PRE>	: REPORT ( -- )
+		PAGE ." QUANTITY       SIZE" CR CR	
+		6 0 DO	 I COUNTER @ 5 U.R
+			 7 SPACES
+			 I LABEL CR
+		  LOOP ;
+</PRE>
+	<P> (The phrase <TT>"I COUNTER @  5 U.R"</TT> takes the category number given by <FONT COLOR="#0000FF">I</FONT>,
+	    indexes into the array, and prints the contents of the proper element in a five-column field.)
+
+<H2>Factoring Definitions</H2>
+	
+	<P> This is a good time to talk about factoring as it applies to Forth definitions. We've just seen
+	    an example in which factoring simplified our problem.
+
+	<P> Our first definition of <TT>EGGSIZE</TT> from Chap. 4, categorized eggs by weight and printed the
+	    name of the categories at the terminal. In our present version we factored out the "categorizing"
+	    and the "printing" into two separate words. We can use the word <TT>CATEGORY</TT> to provide the
+	    argument either for the printing word or the counter-tallying word (or both). And we can use the 
+	    printing word, <TT>LABEL</TT>, in both <TT>EGGSIZE</TT> and <TT>REPORT</TT>.
+
+	<P> As Charles Moore, the inventor of Forth, has written:
+<BLOCKQUOTE>
+	A good Forth vocabulary contains a large number of small words. It is not enough to break a 
+	problem into small pieces. The object is to isolate words <U>that</U> <U>can</U> <U>be</U> <U>reused</U>.
+</BLOCKQUOTE>
+	
+	<P> For example, in the recipe:
+<BLOCKQUOTE>
+	Get a can of tomato sauce.<BR>
+	Open can of tomato sauce.<BR>
+	Pour tomato sauce into pan.<BR>
+	Get can of mushrooms.<BR>
+	Open can of mushrooms.<BR>
+	Pour mushrooms into pan.<BR>
+</BLOCKQUOTE>
+	
+	<P> you can "factor out" the getting, opening, and pouring, since they are common to both cans. Then you
+	    can give the factored-out process a name and simply write:
+<PRE>	TOMATOES ADD
+	MUSHROOMS ADD
+</PRE>
+	    and any chef who's graduated from the Postfix School of Cookery will know exactly what you mean.
+
+	<P> Not only does factoring make a program easier to write (and fix!), it saves memory space, too.
+	    A reusable word such as <TT>ADD</TT> gets defined only once. The more complicated the application,
+	    the greater the savings.
+	
+	<P> Here is another thought about Forth style before we leave the egg ranch. Recall our definition of
+	    <TT>EGGSIZE</TT>
+<PRE>	: EGGSIZE  CATEGORY  DUP LABEL  TALLY ;
+</PRE>
+	<P> <TT>CATEGORY</TT> gave us a value which we wanted to pas on to both <TT>LABEL</TT> and 
+	    <TT>TALLY</TT>, so we included the <FONT COLOR="#0000FF">DUP</FONT>. To make the definition 
+	    "cleaner," we might have been tempted to take the <FONT COLOR="#0000FF">DUP</FONT> out and put it
+	    inside the definition of <TT>LABEL</TT>, at the beginning. Thus we might have written:
+<PRE>	: EGGSIZE  CATEGORY  LABEL TALLY ;
+</PRE>
+	<P> where <TT>CATEGORY</TT> passes the value to <TT>LABEL</TT>, and <TT>LABEL</TT> passes it on to
+	    <TT>TALLY</TT>. Certainly this approach would have worked. But then, when we defined <TT>REPORT</TT>,
+	    we would have had to say
+<PRE>	I LABEL DROP
+</PRE>
+	instead of simply 
+<PRE>	I LABEL
+</PRE>
+	<P> Forth programmers tend to follow this convention: when possible, words should destroy their own
+	    parameters. In general, it's better to put the <FONT COLOR="#0000FF">DUP</FONT> inside the 
+	    "calling definition" (<TT>EGGSIZE</TT>, here) than in the "called" definition (<TT>LABEL</TT>, here).
+
+<H2>Another Example -- "Looping" through an Array</H2>
+
+	<P> We'd like to introduce a little technique that is relevant to arrays. We can best illustrate this
+	    technique by writing our own definition of a Forth word called <FONT COLOR="#0000FF">DUMP</FONT>.
+	    <FONT COLOR="#0000FF">DUMP</FONT> is used to print out the contents of a series of memory 
+	    addresses. The usage is
+<PRE>	addr count DUMP
+</PRE>
+	<P> For instance, we could enter
+<PRE>	COUNTS 6 DUMP
+</PRE>
+	    to print the contents of our egg-counting array called <TT>COUNTS</TT>. Since <FONT COLOR="#0000FF">DUMP</FONT>
+	    is primarily designed as a programming tool to print out the contents of memory locations, it prints
+	    either byte-by-byte or cell-by-cell, depending on the type of addressing our computer uses. Our 
+	    version of <FONT COLOR="#0000FF">DUMP</FONT> will print cell-by-cell.
+
+	<P> Obviously <FONT COLOR="#0000FF">DUMP</FONT> will involve a <FONT COLOR="#0000FF">DO</FONT> loop. The
+	    question is: what should we use for an index? Although we might use the count itself (0 - 6) as the
+	    loop index, it's better to use the <U>address</U> as the index.
+
+	<P> The address of <TT>COUNTS</TT> will be the starting index for the loop, while the address plus 
+	    the count will serve as the limit, like this:
+<PRE>	: DUMP ( addr cell-count -- )
+		CELLS OVER + SWAP 
+		           DO   CR I @ 5 U.R  
+		1 CELLS +LOOP ;
+</PRE>	
+	<P> The key phrase here is 
+<PRE>	CELLS OVER + SWAP
+</PRE>
+	    which immediately precedes the <FONT COLOR="#0000FF">DO</FONT>.
+
+	<IMG SRC="bounds.gif" ALT="bounds" ALIGN=RIGHT>
+	<P> The ending and starting addresses are now on the stack, ready to serve as the limit and index
+	    for the <FONT COLOR="#0000FF">DO</FONT> loop. Since we are "indexing on the addresses," once we
+	    are inside the loop we merely have to say
+<PRE>	I @  5 U.R
+</PRE>
+	    to print the contents of each element of the array. Since we are examining cells (<FONT COLOR="#0000FF">@</FONT>
+	    fetches a single-length, single cell value), we increment the index by one cell each time, by using
+<PRE>	1 CELLS +LOOP
+</PRE>
+
+<H2>Byte Arrays</H2>
+	
+	<P> Forth lets you create an array in which each element consists of a single byte rather than a full
+	    cell. This is useful any time you are storing a series of numbers whose range fits into that which
+	    can be expressed within eight bits.
+
+	<P> The range of an unsigned 8-bit number is 0 to 255. Byte arrays are also used to store ASCII character 
+	    strings. The benefit of using a byte array instead of a cell array is that you can get the same 
+	    amount of data in 25% (32-bit Forth) of the memory space.
+
+	<P> The mechanics of using a byte array are the same as using a cell array except that
+	<OL>
+	  <LI> you don't have to use <FONT COLOR="#0000FF">CELLS</FONT> to manipulate the offset, since each
+	       element corresponds to one address unit, and
+	  <LI> you must use the words <FONT COLOR="#0000FF">C!</FONT> and <FONT COLOR="#0000FF">C@</FONT> instead
+	       of <FONT COLOR="#0000FF">!</FONT> and <FONT COLOR="#0000FF">@</FONT>. These words, which operate
+	       on byte values only, have the prefix "C" because their typical use is accepting ASCII <U>c</U>haracters.
+	</OL>
+
+<P><TABLE WIDTH="100%" BORDER="0">
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>C!</TT>	     <TD bgcolor="#EEEEEE" nowrap> ( b addr -- )		     <TD bgcolor="#EEEEEE"> Stores an 8-bit value into the address.	<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="c-store">
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>C@</TT>	     <TD bgcolor="#EEEEEE" nowrap> ( addr -- b )		     <TD bgcolor="#EEEEEE"> Fetches an 8-bit value from the address.	<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="c-fetch">
+</TABLE>
+	
+<H2>Initializing an Array</H2>
+	
+	<P> Many situations call for an array whose values never change during the operation of the application
+	    and which may as well be stored into the array at the same time that the array is created, just as
+	    <FONT COLOR="#0000FF">CONSTANT</FONT>s are. Forth provides the means to accomplish this through the
+	    two words <FONT COLOR="#0000FF">CREATE</FONT> and <FONT COLOR="#0000FF"><B>,</B></FONT> (pronounced <U>create</U>
+	    and <U>comma</U>).
+
+	<P> Suppose we want permanent values in our <TT>LIMITS</TT> array. Instead of saying
+<PRE>	VARIABLE LIMITS 4 CELLS ALLOT
+</PRE>
+	we can say
+<PRE>	CREATE LIMITS  220 , 340 , 170 , 100 , 190 ,
+</PRE>
+	<P> Usually the above line would be included from a disk file, but it also works interactively.
+
+	<P> Like the word <FONT COLOR="#0000FF">VARIABLE</FONT>, <FONT COLOR="#0000FF">CREATE</FONT> puts a 
+	    new name in the dictionary at compile time and returns the address of that definition when it is 
+	    executed. But it does not "allot" any bytes for a value.
+
+	<P> The word <FONT COLOR="#0000FF"><B>,</B></FONT> takes a number off the stack and stores it into the array.
+	    So each time you express a number and follow it with <FONT COLOR="#0000FF"><B>,</B></FONT>, you add one cell
+	    to the array.
+	<P> <CENTER><IMG SRC="initarray.gif" ALT="initialize"></CENTER>
+
+<FONT SIZE=-1><BLOCKQUOTE>
+	<I>For Newcomers</I><BR><BR>
+	Ingrained habits, learned from English writing, lead some newcomers to forget to type the final
+	<FONT COLOR="#0000FF"><B>,</B></FONT> in the line. Remember that <FONT COLOR="#0000FF"><B>,</B></FONT> does not
+	separate the numbers, it <U>compiles</U> them.
+</BLOCKQUOTE></FONT>
+	
+	<P> You can access the elements in a <FONT COLOR="#0000FF">CREATE</FONT> array just as you would
+	    the elements in a <FONT COLOR="#0000FF">VARIABLE</FONT> array. For example:
+<PRE>	LIMITS CELL+ @ .<U> 340 ok </U>
+</PRE>
+	<P> You can even store new values into the array, just as you would into a <FONT COLOR="#0000FF">VARIABLE</FONT>
+	    array.
+
+	<P> To initialize a byte-array that has been defined with <FONT COLOR="#0000FF">CREATE</FONT>, you can
+	    use the word <FONT COLOR="#0000FF">C,</FONT> (c-comma). For instance, we could store each of the values
+	    used in our egg-sorting definition <TT>CATEGORY</TT> as follows:
+<PRE>	CREATE SIZES 18 C, 21 C, 24 C, 27 C, 30 C, 255 C,
+</PRE>
+	<P>This would allow us to redefine <TT>CATEGORY</TT> using a <FONT COLOR="#0000FF">DO</FONT> loop rather
+	   than as a series of nested <FONT COLOR="#0000FF">IF</FONT>...<FONT COLOR="#0000FF">THEN</FONT> statements,
+	   as follows
+<PRE>	: CATEGORY  6 0 DO  DUP SIZES I + C@  < IF  DROP I LEAVE THEN  LOOP ;
+</PRE>
+	<P> Note that we have added a maximum (255) to the array to simplify our definition regarding category 5.
+
+	<P> Including the initialization of the <TT>SIZES</TT> array, this version takes only three lines of
+	    source text as opposed to six and takes less space in the dictionary, too.
+
+<FONT SIZE=-1><BLOCKQUOTE>
+	<I>For People Who Don't Like Guessing How It Works</I><BR><BR>
+	The idea here is this: since there are five possible categories, we can use the category numbers as our
+	loop index. Each time around, we compare the number on the stack against the element in <TT>SIZES</TT>,
+	offset by the current loop index. As soon as the weight on the stack is greater than one of the elements
+	in the array, we leave the loop and use <FONT COLOR="#0000FF">I</FONT> to tell us how many times we had
+	looped before we "left." Since this number is our offset into the array, it will also be our category 
+	number.
+</BLOCKQUOTE></FONT>
+
+<P> Here's a list of the Forth words we've covered in this chapter:
+<P><TABLE WIDTH="100%" BORDER="0">
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>CONSTANT xxx</TT><TD bgcolor="#EEEEEE" nowrap> ( n -- )<BR>xxx: ( -- n )   <TD bgcolor="#EEEEEE"> Creates a constant named <I>xxx</I> with the value n; the word <I>xxx</I> returns n when executed.
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>VARIABLE xxx</TT><TD bgcolor="#EEEEEE" nowrap> ( -- )	 <BR>xxx: ( -- addr )<TD bgcolor="#EEEEEE"> Creates a variable named <I>xxx</I>; the word <I>xxx</I> returns its address when executed.
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>CREATE xxx  </TT><TD bgcolor="#EEEEEE" nowrap> ( -- )	 <BR>xxx: ( -- addr )<TD bgcolor="#EEEEEE"> Creates a dictionary entry (head and code pointer only) named <I>xxx</I>; the word <I>xxx</I> returns its address when executed.
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>!</TT>	     <TD bgcolor="#EEEEEE" nowrap> ( n addr -- )		     <TD bgcolor="#EEEEEE"> Stores a single-length number into the address.
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>@</TT>	     <TD bgcolor="#EEEEEE" nowrap> ( addr -- n )		     <TD bgcolor="#EEEEEE"> Replaces the address with its contents.
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>?</TT>	     <TD bgcolor="#EEEEEE" nowrap> ( addr -- )		     <TD bgcolor="#EEEEEE"> Prints the contents of the address, followed by one space.
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>+!</TT>	     <TD bgcolor="#EEEEEE" nowrap> ( n addr -- )		     <TD bgcolor="#EEEEEE"> Adds a single-length number to the contents of the address.
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>ALLOT</TT>     <TD bgcolor="#EEEEEE" nowrap> ( n -- )		     <TD bgcolor="#EEEEEE"> Adds n bytes to the body of the most recently defined word.
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>,</TT>	     <TD bgcolor="#EEEEEE" nowrap> ( n -- )		     <TD bgcolor="#EEEEEE"> Compiles n into the next available cell in the dictionary.
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>C!</TT>	     <TD bgcolor="#EEEEEE" nowrap> ( b addr -- )		     <TD bgcolor="#EEEEEE"> Stores an 8-bit value into the address.
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>C@</TT>	     <TD bgcolor="#EEEEEE" nowrap> ( addr -- b )		     <TD bgcolor="#EEEEEE"> Fetches an 8-bit value from the address.
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>FILL</TT>      <TD bgcolor="#EEEEEE" nowrap> ( addr n b -- )	     <TD bgcolor="#EEEEEE"> Fills n bytes of memory, beginning at the address, with value b.
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>BASE</TT>      <TD bgcolor="#EEEEEE" nowrap> ( n -- )		     <TD bgcolor="#EEEEEE"> A variable which contains the value of the number base being used by the system.
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>2CONSTANT xxx</TT><TD bgcolor="#EEEEEE" nowrap> ( d -- )<BR>xxx: ( -- d )   <TD bgcolor="#EEEEEE"> Creates a double-length constant named <I>xxx</I> with the value d; the word <I>xxx</I> returns d when executed.
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>2VARIABLE xxx</TT><TD bgcolor="#EEEEEE" nowrap> ( -- )  <BR>xxx: ( -- addr )<TD bgcolor="#EEEEEE"> Creates a double-length variable named <I>xxx</I>; the word <I>xxx</I> returns its address when executed.
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>2!</TT>	     <TD bgcolor="#EEEEEE" nowrap> ( d addr -- )		     <TD bgcolor="#EEEEEE"> Stores a double-length number into the address.
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>2@</TT>	     <TD bgcolor="#EEEEEE" nowrap> ( addr -- d )		     <TD bgcolor="#EEEEEE"> Returns the double-length contents of the address.
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>C,</TT>	     <TD bgcolor="#EEEEEE" nowrap> ( b -- )		     <TD bgcolor="#EEEEEE"> Compiles b into the next available byte in the dictionary.
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>DUMP</TT>      <TD bgcolor="#EEEEEE" nowrap> ( addr u -- )		     <TD bgcolor="#EEEEEE"> Displays u bytes of memory, starting at the address.
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>ERASE</TT>     <TD bgcolor="#EEEEEE" nowrap> ( addr n -- )		     <TD bgcolor="#EEEEEE"> Stores zeroes into n bytes of memory, beginning at the address.
+</TABLE>
+<P>
+<CENTER><TABLE BORDER="0">
+	<CAPTION><I>KEY</I></CAPTION>
+	<TR> <TD bgcolor="#EEEEEE"> n, n1, ...   <TD bgcolor="#EEEEEE"> single-length signed
+	<TR> <TD bgcolor="#EEEEEE"> d, d1, ...   <TD bgcolor="#EEEEEE"> double-length signed
+	<TR> <TD bgcolor="#EEEEEE"> u, u1, ...   <TD bgcolor="#EEEEEE"> single-length unsigned
+	<TR> <TD bgcolor="#EEEEEE"> ud, ud1, ... <TD bgcolor="#EEEEEE"> double-length unsigned
+	<TR> <TD bgcolor="#EEEEEE"> addr         <TD bgcolor="#EEEEEE"> address
+	<TR> <TD bgcolor="#EEEEEE"> c            <TD bgcolor="#EEEEEE"> ASCII character value
+	<TR> <TD bgcolor="#EEEEEE"> b            <TD bgcolor="#EEEEEE"> 8-bit byte
+	<TR> <TD bgcolor="#EEEEEE"> f            <TD bgcolor="#EEEEEE"> Boolean flag
+</TABLE></CENTER>
+
+<P>	
+<TABLE WIDTH="100%" BORDER="0">
+	<CAPTION><I>Review of Terms</I></CAPTION>
+	<TR> <TH> <HR NOSHADE SIZE="6"> <TH> <HR NOSHADE SIZE="6">
+	<TR> <TD bgcolor="#EEEEEE"> Array		<TD bgcolor="#EEEEEE"> a series of memory locations with a single name. Values can be stored and fetched into the individual locations by giving the name of the array and adding an offset to the address.
+	<TR> <TD bgcolor="#EEEEEE"> Constant		<TD bgcolor="#EEEEEE"> a value which has a name. The value is stored in memory and usually never changes.
+	<TR> <TD bgcolor="#EEEEEE"> Factoring	  	<TD bgcolor="#EEEEEE"> as it applies to programming in Forth, simplifying a large job by extracting those elements which might be reused and defining those elements as operations.
+	<TR> <TD bgcolor="#EEEEEE"> Fetch		<TD bgcolor="#EEEEEE"> to retrieve a value from a given memory location.
+	<TR> <TD bgcolor="#EEEEEE"> Initialize	  	<TD bgcolor="#EEEEEE"> to give a variable (or array) its initial value(s) before the rest of the program begins.
+	<TR> <TD bgcolor="#EEEEEE"> Offset	  	<TD bgcolor="#EEEEEE"> a number which can be added to the address of the beginning of an array to produce the address of the desired location within the array.
+	<TR> <TD bgcolor="#EEEEEE"> Store		<TD bgcolor="#EEEEEE"> to place a value in a given memory location.
+	<TR> <TD bgcolor="#EEEEEE"> Variable	  	<TD bgcolor="#EEEEEE"> a location in memory which has a name and in which values are frequently stored and fetched.
+	<TR> <TH> <HR NOSHADE SIZE="6"> <TH> <HR NOSHADE SIZE="6">
+</TABLE>
+
+<H2>Problems -- Chapter 8</H2>
+			<IMG SRC="felix.gif" ALIGN=MIDDLE ALT="problems">
+
+<OL>
+	<LI> <OL>
+	 	<LI> Write two words called <TT>BAKE-PIE</TT> and <TT>EAT-PIE</TT>. The first word increases
+		     the number of available <TT>PIES</TT> by one. The second decreases the number by one and
+		     thanks you for the pie. But if there are no pies, it types "What pie?" (make sure you 
+		     start out with no pies.)
+<PRE>	EAT-PIE<U> What pie? </U>
+	BAKE-PIE<U> ok </U>
+	EAT-PIE<U> Thank you! ok </U>
+</PRE>	
+		<LI> Write a word called <TT>FREEZE-PIES</TT> which takes all the available pies and adds them
+		     to the number of pies in the freezer. Remember that frozen pies cannot be eaten.
+<PRE>	BAKE-PIE BAKE-PIE FREEZE-PIES<U> ok </U>
+	PIES ?<U> 0 ok </U>
+	FROZEN-PIES ?<U> 2 ok </U>
+</PRE>	
+	     </OL> <A HREF="8-1.forth.html">[answer]</A>
+	<LI> Define a word called <TT>.BASE</TT> which prints the current value of the variable <FONT COLOR="#0000FF">BASE</FONT>
+	     in decimal. Test it by first changing <FONT COLOR="#0000FF">BASE</FONT> to some value other than ten. (This one
+	     is trickier than it may seem.)
+<PRE>	DECIMAL .BASE 10<U> ok </U>
+	HEX .BASE 16<U> ok </U>
+</PRE>	
+	     <A HREF="8-2.forth.html">[answer]</A>
+	<LI> Define a number-formatting word called <TT>M.</TT> which prints a double-length number with a 
+	     decimal point. The position of the decimal point witin the number is movable and depends on the
+	     value of a variable that you will define as <TT>PLACES</TT>. For example, if you store a "1" into
+	     <TT>PLACES</TT>, you will get
+<PRE>	200,000 M.<U> 20000.0 ok </U>
+</PRE>	
+	     that is, with the decimal point one place from the right. A zero in <TT>PLACES</TT> should produce
+	     no decimal point at all. <A HREF="8-3.forth.html">[answer]</A>
+	<LI> In order to keep track of the inventory of colored pencils in your office, create an array, each cell
+	     of which contains the count of a different colored pencil. Define a set of words so that, for example,
+	     the phrase
+<PRE>	RED PENCILS
+</PRE>	
+	     returns the address of the cell that contains the count of red pencils, etc. Then set these variables
+	     to indicate the following counts:
+<PRE>	23 red pencils
+	15 blue pencils
+	12 green pencils
+	0 orange pencils
+</PRE>	<A HREF="8-4.forth.html">[answer]</A>
+	<LI> A histogram is a graphic representation of a series of values. Each value is shown by the height 
+	     or length of a bar. In this exercise you will create an array of values and print a histogram which
+	     displays a line of "*"s for each value. First create an array with about ten cells. Initialize
+	     each element of the array with a value in the range of zero to seventy. Then define a word 
+	     <TT>PLOT</TT> which will print a line for each value. On each line print the number of the cell
+	     followed by a number of "*"s equal to the contents of that cell.
+	     
+	     <P> For example, if the array has four cells and contains the values 1, 2, 3 and 4, then 
+	     <TT>PLOT</TT> would produce:
+<PRE>	1 *
+	2 **
+	3 ***
+	4 ****
+</PRE>	<A HREF="8-5.forth.html">[answer]</A>
+	<LI> Create an application that displays a tic-tac-toe board, so that two human players can make their
+	     moves by entering them from the keyboard. For example, the phrase
+<PRE>	4 X!
+</PRE>
+	     puts an "X" in box 4 (counting starts with 1) and produces this display:
+<PRE>	  |   |
+	---------
+	X |   | 
+	---------
+	  |   |
+</PRE>	    Then the phrase
+<PRE>	3 O!
+</PRE>
+	    puts an "O" in box 3 and prints the display:
+<PRE>	  |   | O
+	---------
+	X |   | 
+	---------
+	  |   |
+</PRE>	    Use a byte array to remember the contents of the board, with the value 1 to signify "X," a -1
+	    to signify a "O," and a 0 to signify an empty box.
+	<A HREF="8-6.forth.html">[answer]</A>
+</OL>
+
+<A HREF="http://validator.w3.org"><IMG SRC="http://validator.w3.org/images/vh32.gif" HEIGHT=31 WIDTH=88 ALIGN=RIGHT BORDER=0 ALT="Valid HTML 3.5"></A>
+</BODY>
+
+</HTML>

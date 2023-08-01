@@ -1,0 +1,66 @@
+<HTML><HEAD><TITLE> ec 209b catch2 </TITLE>
+<link rel="stylesheet" type="text/css" href="an.css">
+</HEAD>
+<BODY><center>
+
+<table><tr><td><center>209b
+<br><tt>
+<a href="ec209a.html"> &#171;&#171; </a> &nbsp;
+<a href="ec200.html"> &#171;&#187; </a> &nbsp;
+<a href="ec209c.html"> &#187;&#187; </a>
+</tt>
+</center></table>
+
+<br> &nbsp;
+
+<table width="80%"><tr><td>
+
+     ----- Example session -----
+<br>
+<br> <b>Bold</b> text is input, plain text is the program's reaction.
+<br> <tt>[rtn] </tt>is the return key.
+<br> NOTE: THE ACTIONS FORTH NORMALLY TAKES AFTER AN ERROR WILL BE SUPPRESSED.
+ 
+<PRE>
+<b>EX [rtn]</b>
+0: [ <b>DROP [rtn]</b> -4 THROW executes
+0: [ <b>12 [rtn]</b>
+1: 12 [ <b>1999 [rtn]</b>
+2: 12 1999 [ <b>: ZWAP [rtn]</b>
+2: 12 1999 ] <b>QWERTY [rtn]</b> -61 THROW executes
+</PRE>
+
+ <tt>EVALUATE </tt>can't grok<tt> QWERTY </tt>-- this is neither a word nor a number. 
+ However, compile-state is kept intact, as is the stack.
+
+<pre> 
+2: 12 1999 ] <b>2>R [rtn]</b>
+2: 12 1999 ] <b>R> R> [rtn]</b>
+2: 12 1999 ] <b>; [rtn]</b>
+</PRE>
+
+ Notwithstanding the error, <tt>ZWAP </tt>seems to have been compiled.
+
+<pre>
+2: 12 1999 [ <b>ZWAP [rtn]</b>
+2: 1999 12 [ <b>' ASDF [rtn]</b> -13 THROW executes
+</pre>
+ 
+ TICK can't find<tt> ASDF</tt>.
+
+<pre>
+2: 1999 12 [ <b>-56 THROW [rtn]</b>
+<b>[rtn]</b>  ok
+<b>.S [rtn]</b> ( 1999 12 )  ok
+</pre>
+ 
+ <tt>EX </tt>enters an infinite loop which you only can break out of by using<tt> QUIT </tt>or<tt> BYE</tt>. Of course<tt> BYE </tt>is inappropriate. <tt>-56 throw </tt>is a special<tt> THROW </tt> that executes<tt> QUIT</tt>.
+<br> Also try<tt> ABORT </tt>and<tt> TRUE ABORT" Hello!"</tt>
+<br> <tt>ABORT </tt>should execute<tt> -1 THROW</tt>. Some Forths allow<tt> ABORT" </tt>in interpretation
+     state and execute<tt> -2 THROW</tt>.
+
+<div align=right><tt><a href="ec209c.html">&#187;&#187;</a></tt></div>
+
+</table>
+
+</center></BODY></HTML>

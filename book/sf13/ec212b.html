@@ -1,0 +1,56 @@
+<HTML><HEAD><TITLE>ec 212b KISS </TITLE>
+<link rel="stylesheet" type="text/css" href="an.css">
+</HEAD>
+<BODY><center>
+
+<table><tr><td><center>212b
+<br><tt>
+<a href="ec212a.html"> &#171;&#171; </a> &nbsp;
+<a href="ec200.html"> &#171;&#187; </a> &nbsp;
+<a href="ec212c.html"> &#187;&#187; </a>
+</tt>
+</center></table>
+
+<br> &nbsp;
+
+<table width="80%"><tr><td>
+
+Because we have redefined the left parenthesis, from this point on, inline comments must be done
+with a double left parenthesis. 
+<pre>
+: (( ( -- )  POSTPONE ( ; IMMEDIATE
+: ( (( -- )  ['] DUMMY >BODY >P ; IMMEDIATE
+PREVIOUS FORTH
+\ ----- End of code -----
+</pre>
+<H2>Defining KISS-commands</H2>
+<pre><b>
+  KISS +      KISS -       KISS *       KISS /
+</b></pre>
+Indeed, that's all there is to it to make KISS-commands out of existing Forth words! 
+From this point on, <tt class=nb>+ - *</tt> and <tt>/</tt> act (almost) like they do in, e.g., BASIC.
+<br>Or to put a finer point on it:
+<ul>
+<li> A KISS-command uses the immediately following word as its argument: infix-notation, ex. 1.
+<li> When a left parenthesis is found, all words up to the right parenthesis are arguments: prefix-notation, ex. 2.
+</ul>
+
+Take care:
+<ul>
+<li>Parentheses are Forth words and must be separated by at least one space from the preceding or following text.
+<li>Precendence rules are not implemented (check out ex. 3, 4 and 5).
+</ul>
+<pre>
+1)  BASE @ + 1 .         \ 11
+2)  1 + ( BASE @ ) .     \ 11
+3)  3 + 4 * 5 .          \ 35
+4)  ( 3 + 4 ) * 5 .      \ 35
+5)  3 + ( 4 * 5 ) .      \ 23 
+</pre>
+KISS-commands work inside definitions.
+<pre>
+  : DOZEN (( x -- x*12 ) * 12 ;
+<div align=right><a href="ec212c.html">&#187;&#187;</a></div>
+</pre>
+</table></center></body></html>
+

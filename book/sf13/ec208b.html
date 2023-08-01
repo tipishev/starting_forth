@@ -1,0 +1,90 @@
+<HTML><HEAD><TITLE> ec 208b catch1 </TITLE>
+<link rel="stylesheet" type="text/css" href="an.css">
+</HEAD>
+<BODY><center>
+
+<table><tr><td><center>208b
+<br><tt>
+<a href="ec208a.html"> &#171;&#171; </a> &nbsp;
+<a href="ec200.html"> &#171;&#187; </a> &nbsp;
+<a href="ec208c.html"> &#187;&#187; </a>
+</tt>
+</center></table>
+
+<br> &nbsp;
+
+<table width="80%"><tr><td valign="top"> Leo:
+<td><tt> EX </tt>empties the stack, a<tt> 1 </tt>is entered and is<tt> DUP</tt>licated.
+<pre>
+[rtn] ( 1 1 0 ) ok
+</pre>
+ Oh yes, and an extra zero. Why?
+
+
+<tr><td valign="top"> Theo:
+<td> I'll show you.
+<pre>
+EX 2 ' ; CATCH .S [rtn] ( 2 -14 ) ok
+</pre>
+ If the extra number added by<tt> CATCH </tt>is zero, the operation was successful. 
+ If the value is not zero, it's an error number.
+
+
+<tr><td valign="top"> Leo:
+<td> What did go wrong with this specific example?
+
+
+<tr><td valign="top"> Theo:
+<td> Try the example using<tt> EXECUTE </tt>instead.
+<pre>
+EX 2 ' ; EXECUTE .S [rtn]
+ Compile-only word (message # -14)
+</pre>
+
+<tr><td valign="top"> Leo:
+<td> Hm.
+<br> (2 minutes of dead silence)
+<br> The<tt> .S </tt>following<tt> EXECUTE </tt>has not executed, but the one after<tt> CATCH </tt>worked.
+
+
+<tr><td valign="top"> Theo:
+<td> Indeed. <tt>EXECUTE </tt>cops out. <tt>CATCH </tt>catches any errors and restores the stacks, i.e., makes sure they have the same depth before and after failed operations. <tt>CATCH </tt>also replaces the execution token of the failed word with the error number. Of course, after a successful operation the "allright zero" lands on top of the operation's results. You can verify that with<tt> EX 1</tt>.
+<br> Next one:
+<pre>
+EX 3 s" DUP" ' EVALUATE CATCH .S
+</pre>
+
+
+<tr><td valign="top"> Leo:
+<td> This does the same as example 1.
+<pre>
+[rtn] ( 3 3 0 ) ok
+</pre>
+
+
+<tr><td valign="top"> Theo:
+<td> Right again. But what about this one:
+<pre>
+EX 4 S" fig" ' EVALUATE CATCH .S
+</pre>
+
+
+<tr><td valign="top"> Leo:
+<td> That "<tt>fig</tt>" can not be evaluated, so in addition to the 4 there will be some error number on the stack.
+<pre>
+[rtn] ( 4 0 0 -61 ) ok
+</pre>
+ Where did those two zeros come from?
+
+<tr><td valign="top"> Theo:
+<td> You should realize that after an error the stack depth before and after<tt> CATCH </tt>must be the same.
+
+
+<tr><td valign="top"> Leo:
+<td> Oh, of course, the<tt> FIG</tt>-string was on stack. But why has it turned into<tt> 0 0 </tt>?
+
+<div align=right><tt><a href="ec208c.html">&#187;&#187;</a></tt></div>
+
+</table>
+
+</center></BODY></HTML>

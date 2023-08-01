@@ -1,0 +1,36 @@
+\ dpiles.forth --------------------------------
+\ "No Weighting" from Starting Forth Chapter 12
+
+0 VALUE density
+0 VALUE tan(theta)
+0 VALUE id
+
+: "	[CHAR] " WORD DUP C@ 1+ ALLOT ; ( -- c-addr )
+: U.3	<# # # # [CHAR] . HOLD #S #> TYPE SPACE ;
+
+: MATERIAL ( 'string density theta -- )
+	CREATE  , , , 
+	DOES>   DUP       @ TO tan(theta)
+		CELL+ DUP @ TO density
+		CELL+     @ TO id ;
+
+: .SUBSTANCE	id COUNT TYPE ;
+
+: CUBE	2DUP OVER 10 M*/  DROP  10 M*/ ; ( d1 -- d2 )
+: /TAN	1000 tan(theta) M*/ ; ( d1 -- d2 )  
+
+: FEET  ( d -- )
+	CUBE  355 339 M*/  density 1 M*/ 
+	/TAN /TAN 5 M+  1 10 M*/
+	2DUP ." = " D. ." pounds of "  .SUBSTANCE 
+	1 2 M*/ ."  or " U.3 ." tons " ;
+
+\ table of materials
+	( string-address  density tan[theta] )
+	" cement"           131       700  MATERIAL cement
+	" loose gravel"      93       649  MATERIAL loose-gravel
+	" packed gravel"    100       700  MATERIAL packed-gravel
+	" dry sand"          90       754  MATERIAL dry-sand
+	" wet sand"         118       900  MATERIAL wet-sand
+	" clay"             120       727  MATERIAL clay
+

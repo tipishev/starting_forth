@@ -1,0 +1,14 @@
+\ -----------------------------------------------------------------------
+\ 2-6.FORTH -------------------------------------------------------------
+\ -----------------------------------------------------------------------
+\ Code from Starting Forth, Chapter 2
+\ ANSized by Benjamin Hoyt in 1997
+
+( problem 2-6 )
+: CONVICTED-OF  ( -- no-sentence )  0 ;
+: ARSON         ( sentence -- sentence+10 )  10 + ;
+: HOMICIDE      ( sentence -- sentence+20 )  20 + ;
+: BOOKMAKING    ( sentence -- sentence+2 )  2 + ;
+: TAX-EVASION   ( sentence -- sentence+5 )  5 + ;
+: WILL-SERVE    ( sentence -- )  . ." years " ;
+

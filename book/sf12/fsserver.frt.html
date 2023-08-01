@@ -1,0 +1,143 @@
+(*
+ * LANGUAGE    : ANS Forth
+ * PROJECT     : Forth Environments
+ * DESCRIPTION : Example intranetworking
+ * CATEGORY    : Sockets
+ * AUTHOR      : Marcel Hendrix
+ * LAST CHANGE : Saturday, March 29, 2003 12:53 PM, mhx
+ *)
+
+
+	NEEDS -sockets
+
+	REVISION -pserver "ÄÄÄ Forth Pile Server Version   1.02 ÄÄÄ"
+
+     	PRIVATES
+
+DOC
+(* 
+   Text server, echo some text.
+   example usage:  4444 ( port#) server
+
+   When GET is used:
+	GET /?height%3A=4.41&material%3A=clay HTTP/1.0
+	Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*
+	Referer: file:C:\dfwforth\examples\modem\html\sf12\sf12.html
+	Accept-Language: en
+	UA-pixels: 1152x864
+	UA-color: color16
+	UA-OS: Windows NT
+	UA-CPU: x86
+	User-Agent: Mozilla/2.0 (compatible; MSIE 3.0; Windows NT)
+	Host: localhost:4444
+	Connection: Keep-Alive
+
+   When POST is used:
+	POST / HTTP/1.0
+	Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*
+	Referer: file:C:\dfwforth\examples\modem\html\sf12\sf12.html
+	Accept-Language: en
+	Content-Type: application/x-www-form-urlencoded
+	UA-pixels: 1152x864
+	UA-color: color16
+	UA-OS: Windows NT
+	UA-CPU: x86
+	User-Agent: Mozilla/2.0 (compatible; MSIE 3.0; Windows NT)
+	Host: localhost:4444
+	Connection: Keep-Alive
+	Content-Length: 35
+	Pragma: No-Cache
+
+	height%3A=11.8&material%3A=wet-sand
+*)
+ENDDOC
+
+FALSE VALUE debug?
+
+DEFER HTTP-ACTION ( ? -- c-addr u )
+
+: +HEADER ( c-addr1 u1 -- c-addr2 u2 )
+	S" HTTP/1.1 200 OK" 				+CR
+	S" Server: iForth 2.0 (console)"		+CR $+
+	S" Accept-Ranges: bytes"			+CR $+
+	S" Content-Length: " $+   2 PICK (0DEC.R)  	+CR $+
+	S" Connection: close" 				+CR $+
+	S" Content-Type: text/html" 			+CR $+
+	+CR 
+	2SWAP +CR $+ ; PRIVATE
+
+: WRAP ( c-addr1 u1 -- c-addr2 u2 )
+	S" <HTML >" 					+CR 
+	S"  <HEAD> <TITLE>Pile Weights</TITLE> </HEAD>"	+CR $+
+	S~  <BODY BGCOLOR="#F8F8F8" TEXT="#000000">~	+CR $+
+	S"   <H1>Results of Pile Height Query</H1>"	+CR $+
+	     2SWAP 					+CR $+
+	S~   <P><HR NOSHADE SIZE="6"><ADDRESS><CENTER>~	+CR $+
+	S~     Leo Brodie - <A HREF="mailto:mhx@iae.nl">leo@brodie.com</A>~ +CR $+
+	S"   </CENTER></ADDRESS>"         		+CR $+
+	S"  </BODY>"					+CR $+
+	S" </HTML>"					+CR $+ 
+	+HEADER ; PRIVATE
+
+\ ----------------------
+  INCLUDE fpiles.forth
+  ' $FEET IS HTTP-ACTION
+\ ----------------------
+
+: HEX-DIGIT>	'0' - DUP 9 > 7 AND - ; PRIVATE  ( u1 -- u2 )
+
+\ A '+' stands for a BL, so exchange it. Any '=' or '&' characters are blanked also.
+\ Non-printable characters in the form %AB with A, B hex are translated back to ASCII.
+\ The final form should be directly interpretable by Forth.
+: FILTER ( c-addr1 u1 -- c-addr2 u2 )
+	OVER 0 LOCALS| offs ptr |
+	2DUP BOUNDS ?DO	I C@  1 TO offs
+			DUP  '=' = 
+			OVER '+' = OR
+			OVER '&' = OR IF  DROP BL  ENDIF
+			DUP  '%' =    IF  DROP
+					  I 1+ C@ HEX-DIGIT> 4 LSHIFT 
+					  I 2+ C@ HEX-DIGIT> OR 
+				 	  3 TO offs
+				   ENDIF
+			ptr C!  1 +TO ptr
+	     offs +LOOP 
+	DROP ptr OVER - ; PRIVATE
+
+\ String is "header<CR><CR>"+"height%3A=10.1&material%3A=wet-sand"
+\ GET can happen when the user presses [refresh] on the result screen.
+: PROCESS ( c-addr1 u1 -- c-addr2 u2 )
+	debug? IF  2DUP CR TYPE  ENDIF
+	OVER 6 S" GET /?" COMPARE 
+	   IF OVER C@ 'P' <> IF  2DROP S" error!" WRAP EXIT  ENDIF
+	      ( POST used ) S" " +CR +CR Split-At-Word 2SWAP 
+	 ELSE (  GET used ) 6 /STRING S" HTTP" Split-At-Word 
+	ENDIF 2DROP 
+	FILTER EVALUATE HTTP-ACTION WRAP ; PRIVATE
+
+5 =: /queue	PRIVATE
+
+: http-server ( socket# -- )
+	0 0 LOCALS| loc sock |
+	( socket# ) CREATE-SERVER TO sock
+	CR ." Press a key to stop this server after its next transaction ... "
+	BEGIN
+	  EKEY? 0=
+	WHILE
+	  sock /queue LISTEN		( wait for the client to connect )
+ 	  sock ACCEPT-SOCKET TO loc	( not going to listen for more connections )
+	  loc pad #1024 READ-SOCKET  
+	  PROCESS  loc WRITE-SOCKET  
+	           loc CLOSE-SOCKET	( close data socket and go for next client )
+	REPEAT 
+	EKEY DROP
+	sock CLOSE-SOCKET ;
+
+: pile-server ( -- ) #4444 HTTP-SERVER ;
+
+:ABOUT	CR ." Try: pile-server -- start the pile server on port 4444" ;
+
+	.ABOUT -pserver CR
+	DEPRIVE
+
+					(* End of Source *)

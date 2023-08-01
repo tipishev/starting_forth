@@ -1,0 +1,1018 @@
+<!DOCTYPE HTML PUBLIC "-//Microsoft//DTD Internet Explorer 3.0 HTML//EN">
+<HTML>
+
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Leo Brodie's Starting Forth - Chapter 7</TITLE>
+  <META name="description" content="Starting Forth, Leo Brodie, Chapter 7, A Number of Kinds of Numbers.">
+  <META name="keywords" content="Forth, example code, Starting Forth, chapter 7">
+</HEAD>
+
+<BODY BGCOLOR="#F8F8F8" TEXT="#000000" LINK="#0000FF" VLINK="#007070" ALINK="#FF0000" TOPMARGIN=0>
+
+<H1>7 A Number of Kinds of Numbers</H1><IMG SRC="digits.gif" ALIGN=RIGHT ALT="count down">
+
+	<P> So far we've only talked about signed single-length numbers. In this chapter we'll introduce
+	    unsigned numbers and double-length numbers, as well as a whole passel of new operators to go
+	    along with them.
+
+	<P> This chapter is divided in two sections:
+	<P> <BLOCKQUOTE>
+		For beginners--this section explains how a computer looks at numbers and exactly what is meant
+		by the terms signed or unsigned and by single-length or double-length.
+	    </BLOCKQUOTE>
+	<P> <BLOCKQUOTE>
+		For everyone--this section continues our discussion of Forth for beginners and experts alike,
+		and explains how Forth handles signed and unsigned, single- and double-length numbers.
+	    </BLOCKQUOTE>
+	
+<H2>Section 1 -- For Beginners</H2>
+<H3>Signed versus Unsigned Numbers</H3>
+
+	<P> All digital computers store numbers in binary form. In Forth, the stack is (normally) 
+	    thirty-two bits wide (a "bit" is a "<U>bi</U>nary digi<U>t</U>"). Below is a view of thirty-two 
+	    bits, showing the value of each bit:
+<CENTER><IMG SRC="32bits.jpg" ALIGN=MIDDLE ALT="bit values"></CENTER>
+
+	<P> If every bit were to contain a 1, the total would be 4294967295. Thus in 32 bits we can express
+	    any value between 0 and 4294967295. Because this kind of number does not let us express negative
+	    values, we call it an "unsigned number." We have been indicating unsigned numbers with the letter
+	    "u" in our tables and stack notations.
+
+	<P> But what about negative numbers? In order to be able to express a positive or negative number, we
+	    need to sacrifice one bit that will essentially indicate sign. This bit is the one at the far left,
+	    the "high-order bit." In 31 bits we can express a number as high as 2147483647. When the sign bit
+	    contains 1, then we can go an equal distance back into the negative numbers. Thus within 32 bits
+	    we can represent any number from -2147483648 to +2147483647. This should look familiar to you as 
+	    the range of a single-length number, which we have been indicating with the letter "n."
+
+	<P> Before we leave you with any misconceptions, we'd better clarify the way negative numbers are 
+	    represented. You might think that it's a simple matter of setting the sign bit to indicate whether
+	    a number is positive or negative, but it doesn't work that way.
+
+	<P> To explain how negative numbers are represented, let's return to decimal notation and examine a
+	    counter such as that found on many WWW internet pages.
+<IMG SRC="20400.gif" ALIGN=MIDDLE ALT="tapecount">
+
+	<P> Let's say the counter has three digits, not five. As more people visit the page, the counter-wheels turn and
+	    the number increases. Starting once again with the counter at 0, now imagine you badly regret 
+	    having visited the page and could "un-visit" it by rolling the counter wheels backward. The first 
+	    number you see is 999, which is, in a sense, the same as -1. The next number will be 998, which is 
+	    the same as -2, and so on.
+
+	<P> The representation of signed numbers in a computer is similar. 
+
+	<P> Starting with the number
+<PRE>	0000,0000,0000,0000,0000,0000,0000,0000	
+</PRE>
+	    and going backwards one number, we get
+<PRE>	1111,1111,1111,1111,1111,1111,1111,1111   (thirty-two ones)	
+</PRE>
+	    which stands for 4294967295 in unsigned notation as well as for -1 in signed notation. The number
+<PRE>	1111,1111,1111,1111,1111,1111,1111,1110
+</PRE>
+            which stands for 4294967294 in unsigned notation, represents -2 in signed notation. 
+
+	<P> Here's a chart that shows how a binary number on the stack can be used either as an unsigned
+	    number or as a signed number:
+
+<CENTER><IMG SRC="posneg.jpg" ALIGN=MIDDLE ALT="number circle"></CENTER>
+	    This bizarre-seeming method for representing negative values makes it possible for the computer
+	    to use the same procedures for subtraction as for addition.
+
+	<P> To show how this works, let's take a very simple problem:
+<PRE>	 2
+	<U>-1</U>
+</PRE>
+	    Subtracting one from two is the same as adding two plus negative one. In single-length binary
+	    notation, the two looks like this:
+<PRE>	0000,0000,0000,0000,0000,0000,0000,0010	
+</PRE>
+	    while negative-one looks like this:
+<PRE>	1111,1111,1111,1111,1111,1111,1111,1111
+</PRE>
+	<P> The computer adds them up the same way we would on paper; that is when the total of any column
+	    exceeds one, it carries a one into the next column. The result looks like this:
+<PRE>	 0000,0000,0000,0000,0000,0000,0000,0010	
+	+<U>1111,1111,1111,1111,1111,1111,1111,1111</U>
+	10000,0000,0000,0000,0000,0000,0000,0001
+</PRE>
+	<P> As you can see, the computer had to carry a one into every column all the way across, and ended 
+	    up with a one in the thirty-third place. But since the stack is only thirty-two bits wide, the
+	    result is simply
+<PRE>	0000,0000,0000,0000,0000,0000,0000,0001	
+</PRE>
+	    which is the correct answer, one.
+
+	<P> We needn't explain how the computer converts a positive number to negative, but we will tell
+	    you that the process is called "two's complementing."
+
+<H3>Arithmetic Shift</H3>
+
+	<P> While we're on the subject of how a computer performs certain mathematical operations, we'll
+	    explain what is meant by the mysterious phrases back in Chap. 5: "arithmetic left shift" and 
+	    "arithmetic right shift."
+
+	<P><BLOCKQUOTE>
+		<TABLE BORDER="0" >
+		 <CAPTION><EM>A Forth Instant Replay</EM></CAPTION>
+		 <TR><TH><HR NOSHADE SIZE="4"> <TH><HR NOSHADE SIZE="4"> <TH><HR NOSHADE SIZE="4">
+		 <TR> <TD> <TT>2*</TT>     <TD> ( n -- n*2 )     <TD> Multiplies by two (arithmetic left shift)
+		 <TR> <TD> <TT>2/</TT>     <TD> ( n -- n/2 )     <TD> Divides by two (arithmetic right shift)
+		 <TR> <TD> <TT>LSHIFT</TT> <TD> ( n u -- n*2^u ) <TD> Logical left shift over u positions
+		 <TR> <TD> <TT>RSHIFT</TT> <TD> ( n -- n/2^-u )  <TD> Logical right shift over u positions </TD>
+		 <TR><TH><HR NOSHADE SIZE="4"> <TH><HR NOSHADE SIZE="4"> <TH><HR NOSHADE SIZE="4">
+		</TABLE>
+	</BLOCKQUOTE>
+
+	<P> To illustrate, let's pick a number, say six, and write it in binary form:
+<PRE>	0000,0000,0000,0000,0000,0000,0000,0110	
+</PRE>
+	    (4+2). Now let's shift every digit one place to the left, and put a zero in the vacant
+	    place in the one's column.
+<PRE>	0000,0000,0000,0000,0000,0000,0000,1100	
+</PRE>
+	<P> This is the binary representation of twelve (8+4), which is exactly double the original number.
+	    This works in all cases, and it also works in reverse. If you shift every digit one place to the
+	    <U>right</U> and fill the vacant digit with a zero, the result will always be <U>half</U> of the
+	    original value. 
+
+	<P> In arithmetic shift, the sign bit does not get shifted. This means that a positive number will
+	    stay positive and a negative number will stay negative when you divide or multiply it by two.
+
+	<P> When the high-order bit shifts with all the other bits, the term is "logical shift." In Forth
+	    you can do a logical shift of up to 32 places with the words <FONT COLOR="#0000FF">LSHIFT</FONT> 
+	    and <FONT COLOR="#0000FF">RSHIFT</FONT>.
+
+	<P> The important thing for you to know is that most computers can shift digits much more quicky 
+	    than they can go through all the folderol of normal division or multiplication. When speed is
+	    critical, it's much better to say
+<PRE>	2*
+</PRE>
+	    than
+<PRE>	2 *
+</PRE>
+	    and it may even be better to say
+<PRE>	2* 2* 2*
+</PRE>
+	    than
+<PRE>	8 *
+</PRE>
+	    depending on your particular model of computer, but this topic is getting too technical for 
+	    right now.
+
+<H3>An Introduction to Double-length Numbers</H3>
+
+	<P> A double-length number is just what you probably expected it would be: a number that is 
+	    represented in sixty-four bits instead of thirty-two. Signed double-length numbers have 
+	    a range of +/-18,446,744,073,709,551,615.
+
+	<P> In Forth, a double-length number takes the place of two single-length numbers on the stack.
+	    Operators like <FONT COLOR="#0000FF">2DUP</FONT> are useful either for double-length numbers or
+	    for pairs of single-length numbers.
+
+	<P> One more thing we should explain: to the non-Forth-speaking computer world, the term "double word"
+	    means a 32-bit value, or four bytes. But in Forth, "word" means a defined command. So in order
+	    to avoid confusion, Forth programmers refer to a 32-bit value as a "cell." A double-length number
+	    requires two cells.
+
+<H3>Other Number Bases</H3>
+
+	<P> As you get more involved in programming, you'll need to employ other number bases besides decimal
+	    and binary, particularly hexadecimal (base 16) and octal (base 8). Since we'll be talking about
+	    these two number bases later on in this chapter, we think you might like an introduction now.
+
+	<P> Computer people began using hexadecimal and octal numbers for one main reason: computers think
+	    in binary and human beings have a hard time reading long binary numbers. For people, it's much
+	    easier to convert binary to hexadecimal than binary to decimal, because sixteen is an even power 
+	    of two, while ten is not. The same is true with octal. So programmers usually use hex or octal
+	    to express the binary numbers that the computer uses for things like addresses and machine codes.
+	    Hexadecimal (or simply "hex") looks strange at first since it uses the letters A through F.
+
+<P><CENTER><TABLE BORDER="0">
+	    <TR> <TH> Decimal <TH> Binary <TH> Hexadecimal
+	    <TR> <TD ALIGN=CENTER> 0       <TD ALIGN=CENTER> 0000   <TD ALIGN=CENTER> 0 
+	    <TR> <TD ALIGN=CENTER> 1       <TD ALIGN=CENTER> 0001   <TD ALIGN=CENTER> 1 
+	    <TR> <TD ALIGN=CENTER> 2       <TD ALIGN=CENTER> 0010   <TD ALIGN=CENTER> 2 
+	    <TR> <TD ALIGN=CENTER> 3       <TD ALIGN=CENTER> 0011   <TD ALIGN=CENTER> 3 
+	    <TR> <TD ALIGN=CENTER> 4       <TD ALIGN=CENTER> 0100   <TD ALIGN=CENTER> 4 
+	    <TR> <TD ALIGN=CENTER> 5       <TD ALIGN=CENTER> 0101   <TD ALIGN=CENTER> 5 
+	    <TR> <TD ALIGN=CENTER> 6       <TD ALIGN=CENTER> 0110   <TD ALIGN=CENTER> 6 
+	    <TR> <TD ALIGN=CENTER> 7       <TD ALIGN=CENTER> 0111   <TD ALIGN=CENTER> 7 
+	    <TR> <TD ALIGN=CENTER> 8       <TD ALIGN=CENTER> 1000   <TD ALIGN=CENTER> 8 
+	    <TR> <TD ALIGN=CENTER> 9       <TD ALIGN=CENTER> 1001   <TD ALIGN=CENTER> 9 
+	    <TR> <TD ALIGN=CENTER> 10      <TD ALIGN=CENTER> 1010   <TD ALIGN=CENTER> A 
+	    <TR> <TD ALIGN=CENTER> 11      <TD ALIGN=CENTER> 1011   <TD ALIGN=CENTER> B 
+	    <TR> <TD ALIGN=CENTER> 12      <TD ALIGN=CENTER> 1100   <TD ALIGN=CENTER> C 
+	    <TR> <TD ALIGN=CENTER> 13      <TD ALIGN=CENTER> 1101   <TD ALIGN=CENTER> D 
+	    <TR> <TD ALIGN=CENTER> 14      <TD ALIGN=CENTER> 1110   <TD ALIGN=CENTER> E 
+	    <TR> <TD ALIGN=CENTER> 15      <TD ALIGN=CENTER> 1111   <TD ALIGN=CENTER> F 
+</TABLE></CENTER>
+
+	<P> Let's take a single-length binary number:
+<PRE>	<U>00000000000000000111101110100001</U>   	
+</PRE>
+	<P> To convert this number to hexadecimal, we first subdivide it into eight units of four bits each:
+<PRE>	| 0000 | 0000 | 0000 | 0000 | 0111 | 1011 | 1010 | 0001 |
+</PRE>
+	    then convert each 4-bit unit to its hex equivalent:
+<PRE>	|0|0|0|0|7|B|A|1|
+</PRE>
+	    or simply 7BA1.
+
+	<P> Octal numbers use only the numerals 0 through 7. Because nowadays most computers use hexadecimal
+	    representation, we'll skip an octal conversion example.
+
+	<P> We'll have more on conversions in the section titled "Number Conversions" later in this chapter.
+
+<H3>The ASCII Character Set</H3>
+
+	<P> If the computer uses binary notation to store numbers, how does it store characters and other
+	    symbols? Binary, again, but in a special code that was adopted as an industry standard many years
+	    ago. The code is called the American Standard Code for Information Interchange, usually
+	    abbreviated ASCII.
+
+	<P> Table 7-1 shows each ASCII character in the system, its ISO 646-1983, ISO 7-bit coded characterset 
+	    for information interchange, International Reference Version equivalent (IRV), and its hexadecimal 
+	    form.
+
+	<P> The characters in the first column (ASCII codes 0-1F hex) are called "control characters" because 
+	    they indicate that the terminal or computer is supposed to do something like ring its bell, 
+	    backspace, start a new line, etc. The remaining characters are called "printing characters" because
+	    they produce visible characters including letters, the numerals zero through nine, all available
+	    symbols and even the blank space (hex 20). The only exception is <CODE>DEL</CODE> (hex 7F) which is a signal
+	    to the computer to ignore the last character sent.
+
+	<P> In Chap. 1 we introduced the word <FONT COLOR="#0000FF">EMIT</FONT>. <FONT COLOR="#0000FF">EMIT</FONT>
+	    takes an ASCII code on the stack and sends it to the terminal so that the terminal will print
+	    it as a character. For example,
+<PRE>	65 EMIT<U> A ok</U>
+	66 EMIT<U> B ok</U>
+</PRE>
+	    etc. (We're using the decimal, rather than the hex, equivalent because that's what your computer
+	    is most likely expecting right now.)
+
+	<P> Why not test <FONT COLOR="#0000FF">EMIT</FONT> on every printing character, "automatically"?
+<PRE>	: PRINTABLES  127 32 DO  I EMIT SPACE  LOOP ;
+</PRE>
+	<P> <TT>PRINTABLES</TT>	will emit every printable character in the ASCII set; that is, the characters
+	    from decimal 32 to decimal 126. (We're using the ASCII codes as our <FONT COLOR="#0000FF">DO</FONT> 
+	    loop index.)
+<PRE>	PRINTABLES<U>   ! " # $ % & ' ( ) * + , - . / </U>...<U> ok</U>
+</PRE>
+
+
+<P><BR><BR> 
+<FONT FACE="Courier New"> 
+<CENTER><TABLE BORDER="1">
+<CAPTION><I>Table 7.1 - Standard graphic characters & Equivalents</I></CAPTION>
+<TR ALIGN=CENTER><TH>  Hex ASCII<TH>  Hex ASCII  <TH>  Hex IRV ASCII  <TH>Hex IRV ASCII<TH> Hex IRV  ASCII <TH>Hex IRV ASCII <TH> Hex IRV ASCII<TH>Hex IRV ASCII
+<TR ALIGN=CENTER><TD>  00   NUL <TD>  10   DLE   <TD>  20 &nbsp;&nbsp;&nbsp;&nbsp;<TD>30   0   0   <TD>  40   @   @    <TD> 50   P   P   <TD>  60   `   `  <TD>   70   p   p
+<TR ALIGN=CENTER><TD>  01   SOH <TD>  11   DC1   <TD>  21   !   !     <TD>31   1   1   <TD>  41   A   A    <TD> 51   Q   Q   <TD>  61   a   a  <TD>   71   q   q
+<TR ALIGN=CENTER><TD>  02   STX <TD>  12   DC2   <TD>  22   "   "     <TD>32   2   2   <TD>  42   B   B    <TD> 52   R   R   <TD>  62   b   b  <TD>   72   r   r
+<TR ALIGN=CENTER><TD>  03   ETX <TD>  13   DC3   <TD>  23   #   #     <TD>33   3   3   <TD>  43   C   C    <TD> 53   S   S   <TD>  63   c   c  <TD>   73   s   s
+<TR ALIGN=CENTER><TD>  04   EOT <TD>  14   DC4   <TD>  24   -   $     <TD>34   4   4   <TD>  44   D   D    <TD> 54   T   T   <TD>  64   d   d  <TD>   74   t   t
+<TR ALIGN=CENTER><TD>  05   ENQ <TD>  15   NAK   <TD>  25   %   %     <TD>35   5   5   <TD>  45   E   E    <TD> 55   U   U   <TD>  65   e   e  <TD>   75   u   u
+<TR ALIGN=CENTER><TD>  06   ACK <TD>  16   SYN   <TD>  26   &   &     <TD>36   6   6   <TD>  46   F   F    <TD> 56   V   V   <TD>  66   f   f  <TD>   76   v   v
+<TR ALIGN=CENTER><TD>  07   BEL <TD>  17   ETB   <TD>  27   '   '     <TD>37   7   7   <TD>  47   G   G    <TD> 57   W   W   <TD>  67   g   g  <TD>   77   w   w
+<TR ALIGN=CENTER><TD>  08   BS  <TD>  18   CAN   <TD>  28   (   (     <TD>38   8   8   <TD>  48   H   H    <TD> 58   X   X   <TD>  68   h   h  <TD>   78   x   x
+<TR ALIGN=CENTER><TD>  09   HT  <TD>  19   EM    <TD>  29   )   )     <TD>39   9   9   <TD>  49   I   I    <TD> 59   Y   Y   <TD>  69   i   i  <TD>   79   y   y
+<TR ALIGN=CENTER><TD>  0A   LF  <TD>  1A   SUB   <TD>  2A   *   *     <TD>3A   :   :   <TD>  4A   J   J    <TD> 5A   Z   Z   <TD>  6A   j   j  <TD>   7A   z   z
+<TR ALIGN=CENTER><TD>  0B   VT  <TD>  1B   ESC   <TD>  2B   +   +     <TD>3B   ;   ;   <TD>  4B   K   K    <TD> 5B   [   [   <TD>  6B   k   k  <TD>   7B   {   {
+<TR ALIGN=CENTER><TD>  0C   FF  <TD>  1C   FS    <TD>  2C   ,   ,     <TD>3C   <   <   <TD>  4C   L   L    <TD> 5C   \   \   <TD>  6C   l   l  <TD>   7C   |   |
+<TR ALIGN=CENTER><TD>  0D   CR  <TD>  1D   GS    <TD>  2D   -   -     <TD>3D   =   =   <TD>  4D   M   M    <TD> 5D   ]   ]   <TD>  6D   m   m  <TD>   7D   }   }
+<TR ALIGN=CENTER><TD>  0E   SM  <TD>  1E   RS    <TD>  2E   .   .     <TD>3E   >   >   <TD>  4E   N   N    <TD> 5E   ^   ^   <TD>  6E   n   n  <TD>   7E   ~   ~
+<TR ALIGN=CENTER><TD>  0F   SI  <TD>  1F   US    <TD>  2F   /   /     <TD>3F   ?   ?   <TD>  4F   O   O    <TD> 5F&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<TD> 6F   o   o  <TD>   &nbsp;&nbsp;&nbsp; </TD>
+</TABLE></CENTER>
+</FONT>
+
+	<P> Beginners may be interested in some of the control characters as well. For instance, try this:
+
+<PRE>	7 <IMG SRC="beep.jpg" ALT="BEEP"> EMIT<U> ok</U>
+</PRE>
+	<P> You should have heard some sort of beep, which is the video terminal's version of the mechanical
+	    printer's "typewriter bell."
+
+	<P> Other control characters that are good to know include the following:
+<P><CENTER><TABLE BORDER="0">
+	    <TR> <TH> name    <TH ALIGN=CENTER> operation       <TH ALIGN=CENTER> decimal equivalent
+	    <TR> <TD> BS      <TD ALIGN=CENTER> backspace       <TD ALIGN=CENTER> 8 
+	    <TR> <TD> LF      <TD ALIGN=CENTER> line feed       <TD ALIGN=CENTER> 10 
+	    <TR> <TD> CR      <TD ALIGN=CENTER> carriage return <TD ALIGN=CENTER> 13 
+</TABLE></CENTER>
+
+	<P> Experiment with these control characters, and see what they do.
+
+	<P> ASCII is designed so that each character can be represented by one byte. The tables in this 
+	    book use the letter "c" to indicate a byte value that is being used as a coded ASCII 
+	    <U>c</U>haracter.
+
+<H3>Bit Logic</H3>
+
+	<P> The words <FONT COLOR="#0000FF">AND</FONT> and <FONT COLOR="#0000FF">OR</FONT> (which we introduced
+	    in Chap. 4) use "bit logic"; that is, each bit is treated independently, and there are no "carries"
+	    from one bit-place to the next. For example, let's see what happens when we 
+	    <FONT COLOR="#0000FF">AND</FONT> these two binary numbers:
+<PRE>	0000,0000,0000,0000,0000,0000,1111,1111	
+	<U>0000,0000,0000,0000,0110,0101,1010,0010</U>  <FONT COLOR="#0000FF">AND</FONT>
+	0000,0000,0000,0000,0000,0000,1010,0010
+</PRE>
+	<P> For any result-bit to be "1," the respective bits in <U>both</U> arguments must be "1." 
+	    Notice in this example that the argument on top contains all zeroes in the high-order bytes
+	    and all ones in the low-order byte. The effect on the second argument in this example is that
+	    the low-order eight bits are kept but the high-order twenty-four bits are all set to zero. Here 
+	    the first argument is being used as a "mask," to mask out the high-order bytes of the second argument.
+
+	<P> The word <FONT COLOR="#0000FF">OR</FONT> also uses bit logic. For example,
+<PRE>	1000,0100,0010,0001,1000,1001,0000,1001	
+	<U>0110,0110,0110,0110,0000,0011,1100,1000</U>  <FONT COLOR="#0000FF">OR</FONT>
+	1110,0110,0110,0111,1000,1011,1100,1001
+</PRE>
+	<P> A "1" in either argument produces a "1" in the result. Again, each column is treated separately,
+	    with no carries.
+
+	<P> By clever use of masks, we could even use a 32-bit value to hold 32 separate flags. For example,
+	    we could find out whether this bit
+<PRE>	1000,0100,0010,0001,1000,1001,0000,1001	
+	                    ^
+</PRE>
+	   is "1" or "0" by masking out all other flags, like this:
+<PRE>	1000,0100,0010,0001,1000,1001,0000,1001	
+	<U>0000,0000,0000,0000,1000,0000,0000,0000</U>  <FONT COLOR="#0000FF">AND</FONT>
+	0000,0000,0000,0000,1000,0000,0000,0000
+</PRE>
+
+	<P> Since the bit was "1," the result is "true." Had it been "0," the result would have been "0" or
+	    "false."
+	
+	<P> We could set the flag to "0" without affecting the other flags by using this technique:
+<PRE>	1000,0100,0010,0001,1000,1001,0000,1001	
+	<U>1111,1111,1111,1111,0111,1111,1111,1111</U>  <FONT COLOR="#0000FF">AND</FONT>
+	1000,0100,0010,0001,0000,1001,0000,1001
+	                    ^
+</PRE>
+	<P> We used a mask that contains all "1"s except for the bit we wanted to set to "0." We can set
+	    the same flag back to "1" by using this technique:
+<PRE>	1000,0100,0010,0001,0000,1001,0000,1001	
+	<U>0000,0000,0000,0000,1000,0000,0000,0000</U>  <FONT COLOR="#0000FF">OR</FONT>
+	1000,0100,0010,0001,1000,1001,0000,1001
+	                    ^
+</PRE>
+
+
+<H2>Section 2 -- For Everybody</H2>
+
+<H3>Signed and Unsigned Numbers</H3>
+	<P> Back in Chap. 1 we introduced the word <FONT COLOR="#0000FF">NUMBER</FONT>. If the word
+	    <FONT COLOR="#0000FF">FIND</FONT> can't find an incoming string in the dictionary, 
+	    it hands it over to the word <FONT COLOR="#0000FF">NUMBER</FONT>. <FONT COLOR="#0000FF">NUMBER</FONT>
+	    then attempts to convert the string into a number expressed in binary form. If <FONT COLOR="#0000FF">NUMBER</FONT>
+	    succeeds, it pushes the binary equivalent onto the stack.
+
+<TABLE ALIGN=RIGHT WIDTH="50%" BORDER="0">
+<CAPTION><I>For Beginners</I></CAPTION>
+		<HR NOSHADE SIZE="6">
+		 This means that <FONT COLOR="#0000FF">NUMBER</FONT> does not check whether the number you've
+		 entered as a single-length number exceeds the proper range. If you enter a giant number,
+		 <FONT COLOR="#0000FF">NUMBER</FONT> converts it but only saves the least significant thirty-two 
+		 digits.
+		<HR NOSHADE SIZE="6">
+</TABLE>
+
+	<P> <FONT COLOR="#0000FF">NUMBER</FONT> does not do any range-checking. Because of this, 
+	    <FONT COLOR="#0000FF">NUMBER</FONT> can convert either signed or unsigned numbers.
+
+	<P> For instance, if you enter any number between 2147483648 and 4294967295, <FONT COLOR="#0000FF">NUMBER</FONT>
+	    will convert it as an unsigned number. Any value between -2147483648 and -1 will be stored as 
+	    a two's-complement integer.
+
+	<P> This is an important point: the stack can be used to hold either signed or unsigned numbers. Whether
+	    a binary value is interpreted as signed or unsigned depends on the operators that you apply to it.
+	    You decide which form is better for a given situation, then stick to your choice.
+
+	<P> We've introduced the word <FONT COLOR="#0000FF">.</FONT>, which prints a value on the stack as a
+	    signed number:
+<PRE>	4294967295 .<U> -1 ok</U>
+</PRE>	
+	<P> The word <FONT COLOR="#0000FF">U.</FONT> prints the binary representation as an unsigned number:
+<PRE>	4294967295 U.<U> 4294967295 ok</U>
+</PRE>	
+
+<TABLE WIDTH="100%" BORDER="2">
+	<TR><TD> <TT>U.</TT> <TD><IMG SRC="bullet.gif" ALT="u-dot">  <TD> ( u -- ) <TD> Prints the unsigned single-length number, followed by a space.
+</TABLE>
+
+	<P> In this book the letter "n" signifies <U>signed</U> single-length numbers, while the letter "u"
+	    signifies <U>unsigned</U> single-length numbers. (We've already introduced <FONT COLOR="#0000FF">U.R</FONT>,
+	    which prints an unsigned single-length number right-justified within a given column width.)
+
+	<P> Here is a table of additional words that use unsigned numbers:
+
+<TABLE WIDTH="100%" BORDER="2">
+	<TR><TD> <TT>UM*   </TT> <TD><IMG SRC="bullet.gif" ALT="u-m-star">       <TD> (&nbsp;u1&nbsp;u2&nbsp;--&nbsp;ud&nbsp;)         <TD> Multiplies two single-length numbers. Returns a double-length result. All values are unsigned.
+	<TR><TD> <TT>UM/MOD</TT> <TD><IMG SRC="bullet.gif" ALT="u-m-slash-mod">  <TD> (&nbsp;ud&nbsp;u1&nbsp;--&nbsp;u2&nbsp;u3&nbsp;) <TD> Divides a double-length by a single-length number. Returns a single-length quotient u2 and remainder u3. All values are unsigned.
+	<TR><TD> <TT>U&lt; </TT> <TD><IMG SRC="bullet.gif" ALT="u-less-than">    <TD> (&nbsp;u1&nbsp;u2&nbsp;--&nbsp;f&nbsp;)          <TD> Leaves true if u1 < u2, where both are treated as single-length unsigned integers.
+</TABLE>
+
+<H3>Number Bases</H3>
+
+	<P> When you first start Forth, all number conversions use base ten (decimal), for both input and 
+	    output. 
+
+<CENTER><IMG SRC="nbase.jpg" ALIGN=MIDDLE ALT="kick base"></CENTER>
+
+	<P> You can easily change the base by executing one of the following commands:
+
+<TABLE WIDTH="100%" BORDER="2">
+	<TR><TD> <TT>HEX</TT>     <TD> ( -- ) <TD> Sets the base to sixteen.
+	<TR><TD> <TT>OCTAL</TT>   <TD> ( -- ) <TD> Sets the base to eight (available on some systems).
+	<TR><TD> <TT>DECIMAL</TT> <TD> ( -- ) <TD> Returns the base to ten.
+</TABLE>
+	
+	<P> When you change the number base, its stays changed until you change it again. So be sure to 
+	    declare <FONT COLOR="#0000FF">DECIMAL</FONT> as soon as you're done with another number base.
+
+	<P> These commands make it easy to do number conversions in "calculator style."
+
+	<P> For example, to convert decimal 100 into hexadecimal, enter
+<PRE>	
+        DECIMAL 100 HEX .<U> 64 ok</U>
+</PRE>
+	<P> To convert hex F into decimal (remember you are already in hex), enter
+<PRE>	
+        0F DECIMAL .<U> 15 ok</U>
+</PRE>
+	<P> Make it a habit, starting right now, to precede each hexadecimal value with a zero, as in
+<PRE>	
+        0A 0B 0F
+</PRE>
+	<P> This practice avoids mix-ups with possibly predefined words as <TT>DEADBEEF</TT>, <TT>BAD</TT>, <TT>DEC</TT> etc. 
+
+<TABLE WIDTH="50%" ALIGN=RIGHT BORDER="0">
+<HR NOSHADE SIZE="6">
+	<CAPTION><I><BR>Handy Hint</I><BR><BR><I>A definition of BINARY -- or <U>Any</U>-ARY</I></CAPTION>
+	<TR> Beginners who want to see what numbers look like in binary notation may enter this definition:
+<PRE>	: BINARY  2 BASE ! ;
+</PRE>
+	<P> The new word BINARY will operate just like <FONT COLOR="#0000FF">OCTAL</FONT> or 
+	<FONT COLOR="#0000FF">HEX</FONT> but will change the number base to <U>two</U>. On systems
+	which do not have the word <FONT COLOR="#0000FF">OCTAL</FONT>, experimenters may define 
+<PRE>	: OCTAL  8 BASE ! ;
+</PRE>
+<HR NOSHADE SIZE="6">
+</TABLE></CENTER>
+	
+<H3>Double-length Numbers</H3>
+
+	<P> Double-length numbers provide a range of +/-18,446,744,073,709,551,615. ANS Forth
+	    systems support double-length numbers to some degree. The way to enter a double-length number onto
+	    the stack (whether from the keyboard or from a file) is to punctuate it with one of these five
+	    punctuation marks:
+<PRE>	, . / - :
+</PRE>
+	<P> For example, when you type 
+<PRE>	200,000<IMG SRC="enterkey.gif" ALIGN=MIDDLE  ALT="return">
+</PRE>
+	    <FONT COLOR="#0000FF">NUMBER</FONT> recognizes the comma as a signal that this value should be 
+	    converted to double-length. <FONT COLOR="#0000FF">NUMBER</FONT> then pushes the value onto the
+	    stack as two consecutive "cells" (cell is the Forth term for single-length), the high order cell 
+	    on top.
+
+<CENTER><IMG SRC="200kpush.jpg" ALIGN=MIDDLE ALT="push 200,000"></CENTER>
+
+	<P> The Forth word <FONT COLOR="#0000FF">D.</FONT> prints a double-length number without any punctuation.
+<P><CENTER><TABLE WIDTH="100%" BORDER="2">
+	<TR><TD> <TT>D.</TT> <TD><IMG SRC="bullet.gif" ALT="d-dot"> <TD> ( d -- ) <TD> Prints the signed double-length number, followed by one space.
+</TABLE></CENTER>
+
+	<P> In this book, the letter "d" stands for a double-length signed integer.
+
+	<P> For example, having entered a double-length number, if you were now to execute <FONT COLOR="#0000FF">D.</FONT>,
+	    the computer would respond:
+<PRE>	D.<U> 200000 ok</U>
+</PRE>
+	<P> Notice that all of the following numbers are converted in exactly the same way:
+<PRE>
+	12345. D.<U> 12345 ok</U>
+	123.45 D.<U> 12345 ok</U>
+	1-2345 D.<U> 12345 ok</U>
+	1/23/45 D.<U> 12345 ok</U>
+	1:23:45 D.<U> 12345 ok</U>
+</PRE>
+	<P> But this is not the same:
+<PRE>	-12345
+</PRE>
+	    because this value would be converted as a negative, single-length number.
+	(This is the only case in which a hyphen is interpreted as a minus sign and not as punctuation.)
+
+	<P> In the next section we'll show you how to define your own equivalents to <FONT COLOR="#0000FF">D.</FONT>
+	which will print whatever punctuation you want along with the number.
+
+
+<H3>Number Formatting -- Double-length Unsigned</H3>
+
+	<P> 
+<PRE>	$200.00   12/31/80  372-8493   6:32:59   98.6
+</PRE>
+	<P> The above numbers represent the kinds of output you can create by defining your own "number-formatting 
+	    words" in Forth. This section will show you how.
+
+	<P> The simplest number-formatting definition we could write would be
+<PRE>	: UD.  <# #S #> TYPE ;
+</PRE>
+	<P> <TT>UD.</TT> will print an unsigned double-length number. The words  <FONT COLOR="#0000FF">&lt;#</FONT>
+	and <FONT COLOR="#0000FF">#&gt;</FONT> (respectively pronounced <U>bracket-number</U> and <U>number-bracket</U>)
+	signify the beginning and the end of the number-conversion process. In this definition, the entire 
+	conversion is being performed by the single word  <FONT COLOR="#0000FF">#S</FONT> (pronounced <U>numbers</U>).
+	<FONT COLOR="#0000FF">#S</FONT> converts the value on the stack into ASCII characters. It will only
+	produce as many digits as are necessary to represent the number; it will not produce leading zeroes. But
+	it always produces at least one digit, which will be zero if the value was zero. For example:
+<PRE>	12,345 UD.<U> 12345ok</U>
+	12. UD.<U> 12ok</U>
+	0. UD.<U> 0ok</U>
+</PRE>
+	<P> The word  <FONT COLOR="#0000FF">TYPE</FONT> prints the characters that represent the number at
+	    your terminal. Notice that there is no space between the number and the "ok." To get a space,
+	    you would simply add the word  <FONT COLOR="#0000FF">SPACE</FONT>, like this:
+<PRE>	: UD.  <# #S #> TYPE SPACE ;
+</PRE>
+	<P> Now let's say we have a phone number on the stack, expressed as a double-length unsigned integer.
+	    For example, we may have typed in:
+<PRE>	372-8493
+</PRE>
+	(remember that the hyphen tells <FONT COLOR="#0000FF">NUMBER</FONT> to treat this as a double-length 
+	value). We want to define a word which will format this value back as a phone number. Let's call it
+	<TT>.PH#</TT> (for "print the <U>ph</U>one number") and define it thus:
+<PRE>	: .PH#  <# # # # # [CHAR] - HOLD #S #> TYPE SPACE ;
+</PRE>
+<IMG SRC="touch.jpg" ALIGN=RIGHT ALT="phone">
+	<P> Our definition of <TT>.PH#</TT> has everything that <TT>UD.</TT> has, and more. The Forth word
+	    <FONT COLOR="#0000FF">#</FONT> (pronounced <U>number</U>) produces a single digit only. A 
+	    number-formatting definition is reversed from the order in which the number will be printed, so
+	    the phrase
+<PRE>	# # # #
+</PRE>
+	    produces the right-most four digits of the phone number.
+
+	<P> Now it's time to insert the hyphen. Using <FONT COLOR="#0000FF">[CHAR]</FONT> we can get the code
+	    value of this ASCII character on the stack. The Forth word <FONT COLOR="#0000FF">HOLD</FONT> takes
+	    this ASCII code and inserts it into the formatted number character string.
+
+	<P> We now have three digits left. We might use the phrase 
+<PRE>	# # # 
+</PRE>
+	    but it is easier to simply use the word <FONT COLOR="#0000FF">#S</FONT>, which will automatically
+	    convert the rest of the number for us.
+
+	<P> If you are more familiar with ASCII codes represented in hexadecimal form, you can use this 
+	    definition instead:
+<PRE>	HEX : .PH#  <# # # # # 02D HOLD #S #> TYPE SPACE ;
+	DECIMAL
+</PRE>	
+	<P> Either way, the compiled definition will be exactly the same.
+
+	<P> Now let's format an unsigned double-length number as a date, in the following form:
+<PRE>	6/15/03
+</PRE>
+	<P> Here is the definition:
+<PRE>	: .DATE  <# # # [CHAR] / HOLD   # # [CHAR] / HOLD  #S #>  TYPE SPACE ;
+</PRE>
+<IMG SRC="15june.jpg" ALIGN=RIGHT ALT="calendar">
+	<P> Let's follow the above definition, remembering that it is written in reverse order from the output.
+	    The phrase
+<PRE>	# # [CHAR] / HOLD
+</PRE>	
+	    produces the right-most two digits (representing the year) and the right-most slash. The next
+	    occurence of the same phrase produces the middle two digits (representing the day) and the 
+	    left-most slash. Finally <FONT COLOR="#0000FF">#S</FONT> produces the left-most two digits
+	    (representing the month).
+
+	<P> We could have just as easily defined
+<PRE>	# # [CHAR] / HOLD
+</PRE>	
+	    as its own word and used this word twice in the definition of <TT>.DATE</TT>.
+	
+	<P> Since you have control over the conversion process, you can actually convert different digits
+	    in different number bases, a feature which is useful in formatting such numbers as hours and 
+	    minutes. For example, let's say that you have the time in seconds on the stack, and you want 
+	    a word which will print hh:mm:ss. You might define it this way:
+<IMG SRC="clock.jpg" ALIGN=RIGHT ALT="clock">
+<PRE>	: SEXTAL  6 BASE ! ;
+	: :00  # SEXTAL # DECIMAL [CHAR] : HOLD ;
+	: SEC  <# :00 :00 #S #>  TYPE SPACE ;
+</PRE>
+	<P> We will use the word <TT>:00</TT> to format the seconds and minutes. Both seconds and minutes
+	    are modulo-60, so the right digit can go as high as nine, but the left digit can only go up 
+	    to five. Thus in the definition of <TT>:00</TT> we convert the first digit (the one on the right)
+	    as a decimal number, then go into "sextal" (base 6) and convert the left digit. Finally, we return
+	    to decimal and insert the colon character. After <TT>:00</TT> converts the seconds and the minutes,
+	    <FONT COLOR="#0000FF">#S</FONT> converts the remaining hours.
+
+	<P> For example, if we had 4500 seconds on the stack, we would get
+<PRE>	4500. SEC<U> 1:15:00 ok</U>
+</PRE>
+	<P> Table 7-2 summarizes the Forth words that are used in number formatting. (Note the "KEY" at the
+	    bottom, which serves as a reminder of the meanings of "n," "d," etc.)
+
+<P>
+<TABLE WIDTH="100%" BORDER="2">
+	<CAPTION><I>Table 7-2 -- Number Formatting</I></CAPTION>
+	<TR><TD> <TT>&lt;#</TT> <TD><IMG SRC="bullet.gif" ALT="bracket-number"> <TD> Begins the number conversion process. Expects the <U>unsigned</U> 
+				     <U>double-length</U> number on the stack.
+	<TR><TD> <TT>#</TT>     <TD><IMG SRC="bullet.gif" ALT="number">         <TD> Converts one digit and puts it into an output character string. 
+				     <FONT COLOR="#0000FF">#</FONT> <U>always</U> produces a digit--if 
+				     you're out of significant digits, you'll still get a zero for 
+				     every <FONT COLOR="#0000FF">#</FONT>.
+	<TR><TD> <TT>#S</TT>    <TD><IMG SRC="bullet.gif" ALT="numbers">        <TD> Converts the number until the result is zero. Always produces 
+				     <U>at</U> <U>least</U> <U>one</U> <U>digit</U> (0 if the value is zero).
+	<TR><TD> <TT>c&nbsp;HOLD</TT><TD>&nbsp;					<TD> Inserts, at the current position in the character string being formatted,
+				     a character whose ASCII value is on the stack. <FONT COLOR="#0000FF">HOLD</FONT>
+				     (or a word which uses <FONT COLOR="#0000FF">HOLD</FONT>) must be used 
+				     between <FONT COLOR="#0000FF">&lt;#</FONT> and <FONT COLOR="#0000FF">#&gt;</FONT>.
+	<TR><TD> <TT>SIGN</TT>  <TD>&nbsp;					<TD> Inserts a minus sign in the output string if the top of stack
+				     is negative. Usually used with <FONT COLOR="#0000FF">ROT</FONT> immediately before <FONT COLOR="#0000FF">#&gt;</FONT> for
+				     a leading minus sign.
+	<TR><TD> <TT>#&gt;</TT> <TD><IMG SRC="bullet.gif" ALT="number-bracket"> <TD> Completes number conversion by leaving the character count and address on the
+				     stack (these are the appropriate arguments for <FONT COLOR="#0000FF">TYPE</FONT>).
+</TABLE>
+
+<P>
+<TABLE WIDTH="100%" BORDER="2">
+	<CAPTION><I>Stack effects for number formatting</I></CAPTION>
+	<TR> <TH> phrase                                    <TH> stack 				               <TH> type of arguments
+	<TR> <TD nowrap> <TT>&lt;# ... #&gt;</TT>           <TD nowrap> ( ud -- addr u )    <TD> double-length unsigned
+	<TR> <TD nowrap> <TT>&lt;# ... ROT SIGN #&gt;</TT>  <TD nowrap> ( n |d| -- addr u ) <TD> double-length signed (where n is the high-order cell of d and |d| is the absolute value of d).</TD>
+</TABLE>
+
+<P>
+<TABLE BORDER="2">
+	<CAPTION><I>KEY</I></CAPTION>
+	<TR> <TD> n, n1, ... <TD> single-length signed
+	<TR> <TD> d, d1, ... <TD> double-length signed
+	<TR> <TD> u, u1, ... <TD> single-length unsigned
+	<TR> <TD> addr       <TD> address
+	<TR> <TD> c          <TD> ASCII character value
+</TABLE>
+
+<H3>Number Formatting -- Signed and Single-length</H3>
+
+	<P> So far we have formatted only unsigned double-length numbers. The <FONT COLOR="#0000FF">&lt;#</FONT>...<FONT COLOR="#0000FF">#&gt;</FONT>
+	    form expects only unsigned double-length numbers, but we can use it for other types of numbers by
+	    making certain arrangements on the stack.
+	
+	<P> For instance, let's look at a simplified version of the system definition of <FONT COLOR="#0000FF">D.</FONT> 
+	    (which prints a <U>signed</U> double-length number):
+<PRE>	: D.  TUCK DABS <#  #S ROT SIGN  #>  TYPE SPACE ;
+</PRE>
+	<P> The phrase <FONT COLOR="#0000FF">ROT SIGN</FONT> inserts a minus string in the character string if the <U>third</U> number on the stack
+	    is negative. We have prepared for this test by putting a copy of the high-order cell (the one with the sign bit) at the bottom
+	    of the stack, by using the word <FONT COLOR="#0000FF">TUCK</FONT>.
+
+	<P> Because <FONT COLOR="#0000FF">&lt;#</FONT> expects only <U>unsigned</U> double-length numbers,
+	    we must take the absolute value of our double-length <U>signed</U> number, with the word <FONT COLOR="#0000FF">DABS</FONT>.
+	    We now have the proper arrangement of arguments on the stack for the <FONT COLOR="#0000FF">&lt;#</FONT>...<FONT COLOR="#0000FF">#&gt;</FONT>
+	    phrase. In some cases, such as accounting, we may want a negative number to be written
+<PRE>	12345-
+</PRE>
+	    in which case we would place the phrase <FONT COLOR="#0000FF">ROT SIGN</FONT> at the <U>left</U> side of our <FONT COLOR="#0000FF">&lt;#</FONT>...<FONT COLOR="#0000FF">#&gt;</FONT>
+	    phrase, like this:
+<PRE>	<#  ROT SIGN #S  #>
+</PRE>
+	<P> <TABLE ALIGN=RIGHT WIDTH="20%"> 
+		<TR><TD><FONT SIZE="+6"> $ </FONT> </TD> 
+	    </TABLE>
+	    Let's define a word which will print a signed double-length number with a decimal point and two 
+	    decimal places to the right of the decimal. Since this is the form most often used for writing
+	    dollars and cents, let's call it <TT>.$</TT> and define it like this:
+<PRE>	: .$   TUCK DABS  <#  # # [CHAR] . HOLD  #S ROT SIGN  [CHAR] $ HOLD  #>  TYPE SPACE ;
+</PRE>
+	<P> Let's try it:
+<PRE>	2000.00 .$<U> $2000.00 ok</U>
+</PRE>
+	    or even
+<PRE>	2,000.00 .$<U> $2000.00 ok</U>
+</PRE>
+	<P> We recommend that you save <TT>.$</TT>, since we'll be using it in some future examples.
+
+	<P> You can also write special formats for single-length numbers. For example, if you want to 
+	    use an unsigned single-length number, simply put a zero on the stack before the word 
+	    <FONT COLOR="#0000FF">&lt;#</FONT>. This effectively changes the single-length number
+	    into a double-length number which is so small that it has nothing (zero) in the high-order cell.
+
+	<P> To format a <U>signed</U> single-length number, again you must supply a zero as a high-order 
+	    cell. But you must also leave a copy of the signed number in the third stack position for 
+	    <FONT COLOR="#0000FF">ROT SIGN</FONT>, and you must leave the absolute value of the number in the
+	    second stack position. The phrase to do all this is
+<PRE>	DUP ABS 0
+</PRE>
+	<P> Here are the "set-up" phrases that are needed to print various kinds of numbers:
+
+<P>
+<TABLE WIDTH="100%" BORDER="2">
+	<TR> <TH> Number to be printed <TH> Precede <FONT COLOR="#0000FF">&lt;#</FONT> by
+	<TR> <TD> double-length, unsigned  <TD> (nothing needed)
+	<TR> <TD> 63-bit, plus sign        <TD> <TT>TUCK DABS</TT> <BR>(to save the sign in the third stack position for <FONT COLOR="#0000FF">ROT SIGN</FONT>)
+	<TR> <TD> single-length, unsigned  <TD> 0 <BR>(to give a dummy high-order part)
+	<TR> <TD> 31-bit, plus sign        <TD> <TT>DUP ABS 0</TT> <BR>(to save the sign)
+</TABLE>
+
+
+<H3>Double-length Operators</H3>
+	<P> Here is a list of double-length math operators:
+
+<P>
+<TABLE WIDTH="100%" BORDER="2">
+	<TR> <TD> <TT>D.R</TT> <TD><IMG SRC="bullet.gif" ALT="d-dot-r"> <TD> (&nbsp;d&nbsp;width&nbsp;--&nbsp;) 	     <TD> Prints the signed double-length number, right-justified within the field width.
+	<TR> <TD> <TT>D+</TT>  <TD><IMG SRC="bullet.gif" ALT="d-plus">  <TD> (&nbsp;d1&nbsp;d2&nbsp;--&nbsp;d-sum&nbsp;)  <TD> Adds two double-length numbers.
+	<TR> <TD> <TT>D-</TT>  <TD><IMG SRC="bullet.gif" ALT="d-minus"> <TD> (&nbsp;d1&nbsp;d2&nbsp;--&nbsp;d-diff&nbsp;) <TD> Subtracts two double-length numbers (d1-d2).
+	<TR> <TD> <TT>DNEGATE</TT> <TD><IMG SRC="bullet.gif" ALT="d-negate"> <TD> (&nbsp;d&nbsp;--&nbsp;-d&nbsp;)              <TD> Changes the sign of a double-length number.
+	<TR> <TD> <TT>DMAX</TT>    <TD><IMG SRC="bullet.gif" ALT="d-max">    <TD> (&nbsp;d1&nbsp;d2&nbsp;--&nbsp;d-max&nbsp;)  <TD> Returns the maximum of two double-length numbers (d1-d2).
+	<TR> <TD> <TT>DMIN</TT>    <TD><IMG SRC="bullet.gif" ALT="d-min">    <TD> (&nbsp;d1&nbsp;d2&nbsp;--&nbsp;d-min&nbsp;)  <TD> Returns the minimum of two double-length numbers (d1-d2).
+	<TR> <TD> <TT>D=</TT>      <TD><IMG SRC="bullet.gif" ALT="d-equal">  <TD> (&nbsp;d1&nbsp;d2&nbsp;--&nbsp;f&nbsp;)      <TD> Returns true if d1 and d2 are equal.
+	<TR> <TD> <TT>D0=</TT>     <TD><IMG SRC="bullet.gif" ALT="d-zero-equal">  <TD> (&nbsp;d&nbsp;--&nbsp;f&nbsp;)               <TD> Returns true if d is zero.
+	<TR> <TD> <TT>D&lt;</TT>   <TD><IMG SRC="bullet.gif" ALT="d-less-than">   <TD> (&nbsp;d1&nbsp;d2&nbsp;--&nbsp;f&nbsp;)      <TD> Returns true if d1 is less than d2.
+	<TR> <TD> <TT>DU&lt;</TT>  <TD><IMG SRC="bullet.gif" ALT="d-u-less-than"> <TD> (&nbsp;ud1&nbsp;ud2&nbsp;--&nbsp;f&nbsp;)    <TD> Returns true if ud1 is less than ud2. Both numbers are unsigned.
+</TABLE>
+
+	<P> The initial "D" signifies that these operators may only be used for double-length operations, whereas
+	    the initial "2," as in <FONT COLOR="#0000FF">2SWAP</FONT> and <FONT COLOR="#0000FF">2DUP</FONT>, 
+	    signifies that these operators may be used either for double-length numbers or for pairs of 
+	    numbers.
+	
+	<P> Here's an example using <FONT COLOR="#0000FF">D+</FONT>:
+<PRE>	200,000 300,000 D+ D.<U> 500000 ok</U>
+</PRE>
+
+<H3>Mixed-length Operators</H3>
+	
+	<P> Here's a table of very useful Forth words which operate on a combination of single- and double-length 
+	    numbers:
+<P>
+<IMG SRC="frenchie_mixed.gif" ALIGN=RIGHT ALT="m-plus,sm-slash-rem,fm-slasm-mod,m-star,m-star-slash">
+<TABLE WIDTH="70%" BORDER="2">
+	<TR> <TD> <TT>M+</TT> 	   <TD> (&nbsp;d&nbsp;n&nbsp;--&nbsp;d-sum&nbsp;)       <TD> Adds a double-length number to a single-length number. Returns a double-length result.
+	<TR> <TD> <TT>SM/REM</TT>  <TD> (&nbsp;d&nbsp;n1&nbsp;--&nbsp;n2&nbsp;n3&nbsp;) <TD> Divide d1 by n1, giving the symmetric quotient n3 and the remainder n2. Input and output stack arguments are signed.  An ambiguous condition exists if n1 is zero or if the quotient lies outside the range of a single-cell signed integer.
+	<TR> <TD> <TT>FM/MOD</TT>  <TD> (&nbsp;d&nbsp;n1&nbsp;--&nbsp;n2&nbsp;n3&nbsp;) <TD> Divide d1 by n1, giving the floored quotient n3 and the remainder n2. Input and output stack arguments are signed.  An ambiguous condition exists if n1 is zero or if the quotient lies outside the range of a single-cell signed integer.
+	<TR> <TD> <TT>M*</TT>      <TD> (&nbsp;n1&nbsp;n2&nbsp;--&nbsp;d-prod&nbsp;)    <TD> Multiplies two single-length numbers. Returns a double-length result. All values are signed.
+	<TR> <TD> <TT>M*/</TT>     <TD> (&nbsp;d&nbsp;+n1&nbsp;n2&nbsp;--&nbsp;d-result&nbsp;) <TD> Multiplies a double-length number by a single-length number and divides the triple-length result by a single-length number (d*n/n). Returns a double-length result. All values are signed.
+</TABLE>
+
+	<P> Here's an example using <FONT COLOR="#0000FF">M+</FONT>:
+<PRE>	200,000 7 M+ D.<U> 200007 ok</U>
+</PRE>
+	<P> Or, using <FONT COLOR="#0000FF">M*/</FONT>, we can redefine our earlier version of <TT>%</TT> so 
+	    that it will accept a double-length argument:
+<PRE>	: %  100 M*/ ;	
+</PRE>
+	    as in
+<PRE>	200.50 15 % D.<U> 3007 ok</U>
+</PRE>
+	<P> If you have loaded the definition of <TT>.$</TT> we gave in the last Handy Hint, you can enter
+<PRE>	200.50 15 % .$<U> $30.07 ok</U>
+</PRE>
+	<P> We can redefine our earlier definition of <TT>R%</TT> to get a rounded double-length result, 
+	    like this:
+<PRE>	: R%  10 M*/  5 M+  10 SM/REM NIP ;
+</PRE>
+	    then
+<PRE>	987.65 15 R% .$<U> $30.08 ok</U>
+</PRE>
+	<P> Notice that <FONT COLOR="#0000FF">M*/</FONT> is the only ready-made Forth word which performs
+	    multiplication on a double-length argument. To multiply 200,000 by 3, for instance, we must supply
+	    a "1" as a dummy denominator:
+<PRE>	200,000 3 1 M*/ D.<U> 600000 ok</U>
+</PRE>
+	    since
+<PRE>	<U>3</U>
+	1
+</PRE>
+	   is the same as 3.
+
+	<P> <FONT COLOR="#0000FF">M*/</FONT> is also the only ready-made Forth word that performs division
+	    with a double-length result. So to divide 200,000 by 4, for instance, we must supply a "1" as
+	    a dummy numerator:
+<PRE>	200,000 1 4 M*/ D.<U> 50000 ok</U>
+</PRE>
+
+
+<H3>Numbers in Definitions</H3>
+
+	<P> When a definition contains a number, such as
+<PRE>	: SCORE-MORE  20 + ;
+</PRE>
+	    the number is compiled into the dictionary in binary form, just as it looks on the stack.
+	<CENTER><IMG SRC="monk_at_pc.jpg" ALIGN=MIDDLE ALT="monk writing numbers"></CENTER>
+
+	<P> The number's binary value depends on  the number base at the time you <U>compile</U> the
+	definition. For example, if you were to enter
+<PRE>	HEX  : SCORE-MORE  14 + ;  DECIMAL
+</PRE>
+	    the dictionary definition would contain the hex value 14, which is the same as the decimal value
+	    20 (16+4). Henceforth, <TT>SCORE-MORE</TT> will always add the equivalent of the decimal 20 to
+	    the value on the stack, regardless of the current number base.
+
+	<P> If, on the other hand, you were to put the word <FONT COLOR="#0000FF">HEX</FONT> <U>inside</U>
+	    the definition, then you would change the number base when you execute the definition.
+
+	<P> For example, if you were to define:
+<PRE>	DECIMAL
+	: EXAMPLE  HEX 20 . DECIMAL ;
+</PRE>
+	    the number would be compiled as the binary equivalent of decimal 20, since <FONT COLOR="#0000FF">DECIMAL</FONT>
+	    was current at compilation time.
+	
+	<P> At execution time, here's what happens:
+<PRE>	EXAMPLE<U> 14 ok</U>
+</PRE>
+	<P> The number is output in hexadecimal.
+
+	<P> For the record, a number that appears inside a definition is called a "literal." (Unlike the
+	    words in the rest of the definition which allude to other definitions, a number must be taken
+	    literally.)
+	
+	<P> Here is a list of the Forth words we've covered in this chapter:
+
+<P>
+<TABLE WIDTH="100%" BORDER="2">
+	<CAPTION><I>Unsigned operators</I></CAPTION>
+	<TR><TD bgcolor="#EEEEEE"> <TT>U.</TT>     <TD bgcolor="#EEEEEE"> (&nbsp;u&nbsp;--&nbsp;)     		       <TD bgcolor="#EEEEEE"> Prints the unsigned single-length number, followed by one space.
+	<TR><TD bgcolor="#EEEEEE"> <TT>UM*   </TT> <TD bgcolor="#EEEEEE"> (&nbsp;u1&nbsp;u2&nbsp;--&nbsp;ud&nbsp;)         <TD bgcolor="#EEEEEE"> Multiplies two single-length numbers. Returns a double-length result. All values are unsigned.
+	<TR><TD bgcolor="#EEEEEE"> <TT>UM/MOD</TT> <TD bgcolor="#EEEEEE"> (&nbsp;ud&nbsp;u1&nbsp;--&nbsp;u2&nbsp;u3&nbsp;) <TD bgcolor="#EEEEEE"> Divides a double-length by a single-length number. Returns a single-length quotient and remainder. All values are unsigned.
+	<TR><TD bgcolor="#EEEEEE"> <TT>U&lt;</TT>  <TD bgcolor="#EEEEEE"> (&nbsp;u1&nbsp;u2&nbsp;--&nbsp;f&nbsp;)          <TD bgcolor="#EEEEEE"> Leaves true if u1 < u2, where both are treated as single-length unsigned integers.
+</TABLE>
+
+<P>
+<TABLE WIDTH="100%" BORDER="2">
+	<CAPTION><I>Number bases</I></CAPTION>
+	<TR><TD bgcolor="#EEEEEE"> <TT>HEX</TT>     <TD bgcolor="#EEEEEE"> ( -- ) <TD bgcolor="#EEEEEE"> Sets the base to sixteen.
+	<TR><TD bgcolor="#EEEEEE"> <TT>OCTAL</TT>   <TD bgcolor="#EEEEEE"> ( -- ) <TD bgcolor="#EEEEEE"> Sets the base to eight (available on some systems).
+	<TR><TD bgcolor="#EEEEEE"> <TT>DECIMAL</TT> <TD bgcolor="#EEEEEE"> ( -- ) <TD bgcolor="#EEEEEE"> Returns the base to ten.
+</TABLE>
+
+<P>
+<TABLE WIDTH="100%" BORDER="2">
+	<CAPTION><I>Number formatting operators</I></CAPTION>
+	<TR><TD bgcolor="#EEEEEE"> <TT>&lt;#</TT> <TD bgcolor="#EEEEEE"> Begins the number conversion process. Expects the <U>unsigned</U> 
+				     <U>double-length</U> number on the stack.
+	<TR><TD bgcolor="#EEEEEE"> <TT>#</TT>     <TD bgcolor="#EEEEEE"> Converts one digit and puts it into an output character string. 
+				     <FONT COLOR="#0000FF">#</FONT> <U>always</U> produces a digit--if 
+				     you're out of significant digits, you'll still get a zero for 
+				     every <FONT COLOR="#0000FF">#</FONT>.
+	<TR><TD bgcolor="#EEEEEE"> <TT>#S</TT>    <TD bgcolor="#EEEEEE"> Converts the number until the result is zero. Always produces 
+				     <U>at</U> <U>least</U> <U>one</U> <U>digit</U> (0 if the value is zero).
+	<TR><TD bgcolor="#EEEEEE"> <TT>c&nbsp;HOLD</TT><TD bgcolor="#EEEEEE"> Inserts, at the current position in the character string being formatted,
+				     a character whose ASCII value is on the stack. <FONT COLOR="#0000FF">HOLD</FONT>
+				     (or a word which uses <FONT COLOR="#0000FF">HOLD</FONT>) must be used 
+				     between <FONT COLOR="#0000FF">&lt;#</FONT> and <FONT COLOR="#0000FF">#&gt;</FONT>.
+	<TR><TD bgcolor="#EEEEEE"> <TT>SIGN</TT>  <TD bgcolor="#EEEEEE"> Inserts a minus sign in the output string if the top of stack
+				     is negative. Usually used with <FONT COLOR="#0000FF">ROT</FONT> immediately before <FONT COLOR="#0000FF">#&gt;</FONT> for
+				     a leading minus sign.
+	<TR><TD bgcolor="#EEEEEE"> <TT>#&gt;</TT> <TD bgcolor="#EEEEEE"> Completes number conversion by leaving the character count and address on the
+				     stack (these are the appropriate arguments for <FONT COLOR="#0000FF">TYPE</FONT>).
+</TABLE>
+
+<P>
+<TABLE WIDTH="100%" BORDER="2">
+	<CAPTION><I>Stack effects for number formatting</I></CAPTION>
+	<TR> <TH> phrase                                       		      <TH> stack 				        <TH> type of arguments
+	<TR> <TD nowrap bgcolor="#EEEEEE"> <TT>&lt;# ... #&gt;</TT>           <TD nowrap bgcolor="#EEEEEE"> ( d -- addr u )     <TD bgcolor="#EEEEEE"> double-length unsigned
+	<TR> <TD nowrap bgcolor="#EEEEEE"> <TT>&lt;# ... ROT SIGN #&gt;</TT>  <TD nowrap bgcolor="#EEEEEE"> ( n |d| -- addr u ) <TD bgcolor="#EEEEEE"> double-length signed (where n is the high-order cell of d and |d| is the absolute value of d).</TD>
+</TABLE>
+
+<P>
+<TABLE BORDER="2">
+	<CAPTION><I>Double-length operators</I></CAPTION>
+	<TR> <TD bgcolor="#EEEEEE"> <TT>D+</TT>      <TD nowrap bgcolor="#EEEEEE"> ( d1 d2 -- d-sum )  <TD bgcolor="#EEEEEE"> Adds two double-length numbers.
+	<TR> <TD bgcolor="#EEEEEE"> <TT>D-</TT>      <TD nowrap bgcolor="#EEEEEE"> ( d1 d2 -- d-diff ) <TD bgcolor="#EEEEEE"> Subtracts two double-length numbers (d1-d2).
+	<TR> <TD bgcolor="#EEEEEE"> <TT>DNEGATE</TT> <TD nowrap bgcolor="#EEEEEE"> ( d -- -d )         <TD bgcolor="#EEEEEE"> Changes the sign of a double-length number.
+	<TR> <TD bgcolor="#EEEEEE"> <TT>DMAX</TT>    <TD nowrap bgcolor="#EEEEEE"> ( d1 d2 -- d-max )  <TD bgcolor="#EEEEEE"> Returns the maximum of two double-length numbers (d1-d2).
+	<TR> <TD bgcolor="#EEEEEE"> <TT>DMIN</TT>    <TD nowrap bgcolor="#EEEEEE"> ( d1 d2 -- d-min )  <TD bgcolor="#EEEEEE"> Returns the minimum of two double-length numbers (d1-d2).
+	<TR> <TD bgcolor="#EEEEEE"> <TT>D=</TT>      <TD nowrap bgcolor="#EEEEEE"> ( d1 d2 -- f )      <TD bgcolor="#EEEEEE"> Returns true if d1 and d2 are equal.
+	<TR> <TD bgcolor="#EEEEEE"> <TT>D0=</TT>     <TD nowrap bgcolor="#EEEEEE"> ( d -- f )          <TD bgcolor="#EEEEEE"> Returns true if d is zero.
+	<TR> <TD bgcolor="#EEEEEE"> <TT>D&lt;</TT>   <TD nowrap bgcolor="#EEEEEE"> ( d1 d2 -- f )      <TD bgcolor="#EEEEEE"> Returns true if d1 is less than d2.
+	<TR> <TD bgcolor="#EEEEEE"> <TT>DU&lt;</TT>  <TD nowrap bgcolor="#EEEEEE"> ( ud1 ud2 -- f )    <TD bgcolor="#EEEEEE"> Returns true if ud1 is less than ud2. Both numbers are unsigned.
+	<TR> <TD bgcolor="#EEEEEE"> <TT>D.R</TT>     <TD nowrap bgcolor="#EEEEEE"> ( d width -- )      <TD bgcolor="#EEEEEE"> Prints the signed double-length number, right-justified within the field width.
+</TABLE>
+
+<P>
+<TABLE BORDER="2">
+	<CAPTION><I>Mixed-length operators</I></CAPTION>
+	<TR> <TD nowrap bgcolor="#EEEEEE"> <TT>M+</TT>      <TD nowrap bgcolor="#EEEEEE"> ( d n -- d-sum )         <TD bgcolor="#EEEEEE"> Adds a double-length number to a single-length number. Returns a double-length result.
+	<TR> <TD nowrap bgcolor="#EEEEEE"> <TT>SM/REM</TT>  <TD nowrap bgcolor="#EEEEEE"> ( d n1 -- n2 n3 ) 	   <TD bgcolor="#EEEEEE"> Divide d1 by n1, giving the symmetric quotient n3 and the remainder n2. Input and output stack arguments are signed.  An ambiguous condition exists if n1 is zero or if the quotient lies outside the range of a single-cell signed integer.
+	<TR> <TD nowrap bgcolor="#EEEEEE"> <TT>FM/MOD</TT>  <TD nowrap bgcolor="#EEEEEE"> ( d n1 -- n2 n3 ) 	   <TD bgcolor="#EEEEEE"> Divide d1 by n1, giving the floored quotient n3 and the remainder n2. Input and output stack arguments are signed.  An ambiguous condition exists if n1 is zero or if the quotient lies outside the range of a single-cell signed integer.
+	<TR> <TD nowrap bgcolor="#EEEEEE"> <TT>M*</TT>      <TD nowrap bgcolor="#EEEEEE"> ( n1 n2 -- d-prod )      <TD bgcolor="#EEEEEE"> Multiplies two single-length numbers. Returns a double-length result. All values are signed.
+	<TR> <TD nowrap bgcolor="#EEEEEE"> <TT>M*/</TT>     <TD nowrap bgcolor="#EEEEEE"> ( d +n1 n2 -- d-result ) <TD bgcolor="#EEEEEE"> Multiplies a double-length number by a single-length number and divides the triple-length result by a single-length number (d*n/n). Returns a double-length result. All values are signed.
+</TABLE>
+
+<P>
+<TABLE BORDER="2">
+	<CAPTION><I>KEY</I></CAPTION>
+	<TR> <TD bgcolor="#EEEEEE"> n, n1, ... <TD bgcolor="#EEEEEE"> single-length signed
+	<TR> <TD bgcolor="#EEEEEE"> d, d1, ... <TD bgcolor="#EEEEEE"> double-length signed
+	<TR> <TD bgcolor="#EEEEEE"> u, u1, ... <TD bgcolor="#EEEEEE"> single-length unsigned
+	<TR> <TD bgcolor="#EEEEEE"> addr       <TD bgcolor="#EEEEEE"> address
+	<TR> <TD bgcolor="#EEEEEE"> c          <TD bgcolor="#EEEEEE"> ASCII character value
+</TABLE>
+
+<P>	
+<TABLE WIDTH="100%" BORDER="0">
+	<CAPTION><I>Review of Terms</I></CAPTION>
+	<TR> <TH> <HR NOSHADE SIZE="6"> <TH> <HR NOSHADE SIZE="6">
+	<TR> <TD bgcolor="#EEEEEE"> Arithmetic left and right shift <TD bgcolor="#EEEEEE"> the process of shifting all bits in a number, except the sign bit, to the left or right, in effect doubling or halving the (assumed signed) number, respectively.
+	<TR> <TD bgcolor="#EEEEEE"> Logical left and right shift <TD bgcolor="#EEEEEE"> the process of shifting all bits in a number, including the sign bit, to the left or right, in effect doubling or halving the (assumed unsigned) number, respectively.
+	<TR> <TD bgcolor="#EEEEEE"> ASCII <TD bgcolor="#EEEEEE"> a standarized system of representing input/output characters as byte values. Acronym for American Standard Code for Information Interchange. (Pronounced <U>ask-key</U>)
+	<TR> <TD bgcolor="#EEEEEE"> Binary <TD bgcolor="#EEEEEE"> number base 2.
+	<TR> <TD bgcolor="#EEEEEE"> Byte <TD bgcolor="#EEEEEE"> the standard term for an 8-bit value.
+	<TR> <TD bgcolor="#EEEEEE"> Cell <TD bgcolor="#EEEEEE"> the Forth term for a single-cell value.
+	<TR> <TD bgcolor="#EEEEEE"> Decimal <TD bgcolor="#EEEEEE"> number base 10.
+	<TR> <TD bgcolor="#EEEEEE"> Hexadecimal <TD bgcolor="#EEEEEE"> number base 16.
+	<TR> <TD bgcolor="#EEEEEE"> Literal <TD bgcolor="#EEEEEE"> in general, a number of symbol which represents only itself; in Forth, a number that appears inside a definition.
+	<TR> <TD bgcolor="#EEEEEE"> Mask <TD bgcolor="#EEEEEE"> a value which can be " superimposed" over another, hiding certain bits and revealing only those bits that we are interested in.
+	<TR> <TD bgcolor="#EEEEEE"> Number formatting <TD bgcolor="#EEEEEE"> the process of printing a number, usually in a special form such as 3/13/03 or $47.93.
+	<TR> <TD bgcolor="#EEEEEE"> Octal <TD bgcolor="#EEEEEE"> number base 8.
+	<TR> <TD bgcolor="#EEEEEE"> Sign bit high-order bit <TD bgcolor="#EEEEEE"> the bit which, for a signed number, indicates whether it is positive or negative and, for an unsigned number, represents the bit of the highest magnitude.
+	<TR> <TD bgcolor="#EEEEEE"> Two's complement <TD bgcolor="#EEEEEE"> for any number, the number of equal absolute value but opposite sign. To calculate 10 - 4, the computer first produces the two's complement of 4, (i.e., -4), then computes 10 + (-4).
+	<TR> <TD bgcolor="#EEEEEE"> Unsigned number <TD bgcolor="#EEEEEE"> a number which is assumed to be positive.
+	<TR> <TD bgcolor="#EEEEEE"> Unsigned single-length number <TD bgcolor="#EEEEEE"> an integer which falls within the range of 0 to 2147483647.
+	<TR> <TD bgcolor="#EEEEEE"> Word <TD bgcolor="#EEEEEE"> In Forth, a defined dictionary entry, elsewhere, a term for a 16-bit value.
+	<TR> <TD bgcolor="#EEEEEE"> Integer division <TD bgcolor="#EEEEEE"> produces a quotient q and a remainder r by dividing operand a by operand b. Division operations return q, r, or both. The identity b*q + r = a holds for all a and b.
+	<TR> <TD bgcolor="#EEEEEE"> Floored division <TD bgcolor="#EEEEEE"> is integer division in which the remainder carries the sign of the divisor or is zero, and the quotient is rounded to its arithmetic floor.
+	<TR> <TD bgcolor="#EEEEEE"> Symmetric division <TD bgcolor="#EEEEEE"> is integer division in which the remainder carries the sign of the dividend or is zero and the quotient is the mathematical quotient "rounded towards zero" or "truncated".
+	<TR> <TH> <HR NOSHADE SIZE="6"> <TH> <HR NOSHADE SIZE="6">
+</TABLE>
+
+<H2>Problems -- Chapter 7</H2>
+			<IMG SRC="felix.gif" ALIGN=MIDDLE ALT="problems">
+
+<OL>
+	<LI> Veronica Wainwright couldn't remember the upper limit for a signed single-length number, and
+	     she had no book to refer to, only a Forth terminal. So she wrote a definition called <TT>N-MAX</TT>,
+	     using a <FONT COLOR="#0000FF">BEGIN</FONT>...<FONT COLOR="#0000FF">UNTIL</FONT> loop. When she 
+	     executed it, she got
+<PRE>	<U>2147483647 ok</U>
+</PRE>	
+	     <P> What was her definition? <A HREF="7-1.forth.html">[answer]</A>
+	<LI> Since you now know that <FONT COLOR="#0000FF">AND</FONT> and <FONT COLOR="#0000FF">OR</FONT> employ
+	     bit logic, explain why the following example <U>must</U> use <FONT COLOR="#0000FF">OR</FONT> instead
+	     of <FONT COLOR="#0000FF">+</FONT>:
+<PRE>	: MATCH   humorous sensitive AND  
+		  art-loving music-loving OR AND
+		  smoking 0= AND
+		  IF  ." I have someone you should meet " THEN ;
+</PRE>
+	<LI> Write a definition that "rings" your terminal's bell three times. Make sure that there is enough
+	     of a delay between the bells so that they are distinguishable. Each time the bell rings, the word
+	     "BEEP" should appear on the terminal screen. <A HREF="7-3.forth.html">[answer]</A>
+	<LI>    <OL TYPE="a">
+	  	 <LI> Rewrite the temperature conversion definitions which you created for the problems in 
+		      Chap. 5. This time assume that the input and resulting temperatures are to be double-length
+		      signed integers which are scaled (i.e., multiplied) by ten. For example, if 10.5
+		      degrees is entered, it is a 32-bit integer with a value of 105. <A HREF="7-4.forth.html">[answer]</A>
+		 <LI> Write a formatted output word named <TT>.DEG</TT> which will display a double-length
+		      signed integer scaled by ten as a string of digits, a decimal point, and one fractional
+		      digit.
+		      <P> For example:
+<PRE>	12.3 .DEG<IMG SRC="enterkey.gif" ALIGN=MIDDLE ALT="return"><U> 12.3 ok</U>
+</PRE>			<A HREF="7-4.forth.html">[answer]</A>
+		 <LI> Solve the following conversions: <BR>
+			0.0<SUP>o</SUP> F in Centigrade<BR>
+			212.0<SUP>o</SUP> F in Centigrade<BR>
+			20.0<SUP>o</SUP> F in Centigrade<BR>
+			16.0<SUP>o</SUP> C in Fahrenheit<BR>
+			-40.0<SUP>o</SUP> C in Fahrenheit<BR>
+			100.0<SUP>o</SUP> K in Centigrade<BR>
+			100.0<SUP>o</SUP> K in Fahrenheit<BR>
+			233.0<SUP>o</SUP> K in Centigrade<BR>
+			233.0<SUP>o</SUP> K in Fahrenheit<BR>
+		</OL>
+	<LI>	<OL TYPE="a">
+		  <LI>  Write a routine which evaluates the quadratic equation
+<PRE>	7x<SUP>2</SUP> + 20x + 5 </PRE>
+			given x, and returns a double-length result.
+		  <LI>  How large an x will work without overflowing sixty-four bits as a signed number? 
+		</OL>
+	<LI> Write a word which prints the numbers 0 through 16 (decimal) in decimal, hexadecimal, and 
+	     binary form in three columns. E.g.,
+<PRE>	DECIMAL  0  HEX  0  BINARY     0
+	DECIMAL  1  HEX  1  BINARY     1
+	DECIMAL  2  HEX  2  BINARY    10
+		...
+	DECIMAL 16  HEX 10  BINARY 10000
+	<BR><A HREF="7-6.forth.html">[answer]</A>
+</PRE>
+	<LI> If you enter
+<PRE>	..<IMG SRC="enterkey.gif" ALIGN=MIDDLE ALT="return">
+</PRE>	(two periods <U>not</U> separated by a space) and the system responds "ok," what does this tell you? <A HREF="7-7.forth.html">[answer]</A>
+	<LI> Write a definition for a phone-number formatting word that will also print the area code with
+	a slash <U>if and only if</U> the number includes an area code. E.g.,
+<PRE>	555-1234 .PH#  555-1234<U> ok</U>
+	213/372-8493 .PH#<U> 213/372-8493 ok</U>
+	<BR><A HREF="7-8.forth.html">[answer]</A>
+</PRE>	
+
+</OL>
+
+<A HREF="http://validator.w3.org"><IMG SRC="http://validator.w3.org/images/vh32.gif" HEIGHT=31 WIDTH=88 ALIGN=RIGHT BORDER=0 ALT="Valid HTML 3.5"></A>
+</BODY>
+
+</HTML>

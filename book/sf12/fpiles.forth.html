@@ -1,0 +1,44 @@
+\ fpiles.forth --------------------------------
+\ "No Weighting" from Starting Forth Chapter 12
+
+FVARIABLE density   
+FVARIABLE PI/3*tan(theta)^-2  
+0 VALUE id
+
+: "     [CHAR] " WORD DUP C@ 1+ ALLOT ; ( -- c-addr )
+
+: MATERIAL  ( 'string -- ) ( F: density theta -- )
+	CREATE  FRAD FTAN FSQR  3e F* 1/F  PI F*  F,  
+		F,  
+		, 
+   	DOES>   DUP F@  PI/3*tan(theta)^-2 F!  
+		FLOAT+ DUP F@  density F!  
+		FLOAT+ @ TO id ;
+
+: $SUBSTANCE    id COUNT ; ( -- c-addr u )
+
+: MATERIAL: ( "mat" -- ) BL <WORD> EVALUATE ;
+: HEIGHT:   ( "height" -- ) ( F: -- r ) BL <WORD> >FLOAT 0= IF  +NAN  ENDIF ;
+
+: FEET  ( F: feet -- )	
+	3e F**   DENSITY F@ F*  PI/3*tan(theta)^-2 F@ F*  
+	." = " FDUP F. ." pounds, or " 
+	0.5e-3 F* F. ." tons of " $SUBSTANCE TYPE ;
+
+: $FEET  ( F: feet -- c-addr u )	
+	PRECISION >R  2 SET-PRECISION
+	S" A pile of " FDUP (F.N1) $+ S" feet of " $+ $SUBSTANCE $+ S"  weighs " $+
+	3e F**   DENSITY F@ F*  PI/3*tan(theta)^-2 F@ F*  
+	FDUP (F.N1) $+ S" pounds, or " $+
+	0.5e-3 F* (F.N1) $+  S" tons." $+ 
+	R> SET-PRECISION ;
+
+\ Table of materials
+\ string-address      density        theta
+\                  pounds/foot^3      deg
+" cement"             131e        34.992020e  MATERIAL cement
+" loose gravel"        93e        32.983571e  MATERIAL loose-gravel
+" packed gravel"      100e        34.992020e  MATERIAL packed-gravel
+" dry sand"            90e        37.016293e  MATERIAL dry-sand
+" wet sand"           118e        41.987212e  MATERIAL wet-sand
+" clay"               120e        36.017152e  MATERIAL clay

@@ -1,0 +1,107 @@
+<!DOCTYPE HTML PUBLIC "-//Microsoft//DTD Internet Explorer 3.0 HTML//EN">
+<HTML>
+
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Starting Forth's home-page</TITLE>
+  <META name="description" content="Starting point to Starting Forth.">
+  <META name="keywords" content="the Forth language,iForth,Forth programs">
+</HEAD>
+
+<BODY BGCOLOR="#F8F8F8" TEXT="#000000" LINK="#0000FF" VLINK="#007070" ALINK="#FF0000" TOPMARGIN=0>
+
+  <H1>A tribute to this great book by Leo Brodie...</H1>
+  <IMG SRC="log.jpg" ALIGN=RIGHT ALT="SF tribute started in week 170">
+  <HR SIZE="5" noshade>
+
+  <BR><A HREF="sf0/sf0.html">Starting Forth First Edition, Introductions</A>.
+  <BR><A HREF="sf1/sf1.html">  Chapter  1 Fundamental Forth</A>
+  <BR><A HREF="sf2/sf2.html">  Chapter  2 How to Get Results</A>
+  <BR><A HREF="sf3/sf3.html">  Chapter  3 The Editor (and Staff)</A>
+  <BR><A HREF="sf4/sf4.html">  Chapter  4 Decision, Decisions, ...</A>
+  <BR><A HREF="sf5/sf5.html">  Chapter  5 The Philosophy of Fixed Point</A>
+  <BR><A HREF="sf6/sf6.html">  Chapter  6 Throw it for a Loop</A>
+  <BR><A HREF="sf7/sf7.html">  Chapter  7 A Number of Kinds of Numbers</A>
+  <BR><A HREF="sf8/sf8.html">  Chapter  8 Variables, Constants, and Arrays</A>
+  <BR><A HREF="sf9/sf9.html">  Chapter  9 Under the Hood</A>
+  <BR><A HREF="sf10/sf10.html">  Chapter 10 I/O and You</A>
+  <BR><A HREF="sf11/sf11.html">  Chapter 11 Extending the Compiler</A>
+  <BR><A HREF="sf12/sf12.html">  Chapter 12 Three Examples</A>
+  <BR><A HREF="sf13/ec200.html">  Chapter 13 Easter Egg</A>
+  <BR><A HREF="http://prdownloads.sourceforge.net/thinking-forth/thinking-forth-color.pdf?download">Thinking Forth?</A> 
+  <BR>
+  
+  <HR NOSHADE SIZE="6">
+  <H1>Comments on the Web Edition</H1>
+
+	<P> <I>Starting Forth</I>, First Edition is from 1981. These web pages were designed in 2003,
+	    when it became apparent that SF would never be re-issued by <A HREF="http://www.forth.com">the copyright holder</A>. A small supply of 
+	    about 500 books was all that was <A HREF="http://theforthsource.com/catalog.html">left</A>.
+	
+	<P> When you can get hold of the original, <B>do so</B>.
+
+	<P> In this transcript Forth code has been ANSified. The samples should run on, <EM>at 
+	    least</EM>, iForth and SwiftForth. Where necessary, statements that were valid in 1981 have been 
+	    exchanged with statements more appropriate for 2003 (when this tribute was written). 
+	    
+	<P> <EM>Starting Forth</EM> is full of very difficult to reproduce graphics. These enormously enhance
+	    the text's mnemonic value, and are invaluable for a first-time Forth user. I have therefore
+	    added "substitute" graphic elements, roughly at the same spot where they are in the 
+	    original. The original graphics are, of course, much better.
+
+	<P> In this transcript I have assumed a 32-bit, byte-addressing Forth, with 8-bit characters. 
+	    The address returned by <FONT COLOR="#0000FF">WORD</FONT> is assumed to be <FONT COLOR="#0000FF">HERE</FONT>. This allows the common trick of <FONT COLOR="#0000FF">ALLOT</FONT>ing
+	    length of <I>str</I> <FONT COLOR="#0000FF">CHARS</FONT> after using <FONT COLOR="#0000FF">WORD</FONT> in order to compile string <I>str</I> to memory.
+	    Multitasking issues are ignored (e.g. no <FONT COLOR="#0000FF">&gt;TYPE</FONT>, just 
+	    <FONT COLOR="#0000FF">TYPE</FONT>). Division is symmetric, not floored, and two's complement 
+	    is assumed throughout. Most Forths should not have problems with this.
+	    Chapter 7 exploits extended uses of number conversion. Some Forths are broken in this respect,
+	    but iForth and SwiftForth do support these neat features.
+
+  <HR SIZE="5" noshade>
+
+	<TABLE WIDTH="50%" BORDER="0" ALIGN=RIGHT>
+		<CAPTION><I>Copyright notice</I></CAPTION>
+		<FONT SIZE="-2">
+		<TR> <TH> <HR NOSHADE SIZE="6"> <TH> <HR NOSHADE SIZE="6">
+		<TR> <TD bgcolor="#EEEEE0"> Copyright        <TD bgcolor="#EEEEE0"> The original print edition of Starting FORTH is copyrighted by FORTH, Inc. and all rights are reserved. Permission has been granted to Marcel Hendrix to make this on-line version of the work available and to make certain modifications to the original printed work. Further reproduction (except for the printing of single copies for personal use), modification, distribution, posting on other web sites, or unauthorized use of either the printed or on-line version of Starting FORTH by any party other than Marcel Hendrix is expressly forbidden without prior written permission from:
+		<TR> <TD bgcolor="#EEEEE0"> More information <TD bgcolor="#EEEEE0"> <P> <ADDRESS>
+											 FORTH, Inc.<BR>
+											 5959 W. Century Blvd.<BR>
+											 Suite 700<BR>
+											 Los Angeles, CA 90045 USA<BR>
+											 800.553.6784 (main office)<BR>
+ 											 888.553.6784 (sales hotline)<BR>
+											</ADDRESS>
+		<TR> <TH> <HR NOSHADE SIZE="6"> <TH> <HR NOSHADE SIZE="6">
+		</FONT>
+	</TABLE>
+
+  Comments appreciated:
+  <EM>
+    c/o Marcel Hendrix - <A HREF="mailto:mhx@iae.nl">mhx@iae.nl</A>
+  </EM><BR>
+
+  <BR>
+  <IMG SRC="sf&#32;front.jpg" ALIGN=LEFT ALT="Starting Front" HEIGHT="25%" WIDTH="25%">
+
+  <A HREF="http://validator.w3.org"><IMG SRC="http://validator.w3.org/images/vh20.gif" HEIGHT=31 WIDTH=88 ALIGN=RIGHT BORDER=0 ALT="Valid HTML 3.0"></A>
+	<BR><!-- Flash-Counter -->
+	<script type="text/javascript">
+	<!--
+	var fc_id = "simple";
+	var fc_countertyp = 1;
+	var fc_language = "en";
+	//-->
+	</script>
+	<script type="text/javascript" 
+	src="http://www.flash-counter.com/scripts/counter.js">
+	</script>
+	<noscript>
+	<a href="http://www.flash-counter.com/" title="Flash Counter">Flash Counter</a>
+	</noscript>
+	<!-- / Flash-Counter -->
+
+</BODY>
+
+</HTML>

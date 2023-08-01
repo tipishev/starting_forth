@@ -1,0 +1,11 @@
+\ -----------------------------------------------------------------------
+\ 10-2.FORTH ------------------------------------------------------------
+\ -----------------------------------------------------------------------
+\ Code from Starting Forth Chapter 10
+\ ANSized by Benjamin Hoyt in 1997
+\ assume 1 CHARS == 1 byte / address unit
+
+( problem 10-2 )
+0 CONSTANT FORTUNES  \ change this to block # with fortunes
+: FORTUNE   CR  16 CHOOSE  64 *
+   FORTUNES BLOCK +  64 -TRAILING TYPE  SPACE ;

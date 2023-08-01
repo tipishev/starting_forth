@@ -1,0 +1,53 @@
+<HTML><HEAD><TITLE>ec 207a ROBOT ARM</TITLE>
+<link rel="stylesheet" type="text/css" href="an.css">
+</HEAD>
+<BODY><center>
+
+<table><tr><td><center>207a
+<br><tt>
+<a href="ec206b.html"> &#171;&#171; </a> &nbsp;
+<a href="ec200.html"> &#171;&#187; </a> &nbsp;
+<a href="ec207b.html"> &#187;&#187; </a>
+
+</tt>
+</center></table>
+
+<br> &nbsp;
+
+<table width="80%"><tr><td><h1> &nbsp; 207 </h1>
+<td class=r align=right> The programming language Forth &nbsp;
+<hr size="1">
+</table>
+
+
+<table width="80%"><tr><td>
+
+<h6> This program coordinates processes that run with different speeds: they'll start at the same time, run smoothly, and stop at the same time. </h6>
+
+<h5> &nbsp;Robot arm with (e.g.) five stepper motors </h5>
+
+     The chairman of the Dutch Forth Users group tinkered with a five-motor robot arm (two in the shoulder, one in the elbow and two in the wrist) and asked me to develop an algorithm to make it move smoothly.
+<br> 
+<br> - But I have absolutely no experience with hardware.
+<br> 
+<br> - Send a number to one of the steppers. It'll move abruptly to the position corresponding to that number. It is not necessary to know the present stepper position. I'll take care of the lowest level driver routines myself.
+<p>  Armed with this hardware knowledge I thought up a program, and, it works! After some tweaking of the word<tt> >MOTOR</tt>, of course. Because I don't have any hardware myself, I've tested the result with output to the terminal screen (using<tt> .HERE</tt>).
+<p>  Because no specific knowledge of the arm is used, there is no protection against commanding the arm steppers to impossible positions. It is trivial to choose the number of motors differently. The program coordinates processes that run with different speeds: they start at the same time, run smoothly, and stop at the same time. Other applications are possible.
+<p>  Examples are cartoons of Achilles and the Tortoise, or drawing straight lines with that five-dimensional plotter you have always wanted to build.
+
+<h2>The problem</h2>
+
+     Say, we move from position<tt> &lt;0 0 0 0 0&gt; </tt>to position<tt> &lt;10 20 13 7 30&gt;</tt>. The last motor rotates over the largest angle:<tt> 30</tt>. This largest angle (<tt>30</tt>) is the starting point of the algorithm: we'll distribute the movement of each motor over 30 segments. Per segment a motor either does a single step (<tt>PLOP</tt>), or it does nothing (<tt>PILI</tt>).
+<br> 
+<br> The last motor does 1 step in each segment (30 times<tt> PLOP</tt>). This is simple. Let's look at the other motors.
+<br> Distance 10: 10 segments 1 step (<tt>PLOP</tt>) and 20 segments nothing (<tt>PILI</tt>). Equally distributed this means:<tt> PILI PLOP PILI </tt>(10 times).
+<br> Distance 20 is simple too:<tt> PLOP PILI PLOP </tt>(10 times).
+<br> Distance 13 is more difficult: 13 times<tt> PLOP </tt>and 17 times<tt> PILI</tt>. How to distribute this evenly over 30 segments?
+
+<div align=right><tt><a href="ec207b.html">&#187;&#187;</a></tt></div>
+
+</table>
+
+</center></BODY></HTML>
+
+

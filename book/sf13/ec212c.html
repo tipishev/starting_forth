@@ -1,0 +1,78 @@
+<HTML><HEAD><TITLE> c 212c KISS </TITLE>
+<link rel="stylesheet" type="text/css" href="an.css">
+</HEAD>
+<BODY><center>
+
+<table><tr><td><center>212c
+<br><tt>
+<a href="ec212b.html"> &#171;&#171; </a> &nbsp;
+<a href="ec200.html"> &#171;&#187; </a> &nbsp;
+<a href="ec212d.html"> &#187;&#187; </a>
+</tt>
+</center></table>
+
+<br> &nbsp;
+
+<table width="80%"><tr><td>
+Let's continue.
+<pre><b>
+  KISS .      KISS EMIT
+</b></pre>
+
+<pre>
+  . 3                  \ 3
+  . ( 3 + 4 * 5 )      \ 35
+</pre>
+
+   Nesting is allowed (12 levels deep):
+
+<pre>
+  . ( 3 + ( 4 * 5 ) )
+  . ( ( 3 + 4 ) * 5 )
+</pre>
+
+   Mixing with other Forth commands is no problem:
+
+<pre>
+  . BASE              \ 291976 (at least one Forth)
+  . ( BASE @ )        \ 10 (parentheses needed!)
+
+  . ( BASE @ 1+ )     \ 11
+  BASE . ( @ 1+ )     \ 11
+  BASE @ . 1+         \ 11
+
+  . ( BASE @ + 5 )    \ 15
+  BASE . ( @ + 6 )    \ 16
+  BASE @ . ( + 7 )    \ 17
+</pre>
+
+   Undoubtedly many more variants are possible.
+<pre>
+  . ( 9 + DUP )       \ 18
+  . ( 1 20 - SWAP )   \ 19
+</pre>
+   Incredibly flexible, no doubt, but <em>easier</em>?
+
+<BR><BR> Let's explore even further.
+
+<pre><b>
+  KISS >      KISS &lt;     KISS =      KISS &lt;&gt;
+  KISS IF     KISS THEN
+  KISS AND
+</b></pre>
+<pre>
+  : TEST (( x -- )
+    CR . DUP ." is "
+    IF ( DUP = 0 )  THEN ( ." zero " )
+    IF ( DUP &lt; 0 )  THEN ( ." negative " )
+    IF ( 0 &lt; over ) THEN ( ." positive " )
+    ." and "
+    IF   ( = ( 1 AND TUCK ) )
+    THEN ( ." odd." ELSE ." even." ) ;
+
+  KISS TEST
+
+  TEST ( 100 - 111 )     \ -11 is negative and odd.
+<div align=right><tt><a href="ec212d.html">&#187;&#187;</a></tt></div>
+</pre>
+</table></center></body></html>

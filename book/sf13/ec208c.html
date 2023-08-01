@@ -1,0 +1,62 @@
+<HTML><HEAD><TITLE> ec 208c catch1 </TITLE>
+<link rel="stylesheet" type="text/css" href="an.css">
+</HEAD>
+<BODY><center>
+
+<table><tr><td><center>208c
+<br><tt>
+<a href="ec208b.html"> &#171;&#171; </a> &nbsp;
+<a href="ec200.html"> &#171;&#187; </a> &nbsp;
+<a href="ec209a.html"> &#187;&#187; </a>
+</tt>
+</center></table>
+
+<br> &nbsp;
+
+<table width="80%"><tr><td valign="top"> Theo:
+<td><tt>EVALUATE </tt>operates on the string, using the stack. Apparently<tt> 0 0 </tt>was on the stack when the error occurred.
+<br> Now for the serious stuff:
+<pre>
+EX 5 ' CHAR CATCH 8 .S
+</pre>
+
+
+<tr><td valign="top"> Leo:
+<td><tt>CATCH </tt>executes<tt> CHAR</tt>. <tt>CHAR </tt>puts the ASCII-code of<tt> 8 </tt>on stack and adds an "allright zero."
+<pre>
+[rtn] ( 5 56 0 ) ok
+</pre>
+
+
+<tr><td valign="top"> Theo:
+<td> Right. For the next example it's important to remember that<tt> CATCH </tt>saves the current input stream before going to work. When an error develops, the stack(s) <em>and</em> the input stream are restored. Why? Consider what happens when loading a file, when after an error the input stream is <em>not</em> restored.
+<pre>
+EX 6 ' ' CATCH 666 .S [rtn] ( 6 -13 666 ) ok
+</pre>
+<tt>CATCH </tt>executes the Tick on<tt> 666</tt>. Of course, that doesn't work. So<tt> CATCH </tt>puts error number -13 on the stack and restores the input stream. That stream was pointing to just after<tt> CATCH</tt>. <tt>666 </tt>is read again and executed and after that<tt> .S </tt>gets its turn.
+<br>
+<br> I'm terribly sorry, but I have to go now. 
+ Here are some puzzles you should be able to solve, given the state of your knowledge at this point.
+<pre>
+ EX 7  ' S" CATCH Vijgeblaadje" .S
+ EX 8  ' ' CATCH FIG .S
+ EX 9  ' TO CATCH BL .S
+ EX 10 ' DUP ' CATCH EXECUTE .S
+ EX 11 ' DUP ' CATCH CATCH .S
+ EX 12 ' DUP ' CATCH ' CATCH CATCH .S
+ EX ( 13 ) ' DROP CATCH .S
+ EX 14 ' THROW CATCH .S
+</pre>
+ Goodbye.
+
+
+<tr><td valign="top"> Leo:
+<td> Goodbye.
+
+<tr><td colspan="2">
+<br>[To be continued]
+<div align=right><tt><a href="ec209a.html">&#187;&#187;</a></tt></div>
+
+</table>
+
+</center></BODY></HTML>

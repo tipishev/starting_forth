@@ -1,0 +1,15 @@
+\ -----------------------------------------------------------------------
+\ 10-1.FORTH ------------------------------------------------------------
+\ -----------------------------------------------------------------------
+\ Code from Starting Forth Chapter 10
+\ ANSized by Benjamin Hoyt in 1997
+\ BOUNDS suggested by Samuel Tardieu in 2003
+
+( problem 10-1 )
+( Remember, we assume 1 CHARS == 1 byte )
+: BOUNDS ( addr size -- addr+size addr ) OVER + SWAP ;
+: CHANGE  ( char1 char2 -- )
+   3 BLOCK 1024 
+   BOUNDS DO  OVER  I C@ = IF  DUP  I C! UPDATE  THEN  
+        LOOP  2DROP ;
+

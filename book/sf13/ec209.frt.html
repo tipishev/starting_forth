@@ -1,0 +1,37 @@
+\ CATCH and THROW (Albert Nijhof)
+
+FORTH DEFINITIONS   DECIMAL
+: .DEPTH ( ? -- ) 
+  DEPTH 0 .R ." : "
+  DEPTH 0<                       \ When necessary:
+  IF   BEGIN 0 DEPTH 0= UNTIL    \   stack repair
+       ." Stack underflow "      \   with message.
+  THEN ;
+
+: .TOP2 ( ? -- )                 \ If possible, show
+  DEPTH 1 > IF OVER . THEN       \   top two numbers
+  DEPTH IF DUP . THEN ;          \   on stack.
+
+: .TOP4 ( ? -- )
+  DEPTH 4 > IF ." ~ " THEN
+  DEPTH 2 > IF 2>R .TOP2 2R> THEN
+  .TOP2 ;
+
+: STATE-SIGN ( - char )
+  STATE @ IF [CHAR] ] ELSE [CHAR] [ THEN ;
+
+: .SITUATION ( -- )
+  CR .DEPTH .TOP4 STATE-SIGN EMIT SPACE ;
+
+CREATE INPUTBUFFER 80 ALLOT
+: INPUT ( -- addr len )
+  INPUTBUFFER DUP 80 ACCEPT SPACE ;
+
+: RISKY-PROGRAM ( -- ) .SITUATION INPUT EVALUATE ;
+
+: EX ( - )
+  BEGIN ['] RISKY-PROGRAM CATCH
+        DUP IF DUP . ." THROW executes " THEN DROP
+  AGAIN ;
+
+\ ----- END -----

@@ -1,0 +1,919 @@
+<!DOCTYPE HTML PUBLIC "-//Microsoft//DTD Internet Explorer 3.0 HTML//EN">
+<HTML>
+
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Leo Brodie's Starting Forth - Chapter 12</TITLE>
+  <META name="description" content="Starting Forth, Leo Brodie, Chapter 12, Three Examples.">
+  <META name="keywords" content="Forth, example code, Starting Forth, chapter 12">
+</HEAD>
+
+<BODY BGCOLOR="#F8F8F8" TEXT="#000000" LINK="#0000FF" VLINK="#007070" ALINK="#FF0000" TOPMARGIN=0>
+
+<H1>12 Three Examples</H1>
+
+	<P> Programming in Forth is more of an "art" than programming in any other language. Like painters drawing 
+	    brushstrokes, Forth programmers have complete control over where they are going and how they will get 
+	    there. Charles Moore has written, "A good programmer can do a fantastic job with Forth; a bad programmer
+	    can do a disastrous job." A good Forth programmer must be conscious of "style." 
+	
+	<P> Forth style is not easily taught; it's a subject that deserves a book of its own. Some elements of good
+	    Forth style include:
+	    <UL>
+	     <LI> simplicity,
+	     <LI> the use of many short definitions rather than a few longer ones,
+	     <LI> a correspondence between words and easy-to-understand actions or data structures,
+	     <LI> well-chosen names, and
+	     <LI> well laid-out files, clearly commented.
+	    </UL>
+	    
+	<P> One good way to learn style, aside from trial and error, is to study existing Forth applications, 
+	    including Forth itself. In this book we've included the definitions of many Forth system words, and
+	    we encourage you to continue this study on your own.
+
+   	<P> This chapter introduces three applications which should serve as examples of good Forth style.
+
+	<P> The first example will show you the typical process of programming in Forth: starting out with a 
+	    problem and working step-by-step towards the solution.
+	
+	<P> The second example involves a more complex application already written: you will see the use of 
+	    well-factored definitions and the creation of an application-specific "language."
+
+	<P> The third example demonstrates the way to translate a mathematical equation into a Forth definition;
+	    you will see that working with fixed-point arithmetic does not necessarily mean sacrificing speed and 
+	    compactness.
+
+<H2>1. <FONT COLOR="#0000FF">WORD</FONT> game</H2>
+
+	<P> The example in this section is a refinement of the buzzphrase generator we programmed back in Chap. 10.
+	    (You might want to review that version before reading this section.) The previous version did not 
+	    keep track of its own carriage returns, causing us to force <FONT COLOR="#0000FF">CR</FONT>s into the
+	    definition and creating a very ragged right margin. The job of deciding how many whole words can fit
+	    on a line is a reasonable application for a computer and not a trivial one.
+
+	<P> The problem is this: to draft a "brief" which consists of four paragraphs, each paragraph consisting 
+	    of an appropriate introduction and sentence. Each sentence will consist of four randomly-chosen
+	    phrases linked together by fillers to create grammatically logical sentences and a period at the end.
+
+	<P> The words and phrases have already been edited into the file <A HREF="phrases.forth.html"><TT>phrases.forth</TT></A>. 
+	    Look at this file now, without looking at <A HREF="wordgame.forth.html"><TT>wordgame.forth</TT></A>. (we're pretending
+	    we haven't written the application yet).
+
+	<P> File <A HREF="phrases.forth.html"><TT>phrases.forth</TT></A> defines the four introductions, compiled into the <TT>INTROS</TT>
+	    string array. The four (or more, <TT>INTROS</TT> is self-organizing) introductions must be used in sequence. 
+	    The same file <A HREF="phrases.forth.html"><TT>phrases.forth</TT></A> contains four sets of fillers, in <TT>FILLER</TT>. The 
+	    four sets are used in sequence, but any of the three versions within a set (organized in columns) is chosen 
+	    at random. Again, <A HREF="phrases.forth.html"><TT>phrases.forth</TT></A> contains the three columns of buzzwords from 
+	    our previous version, with some added words. We've organized the buzz words in separate <TT>1ST-ADJECTIVE</TT>, 
+	    <TT>2ND-ADJECTIVE</TT> and <TT>NOUN</TT> string arrays.
+
+	<P> You migh also look at at the sample output that precedes the end of this section, to get a better
+	    idea of the desired result. 
+
+	<P> "Top-down design" is a widely accepted approach to programming that can help to reduce development time.
+	    The idea is that you first study your application as a whole, then break the problem into smaller processes, 
+	    then break these processes into still smaller units. Only when you know what all the units should do, and 
+	    how they will connect together, do you begin to write code.
+	
+	<P> The Forth language encourages top-down design. But in Forth you can actually begin to write top-level
+	    definitions immediately. Already we can imagine that the "ultimate word" in our application might be 
+	    called <TT>PAPER</TT>, and that it will probably be defined something like this:
+<PRE>	: PAPER	  4 0 DO  I INTRO  SENTENCE LOOP ;
+</PRE>
+ 	    where <TT>INTRO</TT> uses the loop index as its argument to select the appropriate introduction. 
+	    <TT>SENTENCE</TT> could be defined
+<PRE>	: SENTENCE  4 0 DO  I PHRASE  LOOP  ENDS ;
+</PRE>
+	    where <TT>PHRASE</TT> uses the loop index as its argument to select the appropriate set, then chooses one of the 
+	    three versions within the set. <TT>ENDS</TT> takes care of the final '.' and <FONT COLOR="#0000FF">CR</FONT> at the
+	    end of a sentence.
+
+	<P> Using our favorite editor, we can enter these top-level definitions into <A HREF="wordgame.forth.html"><TT>wordgame.forth</TT></A>. 
+	    Of course we can't <FONT COLOR="#0000FF">INCLUDE</FONT> this file until we have written our lower-level 
+	    definitions.
+	    
+	<P> In complicated applications, Forth programmers often test the logic of their top-level definitions
+	    by using "stubs" for the lower-level words. A stub is a temporary definition. It might simply print
+	    a message to let us know its been executed. Or it may do nothing at all, except resolve the reference
+	    to its name in the high-level definition.
+
+	<P> While the top-down approach helps to organize the programming process, it isn't always feasible to code 
+	    in purely top-down fashion. Usually we have to find out how certain low-level mechanisms will work before 
+	    we can design the higher-level definitions.
+
+	<P> The best compromise is to keep a perspective on the problem as a whole while looking out for low-level 
+	    problems whose solutions may affect the whole application.
+
+	<P> In our example application, we can see that it will no longer be possible to force <FONT COLOR="#0000FF">CR</FONT>s
+	    at predictable points. Instead we've got to invent a mechanism whereby the computer will perform carriage returns
+	    automatically.
+
+	<P> The only way to solve this problem is to count every character that is typed. Before each word is typed,
+	    the application must decide whether there is room to type it on the current line or do a carriage return first.
+
+	<P> So let's define the variable <TT>LINECOUNT</TT> to keep the count and the constant <TT>RMARGIN</TT> with the value 78, to
+	    represent the maximum count per line. Each time we type a word we will add its count to <TT>LINECOUNT</TT>. Before
+	    typing each word we will execute this phrase:
+<PRE>	( length-of-next-word -- ) LINECOUNT @ +  RMARGIN < 0= IF  CR
+</PRE>
+	    that is, if the length of the next word added to the current length of the line exceeds our right margin, 
+	    then we'll do a carriage return.
+
+	<P> But we have another problem: how do we isolate words with a known count for each word? For now, let's
+	    assume we have available a word <TT>Split-At-Char</TT>. This word breaks strings apart, given a specific delimiter.	    
+
+	<P> Let's write out a "first draft" of this low-level part of our application. It will type a single word,
+	    making appropriate calculations for carriage return.
+
+<TABLE CELLPADDING=6 CELLSPACING=1 WIDTH="90%" BORDER="0">
+	<TR>  <TD  WIDTH="25%">
+		   <CODE> BL Split-At-Char	</CODE>	<TD> Break string in two at first BL. Leaves the count on the stack, with the address of the first character underneath.
+	<TR>  <TD> <CODE> DUP 1+		</CODE> <TD> Leaves the incremented count and a copy of the original count on the stack.
+	<TR>  <TD> <CODE> LINECOUNT @ +		</CODE> <TD> Compute how long the current line would be if a space plus the new word were to be included on it.
+	<TR>  <TD> <CODE> RMARGIN >    		</CODE> <TD> Decides if it would exceed the margin.
+	<TR>  <TD> <CODE> IF  CR 0 LINECOUNT !	</CODE> <TD> If so, resets the carriage and the count.
+	<TR>  <TD> <CODE> ELSE  SPACE  THEN	</CODE> <TD> Otherwise, leaves a space between the words.
+	<TR>  <TD> <CODE> DUP 1+ LINECOUNT +!	</CODE> <TD> Increases the count by the length of the word to be typed, plus one for the space.
+	<TR>  <TD> <CODE> TYPE			</CODE> <TD> Types the word using the count and the address left by <TT>Split-At-Char</TT>.
+</TABLE>
+
+	<P> Now the problem is getting <TT>Split-At-Char</TT> to look at the strings in <TT>phrases.forth</TT>. This is handled
+	    by <FONT COLOR="#0000FF">INCLUDED</FONT>, so if we say
+<PRE>	S" phrases.forth" INCLUDED
+</PRE>
+	    then <FONT COLOR="#0000FF">CREATE</FONT> will make sure all necessary strings are compiled in memory.
+
+	<P> To help <FONT COLOR="#0000FF">CREATE</FONT> do this, we'll define the word <TT>$"</TT>. As
+	    you can see from its definition, <TT>$"</TT> compiles the string (delimited by a second quotation mark) into the 
+	    dictionary, with the count in the first byte, and leaves its address on the stack for <TT>}$</TT>, <TT>}s$</TT> and <TT>}r$</TT>. 
+	    To compile the count and string into the dictionary, we simply have to execute <FONT COLOR="#0000FF">WORD</FONT>, since
+	    <FONT COLOR="#0000FF">WORD</FONT>'s buffer is <FONT COLOR="#0000FF">HERE</FONT>. We get the string's address
+	    as a fillip, since <FONT COLOR="#0000FF">WORD</FONT> also leaves <FONT COLOR="#0000FF">HERE</FONT>.
+
+	<P> All that remains is to <FONT COLOR="#0000FF">ALLOT</FONT> the appropriate number of bytes. This number is
+	    obtained by fetching the count from the first byte of the string and adding one for the count's byte.
+
+	<P> We have written <TT>$"</TT> to compile the next string into the dictionary, but also to pile the address 
+	    of this string on the stack, on top of the addresses of other strings that were compiled already just before
+	    that. In order to let other words know how many string addresses are on the stack, <TT>$"</TT> also increments 
+	    the top of stack:
+<PRE>	( 'string1 'string2 ... stringN N  new_string_address -- )  SWAP 1+ ;
+</PRE>
+	    In order to make this work for the first string <TT>$"</TT> must compile, we have the constant <TT>${</TT> 
+	    put a 0 on the stack.
+
+	<P> We now have <TT>${</TT> and <TT>$"</TT> compiling our strings for us, but at some point these addresses 
+	    must be stored in the dictionary. There we can choose one of them to print, when <TT>INTRO</TT> or <TT>PHRASE</TT> 
+	    need to do so. Because there is clearly work to be done both at compile and run-time, this is an ideal job 
+	    for a defining word. The compile-time work is done in <FONT COLOR="#0000FF">CREATE</FONT> parts which 
+	    typically look as follows:
+<PRE>	( u -- ) DUP , ( first compile count ) 0 ?DO , LOOP ( compile u string addresses )
+</PRE>
+	    while the run-time part is handled in <FONT COLOR="#0000FF">DOES&gt;</FONT> parts, doing something like
+<PRE>	DOES>   ( ix body -- c-addr u ) SWAP CELLS +  CELL+ @ COUNT ;
+</PRE>
+	    This <FONT COLOR="#0000FF">DOES&gt;</FONT> part is actually usable for <TT>}$</TT>, which has the rather simple
+	    job to deliver <TT>INTRO</TT>'s string, selected by an index on the stack. Other words that need a string address
+	    want more randomness, which is easily provided by using <TT>CHOOSE</TT> (see the listing for <TT>}s$</TT> and <TT>}r$</TT>).
+	
+	<P> Now we have a mechanism to present strings to <TT>Split-At-Char</TT>, the next question is: how do we know 
+	    when we've gotten to the end of such a string?
+
+	<P> Since we are typing word by word what <TT>Split-At-Char</TT> outputs, we only have to check whether the 
+	    character count of these strings is larger than zero. Once <TT>Split-At-Char</TT> gets to the end of its input 
+	    string, it starts returning empty strings.
+
+	<P> For example, the phrase
+<PRE>   S" Hello, I speak Forth" .PHRASE
+</PRE>
+	should type out the contents of the string, word by word, performing carriage returns where necessary.
+
+	<P> How should we structure our definition of .<TT>PHRASE</TT>? Let's re-examine what it must do:
+	<OL>
+	  <LI> Determine whether there is still a word in the string to be typed.
+	  <LI> If there is, type the word (with margin checking), then repeat. If there isn't, exit.
+	</OL>
+
+	<P> The two part nature of this structure suggests that we need a <FONT COLOR="#0000FF">BEGIN</FONT>...<FONT COLOR="#0000FF">WHILE</FONT>...<FONT COLOR="#0000FF">REPEAT</FONT> loop.
+	    Let's write our problem this way, if only to understand it better.
+<PRE>	... BEGIN ANOTHER? WHILE .WORD REPEAT ...
+</PRE>
+	<TT>ANOTHER?</TT> will do step 1; <TT>.WORD</TT> will do step 2.
+
+	<P> How should <TT>ANOTHER?</TT> determine whether there is still a word to be typed from the string? It simply tests 
+	    the top of stack to see if the string count is not yet zero, by using the phrase
+	    <FONT COLOR="#0000FF">DUP</FONT>:
+<PRE>	: ANOTHER? DUP ; ( #chars -- TRUE=string-not-empty )
+</PRE>
+	    The (not properly formed) flag will serve as the argument for <FONT COLOR="#0000FF">WHILE</FONT>.
+
+	<P> How do we compute the strings for .<TT>PHRASE</TT> to work on?  This is accomplished by executing one of the
+	    various children of our compiling word <TT>}$</TT>, <TT>}r$</TT> or <TT>}s$</TT>. Thus our definition of .<TT>PHRASE</TT> might be
+<PRE>	: .PHRASE ( c-addr u -- ) BEGIN  ANOTHER?  WHILE  .WORD  REPEAT  2DROP ;
+</PRE>
+
+	<P> We need the <FONT COLOR="#0000FF">2DROP</FONT> because, when we exit the loop, we will have the final 
+	    address of <TT>Split-At-Char</TT> and a zero count on the stack, neither of which we need any longer.
+
+	<P> How do we define <TT>.WORD</TT>? Actually, we've defined it already, a few pages back. However, it pays 
+	    to split <TT>.WORD</TT> up into a few other useful words, so that it looks like this:
+
+<PRE>	: -FITS? linecount @ +  RMARGIN > ; 
+	: SPACE' linecount @ IF  SPACE  1 linecount +!  THEN ;
+	: CR'    CR  0 linecount ! ;
+
+	: .WORD ( addr1 #chars1 -- addr2 #chars2 )
+		BL Split-At-Char
+		DUP 1+ ( space!) -FITS? IF  CR'  THEN
+		SPACE' TYPE' ;
+</PRE>
+
+	<P> Now we have our word-typing mechanism. But let's see if we're overlooking anything. For example, consider
+	    that every time we start a new paragraph, we must remember to reset <TT>LINECOUNT</TT> to zero. Otherwise 
+	    our <TT>.WORD</TT> will think that the current line is full when it isn't. We should ask ourselves this 
+	    question: is there <U>ever</U> a case in this application where we would want to perform a <FONT COLOR="#0000FF">CR</FONT>
+	    without resetting <TT>LINECOUNT</TT>? The answer is no, by the very nature of the application. For this reason we
+	    defined
+
+<PRE>	: CR' CR  0 LINECOUNT ! ;
+</PRE>
+	    to create a version of <FONT COLOR="#0000FF">CR</FONT> that is appropriate for this application. We have used
+	    this <FONT COLOR="#0000FF">CR</FONT> in our definition of <TT>.WORD</TT>.
+
+	<P> We should also consider our handling of spaces between words. By using the phrase
+
+<PRE>	IF  CR  ELSE  SPACE  THEN
+</PRE>
+	    before typing each word, we guarantee that there will be a space between each pair of words on the same line 
+	    but no space at the beginning of successive lines. And since we are typing a space <U>before</U> each word rather
+            than after, we can place a period immediately after a word, as we must at the end of a sentence.
+
+	<P> But there is a problem with this logic: at the beginning of a new paragraph, we will always get one space
+	    before the first word. Our solution: to redefine <FONT COLOR="#0000FF">SPACE</FONT> so that it will be sensitive
+	    to whether or not we're at the beginning of a line, and will <U>not</U> space if we <U>are</U>:
+
+<PRE>	: SPACE  LINECOUNT @  IF  SPACE  THEN ;	
+</PRE>
+
+	<P> If <TT>LINECOUNT</TT> is "0" then we know we are at the beginning of a line, because of the way we have redefined 
+	    <FONT COLOR="#0000FF">CR</FONT>.
+
+	<P> While we are redefining <FONT COLOR="#0000FF">SPACE</FONT>, it would be logical to include the phrase
+
+<PRE>	1 LINECOUNT +!
+</PRE>
+	<P> in the redefinition. Again our reasoning is that we should never perform a space without incrementing
+	    the count. 
+
+	<P> Let's assume that we have edited our definitions into <TT>wordgame.forth</TT>. Notice that we had very little 
+	    typing to do, compared with the amount of thinking we've done. Forth source code tends to be concise.
+
+	<P> Now we can define our in-between-level words -- words like <TT>INTRO</TT> and <TT>PHRASE</TT> that we have already used in our
+	    highest-level words, but which we didn't define because we didn't have the low-level mechanism.
+
+	<P> Let's start with <TT>INTRO</TT>. The finished definition of <TT>INTRO</TT> looks like this:
+
+<PRE>	: INTRO  ( u -- ) CR' intros .PHRASE ; 
+</PRE>
+
+	<P> Our mechanism has given us a very easy way to select strings. We can test this definition by itself, as follows:
+<PRE>	0 INTRO  ( or 1, 2 or 3 INTRO )
+	<U>In this paper we will demonstrate that ok</U>
+</PRE>
+	    Notice that we put the argument to <TT>INTRO</TT> on the stack first.
+
+	<P> The way to get a <TT>FILLER</TT> phrase is a little more complicated. All of it is handled by the <FONT COLOR="#0000FF">DOES&gt;</FONT> 
+	    part of <TT>}s$</TT>. Since we are dealing with sets, not lines,  and since the sets all have three strings, we must 
+	    multiply the loop index for <TT>filler</TT> by 3. To pick one of the 3 versions <U>within</U> the set, we must 
+	    choose a random number under three, add it to the index so far, convert it to cells, then add this result to 
+	    the beginning of the set, taking into account the count of strings in front. We can define
+<PRE>	...
+	DOES> ( ix -- ) DUP @ 1- ROT -  3 *  3 CHOOSE +   CELLS + CELL+ @ COUNT ; 
+</PRE>
+	    The <TT>DUP @ 1- ROT -</TT> is there because we compiled the strings in reverse order of their specification
+	    in <TT>phrases.forth</TT>, and therefore need to find the complement of the actual compiled number of strings.
+
+	<P> Again we can test this definition by writing
+
+<PRE>	3 FILLER
+	<U>to function as ok</U>
+</PRE>
+	<P> The remaining words in the application are similar to their previous counterparts, stated in terms of the
+	    new mechanism.
+
+	<P> Here is a sample of the output. (We've added <TT>REDO</TT> as an afterthought so that we'd be able to print 
+	    the same part more than once.)
+
+<FONT COLOR="#007F7F"> <PRE>
+	In this paper we will demonstrate that by using synchronized third generation
+	capability balanced by qualified digital projections it becomes not 
+	unfeasible for all but the least stand-alone organizational hardware to 
+	function as transient undocumented mobility.
+
+	On the one hand, studies have shown that by applying available resources 
+	towards synchronized fail-safe mobility coordinated with random context 
+	sensitive mobility it is possible for even the most responsive management 
+	mobility to avoid partial unilateral engineering.
+
+	On the other hand, however, practical experience indicates that with 
+	structured deployment of stand-alone fail-safe concepts coordinated with 
+	optimal omnirange time phasing it is possible for even the most qualified 
+	monitored utilities to avoid optional undocumented utilities.
+
+	In summary, then, we propose that by using total incremental programming 
+	coordinated with representative policy engineering it is possible for even 
+	the most responsive transitional engineering to generate a high level of 
+	compatible incremental engineering.
+</PRE></FONT>
+
+
+<H2>2. File Away!</H2>
+
+	<P> Our second example consists of a simple filing system. It is a moderately useful application, and 
+	    a good one to learn Forth from. We have divided this section into four parts:
+	<OL>
+	  <LI> A "How To" for the end user. This will give you an idea of what the application can do.
+	  <LI> Notes on the way the application is structured and the way certain definitions work.
+	  <LI> A glossary of all the definitions in the application.
+	  <LI> A listing of the application, including the data files themselves.
+	</OL>
+
+<H3>How to Use the Simple File System</H3>
+
+	<P> This computer filing system lets you store and retrieve information quicky and easily. At the moment,
+	    it is set up to handle people's names, occupations, and phone numbers. Not only does it allow you to
+	    enter, change, and remove records, it also allows you to search the file for any piece of information.
+	    For example, if your have a phone number, you can find the person's name; or, given a name, you can find
+	    the person's job, etc.
+
+	<P> For each person there is a "record" which contains four "fields." The names which specify each of these
+	    four fields are 
+<PRE>	SURNAME		GIVEN		JOB		PHONE
+</PRE>
+	<P> ("Given," of course, refers to a person's given name, or first name.)
+
+<H3>File Retrieval</H3>
+
+	<P> You can search the file for the contents of any field by using the word <TT>FIND</TT>, followed by the field-name
+	    and the contents, as in
+<PRE>	FIND JOB newscaster<IMG SRC="enterkey.gif" ALIGN=MIDDLE ALT="enter"><U>Dan Rather ok</U>
+</PRE>
+	<P> If any "job" field contains the string "newscaster," then the system prints the person's full name. If
+	    no such field exists, it prints "NOT IN FILE."
+	
+	<P> Once you have found a field, the record in which it was found becomes "current." You can get the contents
+	    of any field in the current record using the word <TT>GET</TT>. For instance, having entered the line above, you 
+	    can now enter
+<PRE>	GET phone <IMG SRC="enterkey.gif" ALIGN=MIDDLE ALT="enter"><U>555-9876 ok</U>
+</PRE>
+	<P> The <TT>FIND</TT> command will only find the <U>first</U> instance of the field that you are looking for.
+	     To find out if there is another instance of the field that you last found, use the command <TT>ANOTHER</TT>.
+	     For example, to find another person whose "job" is "newscaster," enter
+<PRE>	ANOTHER<IMG SRC="enterkey.gif" ALIGN=MIDDLE ALT="enter"><U>Jessica Savitch ok</U>
+</PRE>
+	and
+<PRE>	ANOTHER<IMG SRC="enterkey.gif" ALIGN=MIDDLE ALT="enter"><U>Frank Reynolds ok</U>
+</PRE>
+	<P> When there are no more people whose job is "newscaster" in the file, the <TT>ANOTHER</TT> command will print
+	    "NO OTHER."
+
+	<P> To list all the names whose field contains the string that was last found, use the command <TT>ALL</TT>:
+<PRE>	ALL<IMG SRC="enterkey.gif" ALIGN=MIDDLE ALT="enter">
+	<U>Dan Rather</U>
+	<U>Jessica Savitch</U>
+	<U>Frank Reynolds</U>
+	<U>ok</U>
+</PRE>
+	<P> Since the surname and given name are stored separately, you can use <TT>FIND</TT> to search the file on the
+	    basis of either one. But if you know the person's <U>full</U> name, you can often save time by locating 
+	    both fields at once, by using the word <TT>FULLNAME</TT>. <TT>FULLNAME</TT> expects the full name to be 
+	    entered with the last name first and the two names separated by a comma, as in
+<PRE>	FULLNAME Wonder,Stevie<IMG SRC="enterkey.gif" ALIGN=MIDDLE ALT="enter"><U>Stevie Wonder ok</U>
+</PRE>
+	<P> (There must not be a space after the comma, because the comma marks the end of the first field and the 
+	    beginning of the second field.) Like <TT>FIND</TT> and <TT>ANOTHER</TT>, <TT>FULLNAME</TT> repeats the name 
+	    to indicate that it has been found.
+	
+	<P> You can actually find <U>any pair</U> of fields by using the word <TT>PAIR</TT>. You must specify both the field
+	    names and their contents, separated by a comma. For example, to find a newscaster whose given name is Dan,
+	    enter
+<PRE>	PAIR JOB newscaster,GIVEN Dan<IMG SRC="enterkey.gif" ALIGN=MIDDLE ALT="enter"><U>Dan Rather ok</U>
+</PRE>
+
+<H3>File Maintenance</H3>
+	
+	<P> To enter a new record, use the command <TT>ENTER</TT>, followed by the surname, given name, job, and phone,
+	    each separated by a comma only. For example,
+<PRE>	ENTER Nureyev,Rudolf,Ballet dancer,555-1234<IMG SRC="enterkey.gif" ALIGN=MIDDLE ALT="enter"><U> ok</U>
+</PRE>
+	<P> To change the contents of a single field within the <U>current</U> record, use the command <TT>CHANGE</TT>
+	    followed by the name of the field, then the new string. For example,
+<PRE>	CHANGE JOB choreographer<IMG SRC="enterkey.gif" ALIGN=MIDDLE ALT="enter"><U> ok</U>
+</PRE>
+	<P> To completely remove the current record, use the command <TT>REMOVE</TT>:
+<PRE>	REMOVE<IMG SRC="enterkey.gif" ALIGN=MIDDLE ALT="enter"><U> ok</U>
+</PRE>
+
+<H3>Comments</H3>
+	
+	<P> This section is meant as a guide, for the novice Forth programmer, to the glossary and listing which follow.
+	    We'll describe the structure of this application and cover some of the more complicated definitions. As you 
+	    read this section, study the glossary and listing on your own, and try to understand as much as you can.
+
+	<P> Turn to the listing <A HREF="filer.forth.html">now</A>. Near the end, this file contains the definitions for all nine 
+	    end-user commands we've just discussed. Notice how simple these definitions are, compared to their power!
+
+	<P> This is a characteristic of a well-designed Forth application. Notice that the word <TT>-FIND</TT>, the elemental 
+	    file-search word, is factored in such a way that it can be used in the definitions of <TT>FIND</TT>, 
+	    <TT>ANOTHER</TT>, and <TT>ALL</TT>, as well as in the internal word, <TT>(PAIR)</TT>, which is used by 
+	    <TT>PAIR</TT> and by <TT>FULLNAME</TT>.
+
+	<P> We'll examine these definitions shortly, but first let's look at the overall structure of this application.
+
+	<P> One of the basic characteristics of this application is that each of the four fields has a name which we
+	    can enter in order to specify the particular field. For example, the phrase
+<PRE>	SURNAME PUT
+</PRE>
+	    will put the character string that follows in the input stream into the "surname" field of the current record.
+	    The phrase
+<PRE>	SURNAME .FIELD
+</PRE>
+	    will print the contents of the "surname" field of the current record, etc.
+
+	<P> There are two pieces of information that are needed to identify each field: the field's starting address 
+	    relative to the beginning of a record and the length of the field.
+
+	<P> In this application, a record is laid out like this:
+<TABLE BORDER=1 WIDTH="70%">
+	<TR> <TH> offset
+	     <TH ALIGN=LEFT> 0
+	     <TH ALIGN=LEFT> 16
+	     <TH ALIGN=LEFT> 32
+	     <TH ALIGN=LEFT> 56
+	<TR> <TH> contents
+	     <TD ALIGN=CENTER> surname
+	     <TD ALIGN=CENTER> given
+	     <TD ALIGN=CENTER> job
+	     <TD ALIGN=CENTER> phone 
+	<TR> <TH> size
+	     <TD ALIGN=CENTER> 16
+	     <TD ALIGN=CENTER> 16
+	     <TD ALIGN=CENTER> 24
+	     <TD ALIGN=CENTER> 8
+</TABLE> 
+
+	<P> For instance, the "job" field starts thirty-two bytes in from the beginning of every record and continues 
+	    for twenty-four bytes.
+	
+	<P> We chose to make a record exactly sixty-four bytes long, but this system can be modified to hold records of
+	    any length and any number of fields. 
+	    
+	<P>
+
+<BLOCKQUOTE>
+<FONT SIZE="-1">
+	    To add more fields, just add lines with the length of the new field, followed by <TT>RECORD new-field-name</TT>.
+	    For example, to add a field <TT>FOO</TT> which is thirty bytes long, do
+<PRE>	30 RECORD foo
+</PRE>
+	    etc. The system automatically computes the values of <TT>R-LENGTH</TT> and <TT>#MAXRECS</TT>.
+</FONT>
+</BLOCKQUOTE>
+
+	<P> We've taken the two pieces of information for each field and put them into a double-length table associated
+	    with each field name. This task is performed by the defining word <TT>RECORD</TT>, at compile-time. Our 
+	    definition of <TT>JOB</TT>, therefore eventually executes <FONT COLOR="#0000FF">CREATE</FONT>, as in
+
+         <TABLE CELLPADDING=6 CELLSPACING=1 BORDER="2">	
+		<TR> <TD>3<TD> <B>J</B> <TD> <B>O</B> <TD> <B>B</B> 
+	 </TABLE>                                     
+         <TABLE CELLPADDING=6 CELLSPACING=1 BORDER="1">
+		<TR> <TD><CENTER><I>        link     </I></CENTER>
+		<TR> <TD><CENTER><I> execution token </I></CENTER>
+		<TR> <TD><CENTER> 32 </CENTER>
+		<TR> <TD><CENTER> 24 </CENTER>
+	 </TABLE> 
+
+<PRE>	CREATE JOB  32 , 24 ,
+</PRE>
+	<P> The literal 32 is computed by the system, which keeps track of the actual offset into a record through updating
+	    <TT>R-LENGTH</TT>.
+
+	<P> Thus when we enter the name of a field, we are putting on the stack the address of the table that describes
+	    the "job" field. We can fetch either or both pieces of information relative to this address.
+
+	<P> Let's call each of these entries a "field specifying table," or a "spec table" for short.
+
+	<P> Part of the design for this application is derived from the requirements of <TT>FIND</TT>, <TT>ANOTHER</TT>, 
+	    and <TT>ALL</TT>; that is, <TT>FIND</TT> not only has to find a given string within a given type of field, 
+	    but also needs to "remember" the string and the type of field so that <TT>ANOTHER</TT> and <TT>ALL</TT> can 
+	    search for the same thing.
+
+	<P> We can specify the kind of field with just one value, the address of the spec table for that type of field.
+	    This means that we can "remember" the type of field by storing this address into <TT>KEEP</TT>.
+
+	<P> <TT>KIND</TT> was created for this purpose, to indicate the "kind" of field.
+
+	<P> To remember the <U>string</U>, we have defined a buffer called <TT>WHAT</TT> to which the string can be moved. 
+
+	<P> The word <TT>KEEP</TT> serves the dual purpose of storing the given field type into <TT>KIND</TT> and the 
+	    given character string into <TT>WHAT</TT>. If you look at the definition of the end-user word <TT>FIND</TT>, 
+	    you will see that the first thing it does  is <TT>KEEP</TT> the information on what is being searched for. 
+	    Then <TT>FIND</TT> executes the internal word <TT>-FIND</TT>, which uses the information in <TT>KIND</TT> 
+	    and <TT>WHAT</TT> to find a matching string.
+
+	<P> <TT>ANOTHER</TT> and <TT>ALL</TT> also use <TT>-FIND</TT>, but they don't use <TT>KEEP</TT>. Instead they look 
+	    for fields that match the one most recently "kept" by <TT>FIND</TT>.
+
+	<P> So that we can <TT>GET</TT> any piece of information from the record we have just "found," we need a pointer 
+	    to the "current" record. This need is met by the value <TT>#RECORD</TT>. The operations of the words <TT>SET</TT>,
+	    <TT>TOP</TT> and <TT>DOWN</TT> should be fairly obvious to you.
+
+	<P> The word <TT>RECORD@</TT> uses its stack parameter to compute the absolute address (the computer-memory 
+	    address, somewhere in the disk buffer) of the beginning of the current record. <TT>RECORD@</TT> also makes 
+	    sure that the record really <U>is</U> in the disk buffer.
+	
+	<P> While a spec table contains the <U>relative</U> address of the field and its length, we usually need to know
+	    the field's absolute address and length for words such as <FONT COLOR="#0000FF">TYPE</FONT>, <FONT COLOR="#0000FF">MOVE</FONT>,
+	    and <FONT COLOR="#0000FF">PARSE</FONT>. Look at the definition of the word <TT>FIELD</TT> to see how it converts the 
+	    address of a spec table into an absolute address and length. Then examine how <TT>FIELD</TT> is applied in the 
+	    definition of <TT>.FIELD</TT>.
+
+	<P> The word <TT>PUT</TT> also employs <TT>FIELD</TT>. Its phrase
+
+<PRE>	>R KBD, R> >FLD_
+</PRE>
+	leaves on the stack the arguments
+<PRE>	addr-of-string count-of-string  absolute-addr-of-field size-of-field
+</PRE>
+	    for <FONT COLOR="#0000FF">MOVE</FONT> to move the string into the appropriate field of the current record. Before
+	    we move the string, we fill the field with spaces, to blank possible old contents. Also, we make sure the length
+	    of the moved string is not larger than the size of the field.
+	
+	<P> There are two things worth noting about the definition of <TT>FREE</TT>. The first is the method used to 
+	    determine whether the record is empty. We've made the assumption that if the first byte of a record is empty, 
+	    then the whole record is empty, because of the way <TT>ENTER</TT> works. If the first byte contains a character whose 
+	    ASCII value is less than or equal to <FONT COLOR="#0000FF">BL</FONT>, then it is not a printing character and 
+	    the line is empty. As soon as an empty record is found, <FONT COLOR="#0000FF">LEAVE</FONT> ends the loop. 
+	    <TT>#RECORD</TT> will contain the number of the free record.
+
+	<P> Another thing worth noting about <TT>FREE</TT> is that it aborts if the file is full, that is, if it runs 
+	    through all the records without finding one empty. We can use a <FONT COLOR="#0000FF">DO</FONT> loop to run 
+	    through all the records, but how can we tell that the loop has run out before it has found an empty record?
+
+    	<P> The best way is to leave a <FONT COLOR="#0000FF">TRUE</FONT> on the stack, to serve as a flag, before 
+	    beginning the loop. If an empty record is found, we can change the flag to <FONT COLOR="#0000FF">FALSE</FONT>
+	    (with the word <FONT COLOR="#0000FF">INVERT</FONT>) before we leave the loop. When we come out of the loop, we'll
+	    have a <FONT COLOR="#0000FF">TRUE</FONT> if we never found an empty record, a <FONT COLOR="#0000FF">FALSE</FONT>
+	    if we did. This flag will be the argument for <FONT COLOR="#0000FF">ABORT"</FONT>.
+
+	<P> We use a similar technique in the definition of <TT>-FIND</TT>. <TT>-FIND</TT> must return a flag to the word 
+	    that executed it: <TT>FIND</TT>, <TT>ANOTHER</TT>, <TT>ALL</TT> or <TT>(PAIR)</TT>. The flag indicates whether
+	    a match was found before the end of the file was reached. Each of these outer words needs to make a different 
+	    decision based on the state of this flag. This flag is <FONT COLOR="#0000FF">TRUE</FONT> if a match is not 
+	    found (hence the name <TT>-FIND</TT>). The decision to use negative logic was based on the way <TT>-FIND</TT> 
+	    is used.
+
+	<P> Because the flag needs to be <FONT COLOR="#0000FF">TRUE</FONT> if a match is not found, the easiest way to 
+	    design this word is to start with a <FONT COLOR="#0000FF">TRUE</FONT> on the stack and change it to a 
+	    <FONT COLOR="#0000FF">FALSE</FONT> only if a match is found. 
+
+	<P> Now that you understand the basic design of this application, you should have no trouble understanding the 
+	    rest of the listing, using the glossary as a guide.
+
+<H3>Filer Glossary</H3>
+
+<TABLE ALIGN=CENTER WIDTH="80%" BORDER="0">
+
+<TR> <TD bgcolor="#EEEEEE"> /CR      <TD bgcolor="#EEEEEE">	A constant that defines the length in bytes of a newline sequence.
+<TR> <TD bgcolor="#EEEEEE"> #MAXRECS <TD bgcolor="#EEEEEE">	A constant that defines the maximum number of records in the data file. To increase this number,
+								add lines containing R-LENGTH spaces, followed by a newline, to the data file.
+<TR> <TD bgcolor="#EEEEEE"> FILE     <TD bgcolor="#EEEEEE">	A value that holds the handle of the file containing the data.
+<TR> <TD bgcolor="#EEEEEE"> KIND     <TD bgcolor="#EEEEEE">	A value that contains the address of the field-specifying table for the type of field that
+								was last searched for by FIND.
+<TR> <TD bgcolor="#EEEEEE"> R-LENGTH <TD bgcolor="#EEEEEE">	A value that contains the length in bytes of a single record.
+<TR> <TD bgcolor="#EEEEEE"> #RECORD  <TD bgcolor="#EEEEEE">	A value that points to the current record.
+<TR> <TD bgcolor="#EEEEEE"> RECORD   <TD bgcolor="#EEEEEE">	A defining word to create field-specifying tables. Takes the field width in bytes as a parameter and
+								updates R-LENGTH. All uses of RECORD should happen before #MAXRECS is defined. 
+								Usage: 10 RECORD foo
+<TR> <TD bgcolor="#EEEEEE"> SURNAME  <TD bgcolor="#EEEEEE">	Returns the address of the field-specifying table for the "surname" (last name) field.
+<TR> <TD bgcolor="#EEEEEE"> GIVEN    <TD bgcolor="#EEEEEE">	Returns the address of the field-specifying table for the "given" (first name) field.
+<TR> <TD bgcolor="#EEEEEE"> JOB      <TD bgcolor="#EEEEEE">	Returns the address of the field-specifying table for the "job" field.
+<TR> <TD bgcolor="#EEEEEE"> PHONE    <TD bgcolor="#EEEEEE">	Returns the address of the field-specifying table for the "phone" field.
+<TR> <TD bgcolor="#EEEEEE"> WHAT     <TD bgcolor="#EEEEEE">	Returns the address of a buffer that contains the string that is being searched for, or was last 
+								searched for, by FIND.
+<TR> <TD bgcolor="#EEEEEE"> RBUF     <TD bgcolor="#EEEEEE">	Returns the address of a buffer that contains the current record data.
+<TR> <TD bgcolor="#EEEEEE"> FLUSH    <TD bgcolor="#EEEEEE">	Makes sure all changed data is committed to disk, but does not close the file.
+<TR> <TD bgcolor="#EEEEEE"> UPDATE   <TD bgcolor="#EEEEEE">	Writes the data for the current record to disk.
+<TR> <TD bgcolor="#EEEEEE"> RECORD@  <TD bgcolor="#EEEEEE">	Insures that the specified record is in RBUF.
+<TR> <TD bgcolor="#EEEEEE"> &gt;FLD_ <TD bgcolor="#EEEEEE"> 	Given the address of a field-specifying table, returns the address of the associated field in RBUF, 
+								along with its assigned length.
+<TR> <TD bgcolor="#EEEEEE"> &gt;FLD  <TD bgcolor="#EEEEEE">	Given the address of a field-specifying table, returns the address of the associated field in RBUF, 
+								along with its actual length.
+<TR> <TD bgcolor="#EEEEEE"> FIELD    <TD bgcolor="#EEEEEE">	Insures that the associated field in the current record is in a disk buffer and returns the address 
+								of the field in the buffer along with its actual length.
+<TR> <TD bgcolor="#EEEEEE"> .FIELD   <TD bgcolor="#EEEEEE">	From the current record, types the contents of the field that is associated with the 
+								field-specifying table at addr.
+<TR> <TD bgcolor="#EEEEEE"> SET      <TD bgcolor="#EEEEEE">	Sets the record pointer to the specified record.
+<TR> <TD bgcolor="#EEEEEE"> TOP      <TD bgcolor="#EEEEEE">	Resets the record pointer to the top of the file.
+<TR> <TD bgcolor="#EEEEEE"> DOWN     <TD bgcolor="#EEEEEE">	Moves the record pointer down one record.
+<TR> <TD bgcolor="#EEEEEE"> .NAME    <TD bgcolor="#EEEEEE">	Prints the full name found in the current record.
+<TR> <TD bgcolor="#EEEEEE"> READ     <TD bgcolor="#EEEEEE">	Moves a character string, delimited by a comma or by a carriage return, from the input 
+								stream to a temporary buffer, then returns its address and count.
+<TR> <TD bgcolor="#EEEEEE"> PUT	     <TD bgcolor="#EEEEEE">	Moves a character string, delimited by a comma or by a carriage return, from the input 
+								stream into the field whose field-specifying table address is given on the stack.
+<TR> <TD bgcolor="#EEEEEE"> KEEP     <TD bgcolor="#EEEEEE">	Moves a character string, delimited by a comma or by a carriage return, from the input 
+								stream into WHAT, and saves the address of the given field in KIND, for future use 
+								by -FIND.
+<TR> <TD bgcolor="#EEEEEE"> FREE     <TD bgcolor="#EEEEEE">	Starting at the top of the file, finds the first record that is free, that is, whose
+								count is zero. Aborts if the file is full.
+<TR> <TD bgcolor="#EEEEEE"> -FIND    <TD bgcolor="#EEEEEE">	Beginning at #record and proceeding down, compares the contents of the field indicated
+								by KIND against the contents of WHAT.
+<TR> <TD bgcolor="#EEEEEE"> (PAIR)   <TD bgcolor="#EEEEEE"> 	Starting from the top, attempts to find a match on the contents of WHAT, using KIND to 
+								indicate the type of field. If a match is made, then attempts to match a second field,
+								whose type is indicated by "field", with the contents {c-addr u}. If both match, prints the
+								name; otherwise repeats until a match is made or until the end of the file is reached,
+								in which case prints an error message.
+<TR> <TD bgcolor="#EEEEEE"> ENTER    <TD bgcolor="#EEEEEE">	Finds the first free record, then moves four strings delimited by commas into the 
+		        					surname, given, job and phone fields of that record.<BR>
+								Usage: ENTER lastname,firstname,job,phone
+<TR> <TD bgcolor="#EEEEEE"> REMOVE   <TD bgcolor="#EEEEEE"> 	Erases the current record.
+<TR> <TD bgcolor="#EEEEEE"> CHANGE   <TD bgcolor="#EEEEEE"> 	Changes the contents of the given field in the current record.<BR>
+								Usage: CHANGE field-name new-contents
+<TR> <TD bgcolor="#EEEEEE"> GET	     <TD bgcolor="#EEEEEE"> 	Prints the contents of the given type of field from the current record.<BR>
+								Usage: GET field-name
+<TR> <TD bgcolor="#EEEEEE"> FIND     <TD bgcolor="#EEEEEE"> 	Finds the record in which there is a match between the contents of the given field 
+								and the given string.<BR>
+								Usage: FIND field-name string
+<TR> <TD bgcolor="#EEEEEE"> ANOTHER  <TD bgcolor="#EEEEEE">	Beginning with the next record after the current one, and using KIND to determine
+								type of field, attempts to find a match on WHAT. If successful, types the name;
+								otherwise an error message.
+<TR> <TD bgcolor="#EEEEEE"> ALL	     <TD bgcolor="#EEEEEE"> 	Beginning at the top of the file, uses KIND to determine type of field and finds 
+								all matches on WHAT. Types the full name(s).
+<TR> <TD bgcolor="#EEEEEE"> PAIR     <TD bgcolor="#EEEEEE"> 	Finds the record in which there is a match between both the contents of the first 
+								given field and the first given string, and also the contents of the second given 
+		   						field and the second given string. Comma is delimiter.<BR>
+								Usage: PAIR field1 string1,field2 string2
+<TR> <TD bgcolor="#EEEEEE"> FULLNAME <TD bgcolor="#EEEEEE">	Finds the record in which there is a match on both the first and last names given.<BR>
+								Usage: FULLNAME lastname,firstname
+</TABLE>
+
+<H3>Filer Listing</H3>
+The listing is <A HREF="filer.forth.html">here</A>.
+
+<H2>3. No Weighting</H2>
+    	
+	<P> Our final example is a math problem which many people would assume could only be solved by using floating 
+	    point. It will illustrate how to handle a fairly complicated equation with fixed-point arithmetic and 
+	    demonstrate that for all the advantages of using fixed-point, range and precision need not suffer. Of 
+	    course, when the hardware does have floating point one should preferably use that instead, and we show 
+	    how to do that, too. Using fixed-point has the slight disadvantage that, in order to correctly compute
+	    scale factors, we have to know our Forth's number of bits per cell. For modern Forths the number of bits 
+	    per cell can be 16, 32, 64, or even higher. In order not to complicate the following description too much, 
+	    we will assume 16-bit hardware. That is probably the only environment this example will be useful for, 
+	    anyway. Also, we'll assume 1 <FONT COLOR="#0000FF">CHARS</FONT> is equivalent to one byte.
+
+	<P> In this example we will compute the weight of a cone-shaped pile of material, knowing the height of the
+	    pile, the angle of the slope of the pile, and the density of the material.
+
+	<P> To make the example more "concrete," let's weigh several huge piles of sand, gravel, and cement. The slope of
+	    each pile, called the "angle of repose," depends on the type of material. For example, sand piles itself
+	    more steeply than gravel.
+	    <CENTER><IMG SRC="gravel.jpg" WIDTH=537 HEIGHT=278 ALT="3 piles"></CENTER>
+
+	    (In reality these values vary widely, depending on many factors; we have chosen approximate angles and
+	    densities for purposes of illustration.)
+
+	<P> Here is the formula for computing the weight of a conical pile <I>h</I> feet tall with an angle of repose of
+	    <I>theta</I> degrees, where <I>D</I> is the density of the material in pounds per cubic foot:
+
+<TABLE ALIGN=RIGHT WIDTH="50%" BORDER="0">
+<CAPTION><I>For Sceptics</I></CAPTION>
+	<TR><TD>
+	     <HR NOSHADE SIZE="6">
+	     The volume of a cone, <I>V</I>, is given by
+		 <IMG SRC="pile2.jpg" WIDTH=100 HEIGHT=50 ALIGN=MIDDLE ALT="V=pi/3 b&sup2;h">,
+	     where <I>b</I> is the radius of the base and <I>h</I> is the height. We can compute the base by knowing 
+	         the angle or, more specifically, the tangent of the angle. The tangent of an angle is simply the ratio of
+	         the segment marked <I>h</I> to the segment marked <I>b</I> in this drawing:<BR>
+	         <IMG SRC="pile5.jpg" ALIGN=MIDDLE WIDTH=255 HEIGHT=255 ALT="V=pi/3 b&sup2;h">
+	     If we call this angle "theta", then 
+		 <IMG SRC="pile3.jpg" WIDTH=75 HEIGHT=50 ALIGN=MIDDLE ALT="tan(theta) = h/b">.
+	     Thus we can compute the radius of the base with
+		 <IMG SRC="pile4.jpg" WIDTH=75 HEIGHT=50 ALIGN=MIDDLE ALT="b = h / tan(theta)">.
+	     When we substitute this into the expression for <I>V</I>, and then multiply the result by the density
+	         <I>D</I> in pounds per cubic foot, we get the formula shown in the text.
+	     <HR NOSHADE SIZE="6">
+</TABLE>
+
+	<P><IMG SRC="pile1.jpg" WIDTH=120 HEIGHT=60 ALIGN=MIDDLE ALT="W = pi h&sup3;D / 3 tan&sup2;(theta)">.
+
+	<P> This will be the formula which we must express in Forth.
+
+	<P> Let's design our application so that we can enter the name of a material first, such as
+<PRE>	DRY-SAND
+</PRE>
+	    then enter the height of a pile and get the result for dry sand.
+
+	<P> Let's assume that for any one type of material the density and angle of repose never vary. We can store
+	    both of these values for each type of material into a table. Since we ultimately need each angle's tangent,
+	    rather than the number of degrees, we will store the tangent. For instance, the angle of repose for a
+	    pile of cement is 35<SUP>o</SUP>, for which the tangent is .700. We will store this as the integer 700.
+
+	<P> Bear in mind that our goal is not just to get an answer; we are programming a computer or device to get the
+	    answer for us in the fastest, most efficient, and most accurate way possible. As we indicated in Chap. 5,
+	    to write equations using fixed-point arithmetic requires an extra amount of thought. But on hardware that
+	    would have to emulate floating point, the effort pays off in two ways:
+
+<IMG SRC="calculator.jpg" ALIGN=LEFT ALT="handheld">
+
+	<OL>
+	  <LI> vastly improved run-time speed, which can be very important when there are millions of steps involved in 
+	       a single calculation, or when we must perform thousands of calculations every minute. Also,
+	  <LI> program size, which would be critical if, for instance, we wanted to put this application in a hand-held
+	       device specifically designed as a pile-measuring calculator. Forth is often used in this type of instrument.
+	</OL>
+
+	<P> Let's approach our problem by first considering scale. The height of our piles ranges from 5 to 50 feet. By
+	    working out our equation for a pile of cement 50 feet high, we find that the weight will be nearly 3,500,000 
+	    pounds.
+	
+	<P> But because our piles will not be shaped as perfect cones and because our values are averages, we cannot expect
+	    better than four or five decimal places of accuracy. If we scale our result to tons, we get about 17,500. This 
+	    value will comfortably fit within the range of a single-length number, even on 16-bit hardware. For this reason, 
+	    let's write this application entirely with single-length arithmetic operators. (Although we will assume 16-bit 
+	    hardware in the following, the code as shown will run unmodified on any ANS Forth.)
+
+	<P> Applications which require greater accuracy can be written using double-length arithmetic; to illustrate we've
+	    even written a second version of <U>this</U> application using double-length math, as you'll see later on.
+	    But we intend to show the accuracy that Forth can achieve even with 16-bit math.
+
+	<P> By running another test with a pile 40 feet high, we find that a difference of one-tenth of a foot in height
+	    can make a difference of 25 tons in weight. So we decide to scale our input to feet and inches rather than
+	    merely to whole feet.
+
+	<P> We'd like the user to be able to enter
+<PRE>	15 FOOT  2 INCH  PILE
+</PRE>
+	    where the words <TT>FOOT</TT> and <TT>INCH</TT> will convert the feet and inches into tenths of an inch, 
+	    and <TT>PILE</TT> will do the calculation. Here's how we might define <TT>FOOT</TT> and <TT>INCH</TT>:
+<PRE>	: FOOT  10 * ;
+	: INCH  100 12 */ 5 +  10 / + ;
+</PRE>
+	    The use of <TT>INCH</TT> is optional.
+
+	<P> (By the way, we could as easily have designed input to be in tenths of an inch with a decimal point, like this:
+<PRE>	15.2
+</PRE>
+	    In this case, <FONT COLOR="#0000FF">NUMBER</FONT> would convert the input as a double-length value. Since we
+	    are only doing single-length arithmetic, <TT>PILE</TT> could simply begin with <FONT COLOR="#0000FF">DROP</FONT>, 
+	    to eliminate the high-order cell.)
+	
+	<P> In writing the definition of <TT>PILE</TT>, we must try to maintain the maximum number of places of precision 
+	    without overflowing 15 bits. According to the formula, the first thing we must do is cube the argument. But let's
+	    remember that we will have an argument which may be as high as 50 feet, which will be 500 as a scaled integer.
+	    Even to <U>square</U> 500 produces 250,000, which exceeds the capacity of single-length arithmetic using 16-bit
+	    cells.
+
+	<P> We might reason that, sooner or later in this calculation, we're going to have to divide by 2000 to yield an 
+	    answer in tons. Thus the phrase
+<PRE>	DUP DUP 2000 */
+</PRE>
+	    will square the argument and convert it to tons at the same time, taking advantage of <FONT COLOR="#0000FF">*/</FONT>'s
+	    double-length intermediate result. Using 500 as our test argument, the above phrase will yield 125.
+
+	<P> But our pile may be as small as 5 feet, which when squared is only 25. To divide by 2000 would produce a 
+	    zero in integer arithmetic, which suggests that we are scaling down too much.
+
+	<P> To retain the maximum accuracy, we should scale down no more than necessary. 250,000 can be safely accomodated
+	    by dividing by 10. Thus we will begin our definition of <TT>PILE</TT> with the phrase
+<PRE>	DUP DUP 10 */
+</PRE>
+	    The integer result at this stage will be scaled to one place to the right of the decimal point (25000 for 
+	    2500.0). 
+	
+	<P> Now we must <U>cube</U> the argument. Once again, straight multiplication will produce a double-length 32-bits
+	    result, so we must use <FONT COLOR="#0000FF">*/</FONT> to scale down. We find that by using 1000 as our divisor,
+	    we can stay just within single-length range. Our result at this stage will be scaled to one place to the <U>left</U>
+	    of the decimal point (12500 for 125000.) and still be accurate to 5 digits.
+
+	<P> According to our formula, we must multiply our argument by pi. We know that we can do this in Forth with the
+	    phrase 
+<PRE>	355 113 */
+</PRE>
+	    which causes no problems with scaling.
+	
+	<P> Next we must divide our argument by the tangent squared, which we can do by dividing the argument by the
+	    tangent <U>twice</U>. Because our tangent is scaled to three decimal places, to divide by the tangent we
+	    multiply by 1000 and divide by the table value. Thus we will use the phrase
+<PRE>	1000 TAN(THETA) */
+</PRE>
+	<P> Since we must perform this twice, let's make it a definition, called <TT>/TAN</TT> (for <U>divide-by-the-tangent</U>)
+	    and use the word <TT>/TAN</TT> twice in our definition of <TT>PILE</TT>. Our result at this point will be scaled to one place
+	    to the left of the decimal (26711 for 267110, using our maximum test values).
+
+	<P> All that remains is to multiply by the density of the material, of which the highest is 131 pounds per cubic 
+	    foot. To avoid overflowing, let's try scaling down by two decimal places with the phrase
+<PRE>	DENSITY 100 */
+</PRE>
+	<P> But by testing, we find that the result at this point for a 50-foot pile of cement will be 34,991, which just
+	    exceeds the 15-bit limit. Now is a good time to take the 2000 into account. Instead of 
+<PRE>	DENSITY 100 */
+</PRE>
+	    we can say
+<PRE>	DENSITY 200 */
+</PRE>
+	    and our answer will now be scaled to whole tons.
+
+	<P> You will find this version in the <A HREF="spiles.forth.html">listing</A>. As we mentioned, we have also written 
+	    this application using <A HREF="dpiles.forth.html">double-length arithmetic</A>. In this version you enter the 
+	    height as a double-length number scaled to tenths of a foot, followed by the word <TT>FEET</TT>, as in 50.0 feet.
+
+	<P> By using double-length integer arithmetic, we are able to compute the weight of the pile to the <U>nearest</U>
+	    whole pound. The range of double-length 32-bit integer arithmetic compares with that of single-precision 
+	    floating-point arithmetic. Below is a comparison of the results obtained using a 10-decimal-digit pocket 
+	    calculator, single-length Forth, double-length (32-bit) Forth, and <A HREF="fpiles.forth.html">floating-point Forth</A>. 
+	    The test assumes a 50-foot pile of cement, using the table values.
+
+<CENTER>
+<TABLE CELLPADDING="6" CELLSPACING="1" BORDER="2">
+	<TR> 	<TD> &nbsp;      		 <TH> in pounds  <TH> in tons
+	<TR>  	<TH> calculator  		 <TD> 34,995,633 <TD> 17,497.816
+	<TR>  	<TH> Forth 16-bit single-length  <TD> ---        <TD> 17,495
+	<TR>  	<TH> Forth 16-bit double-length  <TD> 34,995,634 <TD> 17,497.817
+	<TR>  	<TH> Forth 32-bit single-length  <TD> ---        <TD> 17,495
+	<TR>  	<TH> Forth 32-bit double-length  <TD> 34,995,634 <TD> 17,497.817
+	<TR>  	<TH> Forth floating-point        <TD> 34,995,633 <TD> 17,497.816
+</TABLE>
+</CENTER>
+
+	<P> Here's an example of our application's output:
+
+<PRE>	S" spiles.forth" INCLUDED<U> ok </U>
+	cement<U> ok </U>
+	10 foot pile<U> = 138 tons of cement ok </U>
+	10 foot 3 inch pile<U> = 151 tons of cement ok </U>
+	dry-sand<U> ok </U>
+	10 foot pile<U> = 81 tons of dry sand ok </U>
+	S" dpiles.forth" INCLUDED cement<U> ok </U>
+	10.0 feet<U> = 279939 pounds of cement or 139.969 tons ok </U>
+	S" fpiles.forth" INCLUDED cement<U> ok </U>
+	10e feet<U> = 279965.06373598 pounds, or 139.98253187 tons of cement ok </U>
+</PRE>
+
+<H2>A note on "</H2>
+
+	<P> The defining word <TT>MATERIAL</TT> takes three arguments for each material, one of which is the address of 
+	    a string. <TT>.SUBSTANCE</TT> uses this address to type the name of the material.
+
+	<P> To put the string in the dictionary and to give an address to <TT>MATERIAL</TT>, we have defined a word 
+	    called <TT>"</TT>. As you can see from its definition, <TT>"</TT> compiles the string (delimited by a 
+	    second quotation mark) into the dictionary, with the count in the first byte, and leaves its address on 
+	    the stack for <TT>MATERIAL</TT>. To compile the count and string into the dictionary, we simply have to 
+	    execute <FONT COLOR="#0000FF">WORD</FONT>, since <FONT COLOR="#0000FF">WORD</FONT>'s buffer is 
+	    <FONT COLOR="#0000FF">HERE</FONT>. We get the string's address as a fillip, since <FONT COLOR="#0000FF">WORD</FONT> 
+	    also leaves <FONT COLOR="#0000FF">HERE</FONT>.
+
+	<P> All that remains is to <FONT COLOR="#0000FF">ALLOT</FONT> the appropriate number of bytes. This number is
+	    obtained by fetching the count from the first byte of the string and adding one for the count's byte.
+
+<H2>A Browser Interface for FPILES</H2>
+	<P> This interface is Forth system dependent. It will work for iForth 2.0, after some preparations:
+	<UL>
+	  <LI> Run iForth on the file <A HREF="fsserver.frt.html">fsserver.frt</A>
+	  <LI> Execute the word <TT>PILE-SERVER</TT>.
+	  <LI> Manipulate the below FORM and press SEND. A new browser window opens with the calculation result.
+	</UL>
+
+<FORM ACTION="http://localhost:4444" METHOD="POST">
+    <P>
+    <LABEL for="height">Height in feet: </LABEL> 
+        <INPUT type="text"   name="height:"><BR>
+	<INPUT type="radio"  name="material:" value="cement" checked="true"> cement<BR>
+	<INPUT type="radio"  name="material:" value="wet-sand">wet sand<BR>
+	<INPUT type="radio"  name="material:" value="dry-sand">dry sand<BR>
+	<INPUT type="radio"  name="material:" value="clay">clay<BR>
+	<INPUT type="radio"  name="material:" value="Loose-gravel">loose gravel<BR>
+	<INPUT type="radio"  name="material:" value="Packed-gravel">packed gravel<BR>
+	<INPUT type="submit" value="Send"> 
+	<INPUT type="reset">
+    </P>
+</FORM>
+
+<H2>Review of Terms</H2>
+
+<TABLE CELLPADDING="6" CELLSPACING="1" WIDTH="100%" BORDER="0">
+	<TR>  	<TD bgcolor="#EEEEEE"> Stub
+		<TD bgcolor="#EEEEEE"> in Forth, a temporary definition created solely to allow testing of a higher-level definition.
+	<TR>  	<TD bgcolor="#EEEEEE"> Top-down Programming
+		<TD bgcolor="#EEEEEE"> a programming methodology by which a large application is divided into smaller units, which may be 
+		     further subdivided as necessary. The design process starts with the overview, or "top," and proceeds
+		     down to the lowest level of detail. Coding of the low-level units begins only after the entire 
+		     structure of the application has been designed.
+</TABLE>
+	
+
+<A HREF="http://validator.w3.org"><IMG SRC="http://validator.w3.org/images/vh32.gif" HEIGHT=31 WIDTH=88 ALIGN=RIGHT BORDER=0 ALT="Valid HTML 3.5"></A>
+</BODY>
+
+</HTML>

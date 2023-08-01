@@ -1,0 +1,7 @@
+\ Code from Starting Forth Chapter 6
+\ ANSized by Benjamin Hoyt in 1997
+
+( problem 6-8 )
+: ** ( n1 n2 -- n1**n2 )
+   1 SWAP  ?DUP IF  0 DO  OVER * LOOP  THEN  NIP ;
+

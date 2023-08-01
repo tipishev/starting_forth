@@ -1,0 +1,68 @@
+<HTML><HEAD><TITLE> ec 207c ROBOT ARM </TITLE>
+<link rel="stylesheet" type="text/css" href="an.css">
+</HEAD>
+<BODY><center>
+
+<table><tr><td><center>207c
+<br><tt>
+<a href="ec207b.html"> &#171;&#171; </a> &nbsp;
+<a href="ec200.html"> &#171;&#187; </a> &nbsp;
+<a href="ec207d.html"> &#187;&#187; </a>
+</tt>
+</center></table>
+
+<br> &nbsp;
+
+<table width="80%"><tr><td>
+
+<pre>
+: PREPARE ( -- )
+   0                            \ Longest segment
+   #MOTORS                      \ Per motor:
+   0 DO   I THERE @  I WHERE @
+          2DUP &lt;
+          DUP 2* 1+  I STEP !   \ 1 of -1, direction
+          IF  SWAP  THEN -
+          DUP I USAGE !         \ Distance
+          MAX                   \ Largest distance?
+     LOOP
+   DUP TO #SEGMENTS
+   2/ #MOTORS
+   0 DO   DUP I TANK !          \ Tanks half full
+     LOOP DROP ;
+
+\ To use on-screen without hardware
+: >MOTOR ( new-position motor# -- ) 2DROP ;
+
+\ To put motor information on screen
+: .HERE ( -- ) CR #MOTORS 0 DO  I WHERE @ 4 .R  LOOP SPACE ;
+
+: SEGMENT ( - ) 
+   #MOTORS 
+   0 DO   I TANK @  I USAGE @
+          2DUP &lt;                        \ Fuel shortage?
+          IF   #SEGMENTS -              \ Refuel
+               I STEP @ I WHERE +!      \ New motor position
+               I WHERE @ I >MOTOR       \ P-L-O-P
+          THEN 
+          - I TANK !
+     LOOP ;
+
+: GOTO ( -- ) \ The target should be fixed already.
+   PREPARE
+   #SEGMENTS 
+   0 ?DO  .HERE SEGMENT
+          KEY? IF  KEY DROP LEAVE  THEN
+          WAIT MS
+     LOOP .HERE ;
+
+: DOIT ( targetpositions -- ) TARGET GOTO ;
+<div align=right><tt><a href="ec207d.html">&#187;&#187;</a></tt></div>
+</pre>
+</table>
+
+
+
+</center></BODY></HTML>
+
+

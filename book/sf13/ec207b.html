@@ -1,0 +1,74 @@
+<HTML><HEAD><TITLE> ec 207b ROBOT ARM </TITLE>
+<link rel="stylesheet" type="text/css" href="an.css">
+</HEAD>
+<BODY><center>
+
+<table><tr><td><center>207b
+<br><tt>
+<a href="ec207a.html"> &#171;&#171; </a> &nbsp;
+<a href="ec200.html"> &#171;&#187; </a> &nbsp;
+<a href="ec207c.html"> &#187;&#187; </a>
+</tt>
+</center></table>
+
+<br> &nbsp;
+
+<table width="80%"><tr><td>
+
+<h2>The solution</h2>
+ Fit the motors with a gas tank.
+
+<h2>The fuel</h2>
+
+<ol> 
+ <li> Even when standing still, the motor uses 13 liters per segment 
+      (the number of PLOP's, the number of steps to complete the wanted angle).
+ <li> When the fuel goes out, exactly 30 liters are tanked (the number of segments, 
+      the largest angle).
+</ol>
+
+<h2>The reasoning</h2>
+
+     Per segment 13 liters are used, over 30 segments: 30 * 13 liters.
+<br> 30 * 13 = 13 * 30. How many times do we need to refuel? Right, 13 times.
+<br> And how many steps were we supposed to make? ...
+
+<h2>So here's the solution:</h2>
+
+     If we run out of fuel in a segment, do a refuel <em>and</em> perform<tt> PLOP</tt>. 
+     The other (17) segments are<tt> PILI</tt>. Now remove those fuel tanks and just remember
+     the reasoning, because that's what we'll use in the following code.
+
+<h2>The Forth code</h2>
+
+<pre>Forth file: <a href="ec207.frt.html" target="_blank"> ec207.frt</a>
+\ ROBOT ARM (Albert Nijhof)
+
+FORTH DEFINITIONS   DECIMAL
+: VARIABLES
+  CREATE ( n -- ) CELLS ALLOT
+  DOES>  ( index body -- addres ) SWAP CELLS + ;
+
+5 DUP CONSTANT #MOTORS
+DUP VARIABLES WHERE             \ List of motor positions
+DUP VARIABLES THERE             \ List of target positions
+DUP VARIABLES STEP              \ -1 or +1 (directions)
+DUP VARIABLES TANK              \ Amount of fuel
+DUP VARIABLES USAGE             \ Amount of fuel used per segment
+CELLS  0 WHERE  SWAP 0 FILL
+
+20 VALUE WAIT                   \ Physical motor limitation
+ 0 VALUE #SEGMENTS              \ Longest segment
+
+: TARGET ( m0 m1 m2 m3 m4 -- )  \ Set target 
+  #MOTORS BEGIN 1-
+                TUCK THERE !
+                ?DUP 0= 
+          UNTIL ;
+<div align=right><tt><a href="ec207c.html">&#187;&#187;</a></tt></div>
+</pre>
+</table>
+
+</center></BODY></HTML>
+
+

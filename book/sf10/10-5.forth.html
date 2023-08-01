@@ -1,0 +1,19 @@
+\ -----------------------------------------------------------------------
+\ 10-5.FORTH ------------------------------------------------------------
+\ -----------------------------------------------------------------------
+\ Code from Starting Forth Chapter 10
+\ ANSized by Benjamin Hoyt in 1997
+
+( problem 10-5 )
+VARIABLE stuff  3 stuff !  \ first block of file
+
+: USED     ( -- addr ) stuff @  BLOCK  UPDATE ;
+: ELEMENT  ( index -- addr ) CELLS  1024 /MOD  stuff @  + BLOCK  +  UPDATE ;
+: INIT-ARRAY  600 0 DO  I  I ELEMENT !  LOOP ;
+: .ARRAY      600 0 DO  I 4 .R SPACE  I ELEMENT ?  LOOP ;
+: ELEMENT  ( index -- addr ) 1+ CELLS  1024 /MOD  stuff @  + BLOCK  +  UPDATE ;
+: NO-STUFF   0 USED ! ;  NO-STUFF
+: PUT    ( n -- )  USED @  ELEMENT !  1 USED +! ;
+: ENTER  ( n1 n2 -- )  SWAP  PUT PUT ;
+: TABLE   CR  USED @  0 ?DO  I 8 MOD  0= IF  CR  THEN   I ELEMENT @  8 .R  LOOP  CR ;
+

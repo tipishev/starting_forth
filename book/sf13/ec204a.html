@@ -1,0 +1,72 @@
+<HTML><HEAD><TITLE>EC 204a ifthen1 </TITLE>
+<link rel="stylesheet" type="text/css" href="an.css">
+</HEAD>
+<BODY><center>
+
+<table><tr><td><center>204a
+<br><tt>
+<a href="ec200.html"> &#171;&#171; </a> &nbsp;
+<a href="ec200.html"> &#171;&#187; </a> &nbsp;
+<a href="ec204b.html"> &#187;&#187; </a>
+</tt>
+</center></table>
+
+<br> &nbsp;
+
+<table width="80%"><tr><td><h1> &nbsp; 204 </h1>
+<td class=r align=right> The programming language Forth &nbsp;
+<hr size="1">
+</table>
+
+
+<table width="80%"><tr><td>
+
+<h6>About the compile-time and run-time behavior of<tt> IF THEN BEGIN </tt>etc.</h6>
+
+<h5>&nbsp;Control structures I</h5>
+
+<H2>1. How to do it in the simplest possible way</H2>
+
+First the data, then the code. This Forth ground rule is also valid for conditional branching in programs. A flag on the stack is the 'data' for the 'operators'<tt> IF </tt>or<tt> UNTIL</tt>, who decide if there is to be a jump or not. In many programming languages it goes like this:
+
+<pre>
+IF       \ Decide flag value of 'cold'.
+ cold    \ Formulate flag
+THEN     \ Leave construct when flag=false
+ coat-on \ Conditionally executed code
+ENDIF    \ End; could be named ENDTHEN
+</pre>
+
+In Forth, deciding the flag value is not part of the construct. Only the operator<tt> IF </tt>and its closure<tt> THEN </tt>are present. The programmer is to make sure a flag is waiting:
+
+<pre>
+( cold?    \ flag on stack )
+IF         \ On 'false', jump to THEN
+ coat-on   \ Conditionally executed code 
+THEN       \ End; could be named ENDIF
+</pre>
+
+The backward jump with<tt> UNTIL </tt>has its counterpart in Forth:
+
+<pre>
+BEGIN      \ Begin
+ ... warm? \ The programmer makes sure 
+           \ that this code produces a flag
+UNTIL      \ On 'false', jump back to BEGIN
+( coat-off )
+</pre>
+
+These constructs can be nested. When done cleanly, e.g.
+<br><tt> ... BEGIN ... IF ... THEN ... UNTIL ... </tt>
+<br>this is called structured programming.
+
+<p> In<tt> ... BEGIN ... IF ... UNTIL ... THEN ... </tt>
+<br>Forth will protest when encountering<tt> UNTIL</tt>, because the<tt> IF </tt>has not finished yet.
+
+<p> In<tt> ... IF ... IF ... THEN ... THEN ... </tt>
+<br>the first<tt> THEN </tt>attaches to the second<tt> IF</tt>.
+
+<div align=right><tt><a href="ec204b.html">&#187;&#187;</a></tt></div>
+
+</table>
+</center></body><html>

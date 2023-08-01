@@ -1,0 +1,15 @@
+\ -----------------------------------------------------------------------
+\ 7-6.FORTH -------------------------------------------------------------
+\ -----------------------------------------------------------------------
+\ Code from Starting Forth Chapter 7
+\ ANSized by Benjamin Hoyt in 1997
+
+: BINARY   2 BASE ! ;
+
+( problem 7-6 )
+: 3-BASES
+   17 0 DO  CR  ." decimal"  DECIMAL  I 4 .R  8 SPACES
+                ." hex "     HEX      I 3 .R  8 SPACES
+                ." binary"   BINARY   I 8 .R  8 SPACES
+   LOOP DECIMAL ;
+

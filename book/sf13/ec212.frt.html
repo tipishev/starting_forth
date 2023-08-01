@@ -1,0 +1,68 @@
+\ KISS COMMANDS (Albert Nijhof) -- 1 april 2003
+
+FORTH DEFINITIONS   DECIMAL
+VOCABULARY PARENTHESES
+ALSO PARENTHESES DEFINITIONS
+
+\ P-stack with relative stackpointer in cell # 0
+12 CELLS CONSTANT pq
+CREATE P   0 ,   PQ allot
+: FRESH 0 P ! ;                 \ Reset p-stack
+: ?P ( p# -- )   \ Check overflow and underflow
+  PQ 0 WITHIN
+  IF   FRESH TRUE ABORT" Syntax Error "
+  THEN ;
+: P> ( -- x ) P @ DUP CELL- DUP ?P P ! P + @ ;
+: >P ( x -- ) P @ DUP ?P CELL+ DUP P ! P + ! ;
+ALSO FORTH DEFINITIONS
+: ) ( -- ) P> 2@                   ( xt imm? )
+  0< STATE @ AND
+  IF   COMPILE, EXIT
+  THEN EXECUTE ; IMMEDIATE
+
+: KISS ( ccc -- )
+  >IN @ >R ' DROP       \ Does this word exist?
+  R@ >IN ! BL WORD FIND R> >IN !      \ xt imm?
+  CREATE  HERE 2 CELLS ALLOT 2! IMMEDIATE
+  DOES>   >P
+  BL WORD COUNT EVALUATE
+  POSTPONE ) ;
+: DUMMY ; IMMEDIATE
+KISS DUMMY
+
+\ Because we have redefined the left parenthesis,
+\ from this point on, inline comments must be done
+\ with a double left parenthesis. 
+: (( ( -- )  POSTPONE ( ; IMMEDIATE
+: ( (( -- )  ['] DUMMY >BODY >P ; IMMEDIATE
+PREVIOUS FORTH
+\ ----- End of code -----
+
+\ ----- Examples -----
+
+KISS +      KISS -       KISS *       KISS /
+KISS .      KISS EMIT
+KISS >      KISS <       KISS =       KISS <>
+KISS IF     KISS THEN
+KISS AND
+
+: TEST (( x -- )
+    CR . DUP ." is "
+    IF ( DUP = 0 )  THEN ( ." zero " )
+    IF ( DUP < 0 )  THEN ( ." negative " )
+    IF ( 0 < over ) THEN ( ." positive " )
+    ." and "
+    IF   ( = ( 1 AND TUCK ) )
+    THEN ( ." odd." ELSE ." even." ) ;
+
+KISS TEST
+
+KISS OR      KISS XOR    KISS WITHIN
+
+: >UP (( ch1 -- ch2 )
+    XOR ( DUP
+          WITHIN ( [CHAR] a [CHAR] z + 1 )
+          AND BL
+        ) ;
+KISS >UP
+

@@ -1,0 +1,128 @@
+\ filer.forth --------------------------
+\ "Filer" from Starting Forth Chapter 12
+
+\ Most Forths have this word.
+: PLACE   2DUP 2>R  1+ SWAP  MOVE  2R> C! ; ( addr u dest -- )
+
+1 CONSTANT /CR				\ size of newline string ( $0A )
+
+S" filerdat.forth" R/W BIN OPEN-FILE THROW 
+	VALUE file			\ handle of data file
+      0 VALUE #record			\ points to current record
+      0 VALUE kind			\ type of field last searched by FIND
+      0 VALUE r-length			\ length of all fields summed
+
+: RECORD  CREATE r-length , DUP , r-length + TO r-length ; ( size -- )
+
+     16 RECORD surname			\ four field buffers
+     16 RECORD given  
+     24 RECORD job  
+      8 RECORD phone
+
+: _'	' >BODY ;			( -- 'body )
+
+file FILE-SIZE THROW DROP  r-length /CR + / CONSTANT #maxrecs
+
+CREATE what  0 C, r-length ALLOT	\ two temporary buffers
+CREATE rbuf       r-length ALLOT
+
+: UPDATE ( -- )
+	 #record r-length /CR + UM* file REPOSITION-FILE THROW 
+	 rbuf r-length file WRITE-FILE 
+	 ABORT" filer UPDATE :: write error" ;
+
+\ Fill rbuf with the contents of record #record.
+: RECORD@ ( rec# -- )
+	 r-length /CR + UM* file REPOSITION-FILE THROW 
+	 rbuf r-length file READ-FILE 
+	 ABORT" filer RECORD@ :: read error" DROP ; 
+
+: >FLD_	 2@ rbuf + SWAP ;				( field -- c-addr u )
+: >FLD	 >FLD_ -TRAILING ;				( field -- c-addr u )
+: FIELD	 #record RECORD@  >FLD ;			( field -- c-addr u )
+: .FIELD >FLD TYPE SPACE ;				( field -- )
+: FLUSH	 file FLUSH-FILE ABORT" filer FLUSH error " ;	( -- )
+: SET	 TO #record ;					( u -- )
+: TOP	 0 SET ;				 	( -- )
+: DOWN	 #record 1+ SET ;		 		( -- )
+: .NAME  given .FIELD  surname .FIELD ;			( -- )
+: KBD,	 [CHAR] , WORD COUNT ;				( -- c-addr u )
+: PUT	 >R KBD, R> >FLD_ 2DUP BL FILL  ROT MIN MOVE ;	( field -- )
+		
+
+\ Moves a character string, delimited by a comma or by a carriage return, from the input 
+\ stream into WHAT, and saves the address of the given field in KIND, for future use 
+\ by -FIND.
+: KEEP	TO kind  KBD, what PLACE ;			( field "string" -- )
+
+\ Starting at the top of the file, finds the first record that is free, that is, whose
+\ count is zero. Aborts if the file is full.
+: FREE	TOP  TRUE 					( -- )
+	#maxrecs 
+	0 ?DO   surname FIELD NIP 
+		0= IF  INVERT LEAVE  THEN
+		DOWN
+	 LOOP 
+	ABORT" File full" ;
+
+\ Beginning at #record and proceeding down, compares the contents of the field indicated
+\ by KIND against the contents of WHAT.
+: -FIND TRUE 						( -- bool )
+	#maxrecs #record 
+	  ?DO	kind FIELD  what COUNT COMPARE
+		0= IF  INVERT LEAVE  THEN
+		DOWN
+	 LOOP ( bool) ;
+
+\ Starting from the top, attempts to find a match on the contents of WHAT, using KIND to 
+\ indicate the type of field. If a match is made, then attempts to match a second field,
+\ whose type is indicated by "field", with the contents {c-addr u}. If both match, prints the
+\ name; otherwise repeats until a match is made or until the end of the file is reached,
+\ in which case prints an error message.
+: (PAIR)						( field c-addr u -- )
+	LOCALS| sz what2 field2 |	
+	TOP
+	#maxrecs
+	0 ?DO 	I SET
+		-FIND IF  ." Not in file" LEAVE 
+		    ELSE  field2 >FLD what2 sz COMPARE
+		    	  0= IF  .NAME LEAVE  THEN
+		    THEN
+	 LOOP ;
+
+\ ------------- End user words ---------------------------------------------------------------
+
+\ ENTER    Finds the first free record, then moves four strings delimited by commas into the 
+\          surname, given, job and phone fields of that record.
+\ 	   Usage: ENTER lastname,firstname,job,phone
+\ REMOVE   Erases the current record.
+\ CHANGE   Changes the contents of the given field in the current record. 
+\ 	   Usage: CHANGE field-name new-contents
+\ GET	   Prints the contents of the given type of field from the current record.
+\	   Usage: GET field-name
+\ FIND	   Finds the record in which there is a match between the contents of the given field 
+\          and the given string.
+\	   Usage: FIND field-name string
+\ ANOTHER  Beginning with the next record after the current one, and using KIND to determine
+\          type of field, attempts to find a match on WHAT. If successful, types the name;
+\ 	   otherwise an error message.
+\ ALL 	   Beginning at the top of the file, uses KIND to determine type of field and finds 
+\	   all matches on WHAT. Types the full name(s).
+\ PAIR	   Finds the record in which there is a match between both the contents of the first 
+\ 	   given field and the first given string, and also the contents of the second given 
+\	   field and the second given string. Comma is delimiter.
+\	   Usage: PAIR field1 string1,field2 string2
+\ FULLNAME Finds the record in which there is a match on both the first and last names given.
+\	   Usage: FULLNAME lastname,firstname
+
+: ENTER		FREE  surname PUT given PUT job PUT phone PUT  UPDATE ;
+: REMOVE	rbuf r-length BL FILL  UPDATE ;
+: CHANGE	_' PUT UPDATE ;
+: GET		_' .FIELD ;
+: FIND		_' KEEP TOP -FIND IF  ." Not in file"  ELSE  .NAME  THEN ;
+: ANOTHER	       DOWN -FIND IF  ." No other"     ELSE  .NAME  THEN ;
+: ALL		TOP  BEGIN  CR -FIND 0=  WHILE  .NAME DOWN  REPEAT ;
+: PAIR		_'      KEEP  _'    KBD, (PAIR) ;
+: FULLNAME	surname KEEP  given KBD, (PAIR) ;
+
+\ EOF

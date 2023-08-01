@@ -1,0 +1,246 @@
+<!DOCTYPE HTML PUBLIC "-//Microsoft//DTD Internet Explorer 3.0 HTML//EN">
+<HTML>
+
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Leo Brodie's Starting Forth - Chapter 3</TITLE>
+  <META name="description" content="Starting Forth, Leo Brodie, Chapter 3.">
+  <META name="keywords" content="Forth, example code, Starting Forth, chapter 3">
+</HEAD>
+
+<BODY BGCOLOR="#F8F8F8" TEXT="#000000" LINK="#0000FF" VLINK="#007070" ALINK="#FF0000" TOPMARGIN=0>
+
+<H1>3 The Editor (And Staff)</H1>
+
+	<P> Up till now you've been compiling new definitions into the dictionary by typing them at 
+	    your terminal. This chapter introduces an alternate method, using disk storage.
+
+	<P> Let's begin with some observations that specifically concern the dictionary.
+
+<H2>Another Look at the Dictionary</H2>
+
+	<P> If you've been experimenting with a real computer, you may have discovered some things we haven't
+	    mentioned yet. In any case, it's time to mention them.
+	
+<TABLE WIDTH="80%" CELLPADDING="24" BORDER="0">
+	<TR><TD bgcolor="#EEEEEE"> Discovery One: You can define the same word more than once in different ways--only the most 
+			           recent definition will be executed.
+</TABLE>
+
+	<P> For example, if you have entered:
+<PRE>	: GREET  ." Hello, I speak Forth. " ;<U> ok </U>
+</PRE>
+	    then you should get this result:
+<PRE>	GREET<U> Hello, I speak Forth. ok </U>
+</PRE>
+	<P> And if you redefine:
+<PRE>	: GREET  ." Hi there! " ;<U> ok </U>
+</PRE>
+	    you get the most recent definition:
+<PRE>	GREET<U> Hi there! ok </U>
+</PRE>
+	<P> Has the first <TT>GREET</TT> been erased? No, it's still there, but the most recent <TT>GREET</TT> is
+	    executed because of the search order. The text interpreter always starts at the "back of the 
+	    dictionary" where the most recent entry is. The definition he finds first is the one you 
+	    defined last. This is the one he shows to <FONT COLOR="#0000FF">EXECUTE</FONT>.
+
+	<P> We can prove that the old <TT>GREET</TT> is still there. Try this:
+<PRE>	FORGET GREET<U> ok </U>
+</PRE>
+	    and
+<PRE>	GREET<U> Hello, I speak Forth. ok </U>
+</PRE>
+	    (the old <TT>GREET</TT> again!)<IMG SRC="footnote.gif" ALT="Simpler Forths don't have FORGET; you can use MARKER instead.">
+
+	<P><CENTER><IMG SRC="forget.gif" ALIGN=MIDDLE ALT="Forget it"></CENTER>
+
+	<P> The word <FONT COLOR="#0000FF">FORGET</FONT> looks up a given word in the dictionary and, in effect,
+	    removes it from the dictionary along with anything you may have defined since that word. 
+	    <FONT COLOR="#0000FF">FORGET</FONT>, like the interpreter, searches starting from the back; he only 
+	    removes the most recently defined versions of the word (along with any words that follow). So now
+	    when you type <TT>GREET</TT> at the terminal, the interpreter finds the original <TT>GREET</TT>.
+
+	<P> <FONT COLOR="#0000FF">FORGET</FONT> is a good word to know; he helps you to weed out your dictionary 
+	    so it won't overflow. (The dictionary takes up memory space, so as with any other use of memory, you
+	    want to conserve it.)
+	
+	<P> Some Forths do not have <FONT COLOR="#0000FF">FORGET</FONT>. In that case you need to plan the
+	    forgetting in advance, e.g.:
+<PRE>	MARKER -work
+</PRE>
+	    defines the null definition <TT>-work</TT> to mark the current system state for you. When you 
+	    execute <TT>-work</TT> at some later time, the system state is restored to that in effect when 
+	    <TT>-work</TT> was defined. In particular, all words defined after the marker word <TT>-work</TT>
+	    are completely removed from the dictionary.
+
+<P><TABLE WIDTH="80%" CELLPADDING="24" BORDER="0">
+	<TR><TD bgcolor="#EEEEEE"> Discovery Two: When you enter definitions from the terminal (as you have been doing), your 
+	         source text<IMG SRC="footnote.gif" ALT="The `source text' is the original version of the definition, such as : FOUR-MORE 4 + ; which the compiler translates into a dictionary entry."> is not saved.
+</TABLE>
+
+	<P> Only the compiled form of your definition is saved in the dictionary. So what if you want to make 
+	    a minor change to a word already defined? This is where a "text editor" comes in. With this editor,
+	    you can save your source text and modify it if you want to. In this day and age we can assume that
+	    everyone has access to a text editor. The documentation of your Forth system should discuss the 
+	    procedures to easily use your favorite text editor from within the Forth environment. (On a modern
+	    OS, double-click the file you want to edit. After finishing your editing business, type <FONT COLOR="#0000FF">INCLUDE</FONT>
+	    on the Forth commandline. Add at least one trailing space, then drag your file in the Forth 
+	    window and drop it on the commandline. Type <IMG SRC="enterkey.gif" ALIGN=MIDDLE ALT="enter key">.)
+	    
+	<P> A text editor stores your source text on disk. So we'd better introduce the disk and the way the 
+	    Forth system uses it.
+
+<H2>How Forth Uses the Disk</H2>
+
+	<P> All Forth systems use disk memory. Even though disk memory is not absolutely necessary for a Forth
+	    system, it's difficult to imagine Forth without it.
+
+	<P> To understand what disk memory does, compare it with computer memory (RAM). The difference is 
+	    analogous to the difference between a filing cabinet and a rolling card-index. 
+
+	<P> So far you've been using computer memory, which is like the card index. The computer can access 
+	    this memory almost instantaneously, so programs that are stored in RAM can run very fast. Unfortunately,
+	    this kind of memory is sometimes very limited (e.g. in embedded controllers) and relatively expensive.
+
+	<P> On the other hand, the disk is called a "bulk memory" device, because, like a filing cabinet, it 
+	    can store a lot of information at a much cheaper price per unit of information than the memory inside 
+	    the computer.
+	    
+	<P> Both kinds of memory can be written to and read from.
+
+	<P> The compiler compiles all dictionary entries into computer memory so that the definitions will be
+	    quickly accessible. The perfect place to store source text, however, is on the disk, which is what
+	    Forth does. You can either send source text directly from the keyboard to the interpreter (as you 
+	    have been doing), or you can save your source text on the disk and then later read it off the disk 
+	    and send it to the text interpreter.
+
+	<TABLE WIDTH="50%" ALIGN=RIGHT BORDER="0">
+	 <TR><TD><IMG SRC="floorplan.gif" ALT="Floorplan">
+	</TABLE>
+	<P> Disk memory is divided into units called "blocks." Each block holds 1,024 characters of source
+	    text or binary data, traditionally organized as 16 lines of 64 characters. The ANS Forth standard
+	    does not specify how many blocks there are. The documentation of your Forth system should tell
+	    you this. 
+	    
+	<P> With current Forths, disk memory resides in OS files. There are ways to attach specific
+	    OS files to the "Forth disk." Due to the special 16 by 64 format of Forth blocks, OS utilities
+	    consider them as binary data and cannot generally print, list, filter or edit them. Forth systems
+	    have standardized facilities to handle some of these tasks by themselves.
+
+	<P> Assuming you are using iForth, then the following should instruct disk memory to come 
+	    from <A HREF="blocks.gfb.html">some file</A>:
+<PRE>	USE blocks.gfb<U> ok </U>
+</PRE>
+	<P> To list a block, simply type the block-number and the word <FONT COLOR="#0000FF">LIST</FONT>, as in:
+<PRE>	1 LIST
+	 0
+	 1 ( Large letter F                             MHX 21:29 07/01/89)
+	 2
+	 3 : STAR    [CHAR] * EMIT ;
+	 4 : STARS   0 DO  STAR  LOOP ;
+	 5 : MARGIN  CR 30 SPACES ;
+	 6 : BLIP    MARGIN STAR ;
+	 7 : BAR     MARGIN 5 STARS ;
+	 8 : F       BAR BLIP BAR BLIP BLIP CR ;
+	 9
+	10
+	11
+	12
+	13
+	14
+	15
+	ok 
+</PRE>
+	<P> The above is what a block looks like when it's listed on your terminal. 
+	    
+	<P> To give you a better idea of how all of this could be used, we'll assume that block 1 contains the
+	    definitions shown above. Except for line 1, everything looks familiar: these are the
+	    definitions you used to print a large letter "F" at your terminal.
+	
+	<P> Now if you were to type:
+<PRE>	1 LOAD 
+	F
+</PRE>
+	    you would send block 1 to the input stream and then on to the text interpreter. The text 
+	    interpreter does not care where his text comes from. Recognizing the colons, he will have 
+	    all the definitions compiled, and then will execute the new word <TT>F</TT>.
+
+	<TABLE ALIGN=RIGHT BORDER="0">
+	 <CAPTION><I>( interpret ... )</I></CAPTION>
+	 <TR><TD><IMG SRC="comment.gif" ALIGN=RIGHT ALT="comments">
+	</TABLE>
+	<P> Now for the unfinished business: line 1. The words inside the parentheses are for humans only;
+	    they are neither compiled nor executed. The word <FONT COLOR="#0000FF">(</FONT> (<U>left</U> <U>parenthesis</U>)
+	    tells the text interpreter to skip all the following text up to the terminating right parenthesis.
+	    Because <FONT COLOR="#0000FF">(</FONT> is a word, it must be set off with a space. The closing
+	    parenthesis is not a word, it is simply a character that is looked for by <FONT COLOR="#0000FF">(</FONT>,
+	    called a delimiter. (Recall that the delimiter for <FONT COLOR="#0000FF">."</FONT> is the closing quote mark.)
+	
+	<P> To summarize, the three ANS Forth commands we've learned so far that concern disk blocks are:
+
+<BR>
+<TABLE CELLPADDING="4" WIDTH="80%" BORDER="0">
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>LIST</TT>	  <TD bgcolor="#EEEEEE" nowrap> ( n -- ) <TD bgcolor="#EEEEEE"> Lists a disk block.											     <TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="list">
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>LOAD</TT>	  <TD bgcolor="#EEEEEE" nowrap> ( n -- ) <TD bgcolor="#EEEEEE"> Loads a disk block (compiles or executes).								     <TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="load">		
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>( xxx)</TT> <TD bgcolor="#EEEEEE" nowrap> ( -- )	 <TD bgcolor="#EEEEEE"> Causes the string <I>xxx</I> to be ignored by the text interpreter. The character <I>)</I> is the delimiter. <TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="left paren">
+</TABLE>
+	
+<H2>Block-buffer Basics</H2>
+	<P> We have discussed blocks mainly because of historical reasons. Blocks are hardly ever used
+	    for source text storage any more. The preferred way to handle source is in standard text files, 
+	    using the word <FONT COLOR="#0000FF">INCLUDE</FONT> to load them:
+<PRE>	INCLUDE blocks.forth<U> ok </U>
+</PRE>
+	    The main advantage is that <A HREF="blocks.forth.html"> <CODE>blocks.forth</CODE></A> can be edited and 
+	    managed with standard text file utilities.
+	  
+	<P> However, now we're at it, we'll mention a few other words to access and modify blocks on disk.
+	
+	<P> The basic word that brings a block in from the disk, after first finding an available buffer
+	    and storing its contents on disk if necessary, is <FONT COLOR="#0000FF">BLOCK</FONT>. For instance,
+	    if you say
+<PRE>	1 BLOCK
+</PRE>
+	    the system will copy block 1 of the currently open file into one of the system buffers. <FONT COLOR="#0000FF">BLOCK</FONT>
+	    also leaves on the stack the address of the beginning of the buffer (1024 bytes, remember) that it 
+	    used. The contents of this buffer are guaranteed to stay valid until you execute a word from the 
+	    set of procedures with "multitasking impact," like <FONT COLOR="#0000FF">EMIT</FONT> or <FONT COLOR="#0000FF">TYPE</FONT>.
+	    If you at any time modify the buffer contents and then execute the word <FONT COLOR="#0000FF">UPDATE</FONT>, 
+	    Forth will remember to first write the block back to disk when it needs to reuse the buffer. If, 
+	    for some reason, you execute <FONT COLOR="#0000FF">UPDATE</FONT> and then decide that you don't 
+	    want to have the blocks rewritten after all, use <FONT COLOR="#0000FF">EMPTY-BUFFERS</FONT> to 
+	    invalidate them. This works because Forth does not immediately write the disk after you use 
+	    <FONT COLOR="#0000FF">UPDATE</FONT>. To force writing out the buffers <U>right now</U>, use the
+	    word <FONT COLOR="#0000FF">FLUSH</FONT>.
+	
+<P> Here's a list of the Forth words we've covered in this chapter:
+<P><TABLE WIDTH="100%" BORDER="0">
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>USE xxx</TT>	 <TD bgcolor="#EEEEEE" nowrap> ( -- )	     <TD bgcolor="#EEEEEE"> Designate OS text file <I>xxx</I> as the "Forth disk."
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>LIST</TT>    	 <TD bgcolor="#EEEEEE" nowrap> ( n -- )      <TD bgcolor="#EEEEEE"> Lists a disk block.
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>LOAD</TT>	   	 <TD bgcolor="#EEEEEE" nowrap> ( n -- )      <TD bgcolor="#EEEEEE"> Loads a disk block (compiles or executes).
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>( xxx)</TT>  	 <TD bgcolor="#EEEEEE" nowrap> ( -- )	     <TD bgcolor="#EEEEEE"> Causes the string <I>xxx</I> to be ignored by the text interpreter. The character <I>)</I> is the delimiter.
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>UPDATE</TT>        <TD bgcolor="#EEEEEE" nowrap> ( -- )        <TD bgcolor="#EEEEEE"> Marks the most recently referenced block as modified. The block will later be automatically transferred to mass storage if its buffer is needed to store a different block or if <FONT COLOR="#0000FF">FLUSH</FONT> is executed.
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>EMPTY-BUFFERS</TT> <TD bgcolor="#EEEEEE" nowrap> ( -- )        <TD bgcolor="#EEEEEE"> Marks all block buffers as empty without necessarily affecting their actual contents. Updated blocks are not written to mass storage.
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>BLOCK</TT> 	 <TD bgcolor="#EEEEEE" nowrap> ( u -- addr ) <TD bgcolor="#EEEEEE"> Leaves the address of the first byte in block u. If the block is not already in memory, it is transferred from mass storage into whichever memory buffer has been least recently accessed. If the block occupying that buffer has been updated (i.e., modified), it is rewritten onto mass storage before block u is read into the buffer.
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>INCLUDE xxx</TT>   <TD bgcolor="#EEEEEE" nowrap> ( -- ) 	     <TD bgcolor="#EEEEEE"> Load the text file <I>xxx</I> (compiles or executes).
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>FORGET xxx</TT>    <TD bgcolor="#EEEEEE" nowrap> ( -- )	     <TD bgcolor="#EEEEEE"> Forgets all definitions back to and including <I>xxx</I>.
+	<TR><TD bgcolor="#EEEEEE" nowrap> <TT>MARKER xxx</TT>    <TD bgcolor="#EEEEEE" nowrap> ( -- )	     <TD bgcolor="#EEEEEE"> Creates a word <I>xxx</I> which, when executed, restores the dictionary to the state it had just prior to the definition of <I>xxx</I>. In particular, remove <I>xxx</I> and all subsequent word definitions.
+</TABLE>
+
+<P>	
+<TABLE WIDTH="100%" BORDER="0">
+	<CAPTION><I>Review of Terms</I></CAPTION>
+	<TR> <TH> <HR NOSHADE SIZE="6"> 		<TH> <HR NOSHADE SIZE="6">
+	<TR> <TD bgcolor="#EEEEEE"> Block		<TD bgcolor="#EEEEEE"> in Forth, a division of disk memory containing up to 1024 characters of source text.
+	<TR> <TD bgcolor="#EEEEEE"> Buffer		<TD bgcolor="#EEEEEE"> a temporary storage area for data.
+	<TR> <TD bgcolor="#EEEEEE"> Null definition  	<TD bgcolor="#EEEEEE"> a definition that does nothing, written in the form:<BR><PRE>: NAME ;</PRE>that is, a name only will be compiled into the dictionary. A null definition serves as a "bookmark" in the dictionary, for <TT>FORGET</TT> to find.
+	<TR> <TD bgcolor="#EEEEEE"> Pointer		<TD bgcolor="#EEEEEE"> a location in memory  where a number can be stored (or changed) as a reference to something else.
+	<TR> <TD bgcolor="#EEEEEE"> Source text	  	<TD bgcolor="#EEEEEE"> in Forth, the written-out form of a definition or definitions in English-like words and punctuation, as opposed to the compiled form that is entered into the dictionary.
+	<TR> <TH> <HR NOSHADE SIZE="6"> 		<TH> <HR NOSHADE SIZE="6">
+</TABLE>
+
+
+<A HREF="http://validator.w3.org"><IMG SRC="http://validator.w3.org/images/vh32.gif" HEIGHT=31 WIDTH=88 ALIGN=RIGHT BORDER=0 ALT="Valid HTML 3.5"></A>
+</BODY>
+
+</HTML>

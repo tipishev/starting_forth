@@ -1,0 +1,26 @@
+\ -----------------------------------------------------------------------
+\ 10-3.FORTH ------------------------------------------------------------
+\ -----------------------------------------------------------------------
+\ Code from Starting Forth Chapter 10
+\ ANSized by Benjamin Hoyt in 1997
+\ assume 1 CHARS == 1 byte / address unit
+
+( problem 10-3 )
+: ANIMALS  ( -- addr )
+   C" rat   ox    tiger rabbitdragonsnake horse ram   monkeycock  dog   boar  " ;
+
+: .ANIMAL  ( index -- )
+   6 *  ANIMALS 1+  +  6 -TRAILING TYPE ;
+
+: (JUNEESHEE)  ( year -- )
+   1900 -  12 MOD  ." You were born in the year of the "
+   .ANIMAL  [CHAR] . EMIT  CR ;
+
+: DIGIT  ( -- digit )  KEY  DUP EMIT  [CHAR] 0 - ;
+
+: YEAR  ( -- year )  ( lets hope he types in proper digits! )
+   0  4 0 DO  10 *  DIGIT +  LOOP ;
+
+: JUNEESHEE
+   CR  ." In what year were you born? "  YEAR  CR (JUNEESHEE) ;
+

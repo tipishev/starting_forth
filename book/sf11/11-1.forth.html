@@ -1,0 +1,10 @@
+\ Starting Forth Chapter 11, Problem 11-1
+
+: D@  ( addr -- u1 u2 ) 2@ SWAP ;
+
+: LOADED-BY ( c-addr u -- ) 
+	CREATE  HERE 2 CELLS + , ( $addr) DUP ( count) , 
+		>R HERE R@ MOVE  ( get string)
+		R> ALLOT 	 ( make room for it)
+	DOES>   D@ INCLUDED ;
+

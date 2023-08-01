@@ -1,0 +1,65 @@
+<HTML><HEAD><TITLE> ec 210a many times </TITLE>
+<link rel="stylesheet" type="text/css" href="an.css">
+</HEAD>
+<BODY><center>
+
+<table><tr><td><center>210a
+<br><tt>
+<a href="ec209c.html"> &#171;&#171; </a> &nbsp;
+<a href="ec200.html"> &#171;&#187; </a> &nbsp;
+<a href="ec210b.html"> &#187;&#187; </a>
+</tt>
+</center></table>
+
+<br> &nbsp;
+
+<table width="80%"><tr><td><h1> &nbsp; 210 </h1>
+<td class=r align=right> The programming language Forth &nbsp;
+<hr size="1">
+</table>
+
+
+<table width="80%"><tr><td>
+
+
+<h6>About manipulating the input stream.</h6>
+
+<h5> &nbsp; MANY TIMES </h5>
+
+<H2>FORTH at work</H2>
+
+     When a user types a line of text and presses<tt> [rtn]</tt>, Forth approaches this line as follows:
+<br>
+<br> It searches the first non-space (which is where a word starts), then it searches the next space after that (where the word stops). The system variable<tt> >IN </tt>functions as a pointer.
+<br> Forth administrates carefully in<tt> >IN </tt>where on the line it is looking.
+<br>
+<br> After the word is parsed, it is looked up in the dictionary and executed. When Forth can't find the word, it announces an error and ignores the rest of the unparsed input text.
+<br>
+<br> When no error develops, Forth endlessly repeats this procedure: determine the next word, again and again using <tt>>IN</tt>, and executing the word -- until the end of line is detected.
+<br>
+<br> Because Forth has no syntax, it is not necessary to decide beforehand if the line is correct.
+<br> Typing errors will automatically be detected, because Forth can't find misspelled words anyway.
+<br> Programming errors are of course still a problem, but they have nothing to do with syntax. 
+
+<pre>
+)<u> >IN @ </u>. [rtn] ?
+ 1234567... positions
+</pre>
+
+  The contents of<tt> >IN </tt>are fetched by<tt> @</tt>. Forth has already read the line including<tt> @ </tt>and the trailing space.
+
+<pre>
+)<u>       >IN @ </u>. [rtn] ?
+ 1234567890123... positions
+
+)<u>       >IN @ . >IN @ </u>. [rtn] ?
+ 123456789012345678901... positions
+</pre>
+
+ Forth assumes that users won't type words that change<tt> >IN </tt>behind its back, but we all know how Forth programmers are ...
+
+<div align=right><tt><a href="ec210b.html">&#187;&#187;</a></tt></div>
+
+</table>
+
+</center></body></html>

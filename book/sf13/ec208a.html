@@ -1,0 +1,70 @@
+<HTML><HEAD><TITLE> ec 208a catch1 </TITLE>
+<link rel="stylesheet" type="text/css" href="an.css">
+</HEAD>
+<BODY><center>
+
+<table><tr><td><center>208a
+<br><tt>
+<a href="ec207d.html"> &#171;&#171; </a> &nbsp;
+<a href="ec200.html"> &#171;&#187; </a> &nbsp;
+<a href="ec208b.html"> &#187;&#187; </a>
+
+</tt>
+</center></table>
+
+<br> &nbsp;
+
+<table width="80%"><tr><td><h1> &nbsp; 208 </h1>
+<td class=r align=right> The programming language Forth &nbsp;
+<hr size="1">
+</table>
+
+
+<table width="80%"><tr><td colspan="2">
+
+
+<h5> &nbsp;CATCH and THROW I </h5>
+
+<tr><td valign="top"> Leo:
+<td> Last time we discussed <em>Signed</em> and <em>Unsigned</em>. Today, I'd like you to tell me more about<tt> THROW</tt>. I know<tt> THROW </tt>expects a number on the data stack. When this number is zero, nothing happens. Other values cause Forth to abort the program, sometimes after printing "error: message such and such." For example, the result of<tt> -14 THROW </tt>is
+
+<pre>Compile-only word (message # -14)
+</pre>
+     I'm sure there is more to tell about this mechanism.
+
+
+<tr><td valign="top"> Theo: &nbsp;
+<td> Certainly. But let's take a detour first. You already know about<tt> EXECUTE</tt>. What do you expect the following does?
+<pre>
+17 ' DUP EXECUTE .S
+</pre>
+
+
+<tr><td valign="top"> Leo:
+<td> Easy.<tt> ' </tt>(Tick) finds<tt> DUP</tt>, and<tt> EXECUTE </tt>runs<tt> DUP</tt>'s code. It does the same as a simple<tt> DUP</tt>.
+<pre>
+[rtn] ( 17 17 ) ok
+</pre>
+
+
+<tr><td valign="top"> Theo:
+<td> Indeed. One moment, let me define a word to ... O.K., you can tell me what<tt> EX </tt>does:
+<pre>
+: EX BEGIN DEPTH 0> WHILE DROP REPEAT ;
+</pre>
+
+<tr><td valign="top"> Leo:
+<td> In case<tt> DEPTH </tt>is not zero, numbers are dropped off the stack. Thus<tt> EX </tt>cleans up the stack.
+
+<tr><td valign="top"> Theo:
+<td> O.K. Here's Puzzle # 1. What does this do:
+<pre>
+EX 1 ' DUP CATCH .S
+</pre>
+ Let me add that in this case<tt> CATCH </tt>has almost the same effect as<tt> EXECUTE</tt>. The difference is that<tt> CATCH </tt>additionally places a zero on the stack. Deduce the answer before pressing<tt> [rtn] </tt>.
+
+<div align=right><tt><a href="ec208b.html">&#187;&#187;</a></tt></div>
+
+</table>
+
+</center></BODY></HTML>

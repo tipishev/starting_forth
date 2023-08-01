@@ -1,0 +1,12 @@
+\ -----------------------------------------------------------------------
+\ 4-4.forth -------------------------------------------------------------
+\ -----------------------------------------------------------------------
+\ Code from Starting Forth, Chapter 4
+\ ANSized by Benjamin Hoyt in 1997
+
+( problem 4-4 )
+: SIGN.TEST  ( n -- )
+   DUP 0< IF ." Negative " DROP  EXIT  THEN
+       0> IF ." Positive "       EXIT  THEN 
+   ." Zero " ;
+

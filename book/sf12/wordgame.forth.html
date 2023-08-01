@@ -1,0 +1,103 @@
+\ wordgame.forth --------------------------------------------------------------------------
+\ PAPER generator from Starting Forth Chapter 12
+\ assume 1 CHARS == 1 byte per address unit
+
+\ -----------------------------------------------------------------------------------------
+\ Most Forths have this word already
+: SKIP  ( addr1 n1 char -- addr2 n2 )
+	LOCALS| ch |
+	BEGIN  DUP 
+	WHILE  OVER C@ ch =
+	WHILE  1 /STRING
+	REPEAT THEN ;
+
+\ Most Forths have this word already
+: SCAN  ( addr1 n1 char -- addr2 n2 )
+	LOCALS| ch |
+	BEGIN  DUP 
+	WHILE  OVER C@ ch -
+	WHILE  1 /STRING
+	REPEAT THEN ;
+
+HERE VALUE seed
+0    VALUE used
+
+\ Most Forths have RANDOM and CHOOSE
+\ Some Forths don't allow entering HEX with "$" prefixes.
+: RANDOM  ( -- u )
+	seed TO used 
+    	seed  $107465 *  $234567 + 
+	DUP TO seed ;	
+
+: CHOOSE  RANDOM UM* NIP ; ( n -- u )
+
+\ -----------------------------------------------------------------------------------------
+
+VARIABLE linecount  		\ current horizontal output cursor position
+78 CONSTANT RMARGIN  		\ right margin
+
+\ : $"    [CHAR] " WORD DUP C@ 1+ ALLOT  SWAP 1+ ; ( addr*u1 u1 "ccc<quote>" -- addr*u2 u2 ) 
+\ ANSified by: ward@megawolf.com (ward mcfarland)
+: $" ( addr*u1 u1 "ccc<quote>" -- addr*u2 u2 )
+     HERE
+     [CHAR] " PARSE  DUP C,
+     HERE OVER ALLOT
+     SWAP MOVE
+     SWAP 1+  ;
+
+0 CONSTANT ${
+
+: ->$$  CELLS + CELL+ @ COUNT ; ( addr ix -- 'strings )
+
+: }$	CREATE  ( addr*u u -- )    DUP , 0 ?DO , LOOP
+	DOES>   ( ix -- c-addr u ) DUP @ 1- ROT -  ->$$ ;
+
+: }s$	CREATE  ( addr*u u -- )    DUP 3 / , 0 ?DO , LOOP
+	DOES>   ( ix -- c-addr u ) DUP @ 1- ROT -  3 *  3 CHOOSE +  ->$$ ;
+
+: }r$	CREATE  ( addr*u u -- )    DUP , 0 ?DO , LOOP
+	DOES>   ( -- c-addr u )    DUP @ CHOOSE  ->$$ ;
+
+S" phrases.forth" INCLUDED
+
+' filler >BODY @ CONSTANT #phrases 
+' intros >BODY @ CONSTANT #intros   
+
+: Split-At-Char  ( addr1 n1 char -- addr2+n2 n1-n2 addr2 n2 )
+	LOCALS| ch |
+	ch SKIP
+	2DUP  ch SCAN  TUCK 2>R - 2R>  2SWAP ;
+
+: CR'       CR  0 linecount ! ;
+: SPACE'    linecount @ IF  SPACE  1 linecount +!  THEN ;
+: TYPE'     DUP linecount +!  TYPE ; ( char -- )
+: -FITS?    linecount @ +  RMARGIN > ; ( #chars -- TRUE=fits-on-this-line ) 
+: ANOTHER?  DUP ; ( #chars -- TRUE=string-not-empty )
+
+: .WORD ( addr1 #chars1 -- addr2 #chars2 )
+	BL Split-At-Char
+	DUP 1+ ( space!) -FITS? IF  CR'  THEN  
+	SPACE' TYPE' ;
+
+: .PHRASE  ( addr #chars -- )	\ output formatted text
+	BEGIN  ANOTHER?  WHILE  .WORD  REPEAT 2DROP ;
+
+: PHRASE ( index -- )
+	filler .PHRASE  
+	1st-adjective .PHRASE  2nd-adjective .PHRASE  
+	noun .PHRASE ;
+
+: INTRO     CR' intros .PHRASE ; ( paragraph# -- )
+: ENDS	    [CHAR] . EMIT CR' ;  ( there's always room for '.' )
+: SENTENCE  #phrases 0 DO  I PHRASE  LOOP    ENDS ;
+: PAPER     #intros  0 DO  I INTRO SENTENCE  LOOP ; 
+
+\ Execute AFTER a PAPER, to reprint it, usage: REDO PAPER 
+: REDO	    used TO seed ;	  
+
+PAPER ( try it out )
+
+\ Occasionally, successive SENTENCEs will look very similar.
+\ This is because CHOOSE can return a run of equal values.
+\ Homework: write an NCHOOSE that returns a batch of N unique numbers < m
+\           and try to use it in SENTENCE.

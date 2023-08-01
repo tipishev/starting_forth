@@ -1,0 +1,672 @@
+<!DOCTYPE HTML PUBLIC "-//Microsoft//DTD Internet Explorer 3.0 HTML//EN">
+<HTML>
+
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Leo Brodie's Starting Forth - Chapter 10</TITLE>
+  <META name="description" content="Starting Forth, Leo Brodie, Chapter 10.">
+  <META name="keywords" content="Forth, example code, Starting Forth, chapter 10">
+</HEAD>
+
+<BODY BGCOLOR="#F8F8F8" TEXT="#000000" LINK="#0000FF" VLINK="#007070" ALINK="#FF0000" TOPMARGIN=0>
+
+<H1>10 I/O and You</H1>
+
+	<P> In this chapter, we'll explain how Forth handles I/O<IMG SRC="footnote.gif" ALT="For Beginners: I/O is an abbreviation of `input-output,' which refers to data, text, or signals that are sent or received by the computer. I/O devices include terminals, printers, disk drives, push buttons, etc."> 
+	    of character strings to and from disk and the terminal.
+
+	<P> Specifically, we'll discuss disk-access commands, output commands, string-manipulation commands,
+	    input commands, and number-input conversion.
+
+<H2>Output Operators</H2>
+
+	<P> The word <FONT COLOR="#0000FF">EMIT</FONT> takes a single ASCII representation on the stack, using
+	    the low-order byte only, and prints the character at your terminal. For example, in decimal:
+<PRE>	65 EMIT<U> A ok</U>
+	66 EMIT<U> B ok</U>
+</PRE>
+	<P> The word <FONT COLOR="#0000FF">TYPE</FONT> prints an entire string of characters at your terminal,
+	    given the starting address of the string in memory and the count, in this form:
+<PRE>	( addr u -- )
+</PRE>
+	<P> We've already seen <FONT COLOR="#0000FF">TYPE</FONT> in our number-formatting definitions without 
+	    worrying about the address and count, because they are automatically supplied by <FONT COLOR="#0000FF">#&gt;</FONT>.
+
+	<P> Let's give <FONT COLOR="#0000FF">TYPE</FONT> an address that we know contains a character string.
+	    Remember that the starting address of the terminal input buffer is returned by <FONT COLOR="#0000FF">TIB</FONT>?
+	    Suppose we enter the following command:
+<PRE>	TIB #TIB @ TYPE
+</PRE>	
+	<P> This will type 15 characters from the terminal input buffer, which contains the command we just entered:
+<PRE>	TIB #TIB @ TYPE<IMG SRC="enterkey.gif" ALIGN=MIDDLE  ALT="return"><U> TIB #TIB @ TYPE ok</U>
+</PRE>
+	<P> Let's digress for a moment to look at the operation of <FONT COLOR="#0000FF">."</FONT>. At compile time, 
+	    when the compiler encounters a dot-quote, it compiles the ensuing string right into the dictionary,
+	    letter-by-letter, up to the delimiting double-quote. To keep track of things, it also compiles the
+	    <U>count</U> of characters into the dictionary entry. Given the definition
+<PRE>	: TEST   ." sample " ;
+</PRE>
+	    and looking at bytes in the dictionary horizontally rather than vertically, here is what the compiler has 
+	    compiled:
+
+<IMG SRC="ch10-door.gif" ALIGN=MIDDLE ALT="compiled">
+
+	<P> If we wanted to, we could type the word <TT>"SAMPLE"</TT> ourselves (without executing <TT>TEST</TT>) 
+	    with the phrase
+<PRE>	' TEST >BODY CELL+ 1+ 7 TYPE
+</PRE>
+	    where 
+<PRE>	' TEST >BODY
+</PRE>
+	    gives us the body address of <TT>TEST</TT>,
+<PRE>	CELL+ 1+
+</PRE>
+	    offsets us past the address and the count, to the beginning of the string (the letter "s"), and
+<PRE>	7 TYPE
+</PRE>
+	    types the string "sample."
+
+	<P> That little exercise may not seem too useful. But let's go a step further.
+
+	<P> Remember how we defined <TT>LABEL</TT> in our egg-sizing application, using nested <FONT COLOR="#0000FF">IF</FONT>...<FONT COLOR="#0000FF">THEN</FONT>
+	    statements? We can rework our definition using <FONT COLOR="#0000FF">TYPE</FONT>. First let's make
+	    all the labels the same length and "string them together" within a single definition as a string
+	    array. (We can abbreviate the longest label to "XTRA LRG" so that we can make each label eight 
+	    characters long, including trailing spaces.)
+<PRE>	: "LABEL"  ." REJECT  SMALL   MEDIUM  LARGE   XTRA LRGERROR   " ;
+</PRE>
+	<P> Once we enter 
+<PRE>	' "LABEL" >BODY CELL+ 1+
+</PRE>
+	    to get the address of the start of the string, we can type any particular label by offsetting into
+	    the array. For example, if we want label 2, we simply add sixteen (2 x 8) to the starting address and
+	    type the eight characters of the name:
+<PRE>	16 + 8 TYPE
+</PRE>
+	<P> Now let's redefine <TT>LABEL</TT> so that it takes a category-number from zero through five and uses 
+	    it to index into the string array, like this:
+<PRE>	: LABEL   8 *  ['] "LABEL" >BODY CELL+ 1+  +  8 TYPE  SPACE ;
+</PRE>	
+	<P> Recall that the word <FONT COLOR="#0000FF">[']</FONT> is just like <FONT COLOR="#0000FF"><B>'</B></FONT>
+	    except that it may only be used inside a definition to compile the address of the next word in the
+	    definition (in this case, <TT>"LABEL"</TT>). Later, when we execute <TT>LABEL</TT>, bracket-tick-bracket 
+	    followed by to-body will push the body address of <TT>"LABEL"</TT> onto the stack. The number corresponding to
+	    <FONT COLOR="#0000FF">CELL+ 1+</FONT> is added, then the string offset is added to compute the address 
+	    of the particular label name that we want.
+
+	<P> This kind of string array is sometimes called a "superstring." As a naming convention, the name of 
+	    the superstring usually has quotes around it. Note that this method is in practice never used, as
+	    the same result can be had with the completely portable ANS Forth word <FONT COLOR="#0000FF">C"</FONT>, 
+	    as follows:
+<PRE>	: "LABEL"  C" REJECT  SMALL   MEDIUM  LARGE   XTRA LRGERROR   " ;
+	: LABEL   8 *  "LABEL" 1+ +  8 TYPE  SPACE ;
+</PRE>	
+	<P> Our new version of <TT>LABEL</TT> will run a little faster because it does not have to perform
+	    a series of comparison tests before it hits upon the number that matches the argument. Instead it
+	    uses the argument to compute the address of the appropriate string to be typed.
+
+	<P> Notice, though, that if the argument to <TT>LABEL</TT> exceeds the range zero through five, you'll
+	    get garbage. If <TT>LABEL</TT> is only going to be used within <TT>EGGSIZE</TT> in the application,
+	    there's no problem. But if an "end user," meaning a person, is going to use it, you'd better "clip"
+	    the index, like this:
+<PRE>	: LABEL   0 MAX 5 MIN  LABEL ;
+</PRE>	
+
+<P><TABLE WIDTH="100%" BORDER="0">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>TYPE</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( addr u -- )	<TD bgcolor="#EEEEEE"> Transmits u characters, beginning at address, to the current output device.
+</TABLE>
+
+<H2>Outputting Strings from Disk</H2>
+
+	<P> We mentioned before that the word <FONT COLOR="#0000FF">BLOCK</FONT> copies a given block into an
+	    available buffer and leaves the address of the buffer on the stack. Using this address as a starting-point,
+	    we can index into one of the buffer's 1,024 bytes and type any string we care to. For example, to print
+	    line 0 of block 1, we could say (assuming you've executed <CODE>USE blocks.fb</CODE>)
+<PRE>	CR 1 BLOCK 64 TYPE<IMG SRC="enterkey.gif" ALIGN=MIDDLE  ALT="return">
+	<U>                                                                 ok </U>
+</PRE>
+	<P> To print line eight, we could add 512 (8 x 64) to the address, like this:
+<PRE>	CR 1 BLOCK  512 + 64 TYPE
+</PRE>
+	<P> Before we give a more interesting example, it's time to introduce a word that is closely
+	    associated with <FONT COLOR="#0000FF">TYPE</FONT>.
+<P><TABLE WIDTH="100%" BORDER="0">
+	<TR><TD align=center nowrap bgcolor="#EEEEEE"> <TT>-TRAILING</TT>   <TD bgcolor="#EEEEEE" nowrap> ( addr u1 -- addr u2 ) <TD bgcolor="#EEEEEE"> Eliminates trailing blanks from the string that starts at the address by reducing the count from u1 (original byte count) to u2 (shortened byte count).  <TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="not-trailing">
+</TABLE>
+
+<TABLE ALIGN=RIGHT WIDTH="50%" BORDER="0">
+<HR NOSHADE SIZE="6">
+	<CAPTION><I><BR>Handy Hint</I><BR><BR><I>A Random Number Generator</I></CAPTION>
+	<TR><TD> This simple random number generator can be useful for games, although for more sophisticated 
+	         applications such as simulations, better versions are available.
+<PRE>	( Random number generation -- High level )
+	VARIABLE rnd   HERE rnd !
+	: RANDOM  rnd @ 31421 *  6927 +  DUP rnd ! ;
+	: CHOOSE  ( u1 -- u2 )  RANDOM UM*  NIP ;
+
+	( where CHOOSE returns a random integer 
+	  within the range 0 = or < u2 < u1. )
+</PRE>
+	<P> Here's how to use it:
+
+	<P> To choose a random number between zero and ten (but exclusive of ten) simply enter
+<PRE>	10 CHOOSE
+</PRE>
+	    and <TT>CHOOSE</TT> will leave the random number on the stack.
+
+<HR NOSHADE SIZE="6">
+</TABLE>
+
+	<P> <FONT COLOR="#0000FF">-TRAILING</FONT> can be used immediately before the <FONT COLOR="#0000FF">TYPE</FONT>
+	    command so that trailing blanks will not be printed. For instance, inserting it into our first example 
+	    above would give us
+<PRE>	CR 1  BLOCK 64 
+	-TRAILING TYPE<IMG SRC="enterkey.gif" ALIGN=MIDDLE  ALT="return">
+	<U> ok </U>
+</PRE>
+	<P> The following example uses <FONT COLOR="#0000FF">TYPE</FONT> 
+<PRE>	USE blocks.fb
+	: POOF   
+	  16 CHOOSE 64 *  
+	  2 BLOCK +  
+	  CR 64 -TRAILING 
+	  TYPE ;
+</PRE>
+	<P> try it:
+<PRE>	POOF
+	<U>qualified ok </U>
+	POOF
+	<U>flexible ok </U>
+	POOF
+	<U>total ok </U>
+</PRE>
+
+
+
+<H2>Internal String Operators</H2>
+	
+	<P> The commands for moving character strings or data arrays are very simple. Each requires three 
+	    arguments: a source address, a destination address, and a count.
+<P><TABLE WIDTH="100%" BORDER="0">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>CMOVE</TT>       <TD bgcolor="#EEEEEE" nowrap> ( addr1 addr2 u -- )   <TD bgcolor="#EEEEEE"> Copies a region of memory u bytes long, byte-by-byte beginning at addr1, to memory beginning at addr2. The move begins with the contents of addr1 and proceeds toward high memory.				<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="c-move">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>CMOVE&gt;</TT>   <TD bgcolor="#EEEEEE" nowrap> ( addr1 addr2 u -- )	  <TD bgcolor="#EEEEEE"> If u is greater than zero, copy u consecutive characters from the data space starting at c-addr1 to that starting at c-addr2, proceeding character-by-character from higher addresses to lower addresses.	<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="c-move-up">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>MOVE</TT>        <TD bgcolor="#EEEEEE" nowrap> ( addr1 addr2 u -- )   <TD bgcolor="#EEEEEE"> After this move, the u bytes at addr2 contain exactly what the u bytes at addr1 contained before the move (no "clobbering" occurs).										<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="move">
+</TABLE>
+
+	<P> Notice that these commands follow certain conventions we've seen before:
+	<OL>
+	  <LI> When the arguments include a source and a destination, the source precedes the destination.
+	  <LI> When the arguments include an address and a count (as they do with <FONT COLOR="#0000FF">TYPE</FONT>), the address precedes the count.
+	</OL>
+
+	<P> And so with these three words the arguments are
+<PRE>	( source destination count -- )
+</PRE>
+	<P> To move the entire contents of a buffer into the <FONT COLOR="#0000FF">PAD</FONT>, for example,
+	    we would write
+<PRE>	210 BLOCK  PAD  1024 CMOVE
+</PRE>
+	    although on cell-address machines the move might be made faster if it were cell-by-cell, like this:
+<PRE>	210 BLOCK  PAD  1024 MOVE
+</PRE>
+	<P> The word <FONT COLOR="#0000FF">CMOVE&gt;</FONT> lets you move a string to a region that is higher in 
+	    memory but that overlaps the source region.
+
+<IMG SRC="cmove.gif"   ALIGN=LEFT  ALT="cmove">
+<IMG SRC="cmoveup.gif" ALIGN=RIGHT ALT="cmove&gt;">
+
+	<P> If you were to use <FONT COLOR="#0000FF">CMOVE</FONT>, the first letter of the string would get 
+	    copied to the second byte, but that would "clobber" the second letter of the string. The final result 
+	    would be a string composed of a single character.
+	
+	<P> Using <FONT COLOR="#0000FF">CMOVE&gt;</FONT> in this situation keeps the string from clobbering 
+	    itself during the move.
+
+	<P> You probably notice that <FONT COLOR="#0000FF">CMOVE</FONT> can be used to fill an array with a 
+	    certain byte. On older systems the word <FONT COLOR="#0000FF">FILL</FONT>, which we introduced 
+	    earlier, may have been defined using this trick. On modern Forths it is recommended to explicitly 
+	    use <FONT COLOR="#0000FF">FILL</FONT>, if fill is what you want to do. For example, to store blanks
+	    into 1024 bytes of the pad, we say
+<PRE>	PAD  1024 CHAR BL FILL
+</PRE>
+
+<H2>Single-character Input</H2>
+	
+	<P> The word <FONT COLOR="#0000FF">KEY</FONT> awaits the entry of a single key from your terminal
+	    keyboard and leaves the character's ASCII equivalent on the stack in the low-order byte.
+
+	<P> To execute it directly, you must follow it with a return, like this:
+<PRE>	KEY<IMG SRC="enterkey.gif" ALIGN=MIDDLE  ALT="return">
+</PRE>
+	<P> The cursor will advance a space, but the terminal will <U>not</U> print the "ok"; it is waiting
+	    for your input. Press the letter "A," for example, and the screen will "echo" the letter "A,"
+	    followed by the "ok." The ASCII value is now on the stack, so enter <FONT COLOR="#0000FF"><B>.</B></FONT>:
+<PRE> 	KEY A<U> ok </U>
+	.<IMG SRC="enterkey.gif" ALIGN=MIDDLE  ALT="return"><U> 65 ok </U>
+</PRE>
+	<P> This saves you from having to look in the table to determine a character's ASCII code.
+
+	<P> You can also include <FONT COLOR="#0000FF">KEY</FONT> inside a definition. Execution of the definition
+	    will stop, when <FONT COLOR="#0000FF">KEY</FONT> is encountered, until an input character is received.
+	    For example, the following definition will list a given number of blocks in series, starting with the 
+	    current block, and wait for you to press any key before it lists the next one:
+<PRE>	: BLOCKS   ( count -- )
+		SCR @ + SCR @ DO  I LIST KEY DROP  LOOP ;
+</PRE>
+	<P> In this case we drop the value left by <FONT COLOR="#0000FF">KEY</FONT> because we don't care what 
+	    it is.
+	
+	<P> Or we might add a feature that allows us either to leave the loop at any time by pressing return
+	    or to continue by pressing any other key, such as as space. In this case we will perform a 
+	    conditional test on the value returned by <FONT COLOR="#0000FF">KEY</FONT>.
+<PRE>	13 CONSTANT #EOL
+	: BLOCKS  ( count -- )
+		SCR @ + 
+		SCR @ DO	I LIST 
+				KEY #EOL = ( cr) IF  LEAVE  THEN 
+		    LOOP ;
+</PRE>	
+ 	<P> Note that in some Forth systems, the carriage-return key is received as a linefeed (10) or as 
+	    a null (zero).
+
+<P><TABLE WIDTH="100%" BORDER="0">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>KEY</TT>         <TD bgcolor="#EEEEEE" nowrap> ( -- c )   		  <TD bgcolor="#EEEEEE"> Returns the ASCII value of the next available character from the current input device.  											     <TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="key">
+</TABLE>
+
+<H2>String Input Commands, from the Bottom up</H2>
+
+	<P> There are several words involved with string input. We'll start with the lower-level of these
+	    and proceed to some higher-level words. Here are the words we will cover in this section:
+
+<P><TABLE WIDTH="100%" BORDER="0">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>ACCEPT</TT>      <TD bgcolor="#EEEEEE" nowrap> ( c-addr u1 -- u2 )    <TD bgcolor="#EEEEEE"> Accepts at most u1 characters from the terminal keyboard and stores them, starting at the address, returning the count of accepted characters. As this word waits for a carriage return, more than u1 characters can be received.  	<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="accept">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>WORD</TT>        <TD bgcolor="#EEEEEE" nowrap> ( c -- addr )  	  <TD bgcolor="#EEEEEE"> Reads one word from the input stream, using the character (usually blank) as a delimiter. Moves the string to the address (<FONT COLOR="#0000FF">HERE</FONT>) with the count in the first byte, leaving the address on the stack.	<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="word">
+</TABLE>
+	<P> The word <FONT COLOR="#0000FF">ACCEPT</FONT> stops execution of the task and waits for a specified maximum number of keystrokes from
+	    your keyboard.  End of input is signaled by a carriage return. 
+	    The incoming text is stored beginning at the address given as an argument and the count of accepted 
+	    characters is returned on the stack. Note that the actually received number of keystrokes can be higher 
+	    than the specified maximum length of the returned string, e.g. when a user needs to edit the input.
+
+	<P> For example, the phrase
+<PRE>	TIB 80 ACCEPT
+</PRE>
+	    requests up to eighty characters and store them in the Terminal Input Buffer (<FONT COLOR="#0000FF">TIB</FONT>). 
+	    (Storing directly in the <FONT COLOR="#0000FF">TIB</FONT> is not standard, but e.g. iForth has 
+	    no problem with this tradition.)
+	<P> This phrase is the one used in the definition of <FONT COLOR="#0000FF">QUIT</FONT> to get
+	    the input for <FONT COLOR="#0000FF">INTERPRET</FONT>.
+
+	<P> Let's move on to the next higher-level string-input operator. We've just explained that 
+	    <FONT COLOR="#0000FF">QUIT</FONT> contains the phrase
+<PRE>	... TIB 80 ACCEPT #TIB !  INTERPRET ...
+</PRE>
+	    but how does the text interpreter scan the terminal input buffer and pick out each individual word
+	    there? With the phrase
+<PRE>	BL WORD
+</PRE>	
+	<P> <FONT COLOR="#0000FF">WORD</FONT> scans the input stream looking for the given delimiter, in this
+	    case space, and moves the sub-string into a different buffer of its own, with the count in the 
+	    first byte of the buffer. Finally, it leaves the address of the buffer on the stack, so that 
+	    <FONT COLOR="#0000FF">INTERPRET</FONT> (or anyone else) knows where to find it. 
+	    <FONT COLOR="#0000FF">WORD</FONT>'s buffer usually begins at <FONT COLOR="#0000FF">HERE</FONT>, so
+	    the address given is <FONT COLOR="#0000FF">HERE</FONT>.
+
+	<P> <FONT COLOR="#0000FF">WORD</FONT> looks for the given delimiter in the terminal input buffer,
+	    and moves the sub-string to <FONT COLOR="#0000FF">WORD's</FONT> buffer with the count in the 
+	    first byte.
+
+	<P> When you are executing words directly from a terminal, <FONT COLOR="#0000FF">WORD</FONT> will 
+	    scan the input buffer, starting at <FONT COLOR="#0000FF">TIB</FONT>. As it goes along,
+	    it advances the input buffer <U>pointer</U>, called <FONT COLOR="#0000FF">&gt;IN</FONT>, so that
+	    each time you execute <FONT COLOR="#0000FF">WORD</FONT>, you scan the <U>next</U> word in the 
+	    input stream. <FONT COLOR="#0000FF">WORD</FONT> knows to stop scanning when <FONT COLOR="#0000FF">&gt;IN @</FONT>
+	    becomes larger than <FONT COLOR="#0000FF">#TIB @</FONT>, the count of received characters.
+
+	<P> <FONT COLOR="#0000FF">&gt;IN</FONT> is a "relative pointer"; that is, it does not contain the actual
+	    address but rather an offset that is to be added to the actual address, which is is in this case
+	    <FONT COLOR="#0000FF">TIB</FONT>. For example, after <FONT COLOR="#0000FF">WORD</FONT> has
+	    scanned the string "STAR," the value of <FONT COLOR="#0000FF">&gt;IN</FONT> is five.
+
+<P><IMG SRC="imb.gif" ALIGN=MIDDLE ALT="terminal input buffer">
+
+	<P> <FONT COLOR="#0000FF">WORD</FONT> ignores initial occurences of the delimiter (until any other 
+	    character is encountered). You could type
+<PRE>	STAR
+</PRE>
+	    (that is, <TT>STAR</TT> preceded by several spaces) and get exactly the same string in 
+	    <FONT COLOR="#0000FF">WORD</FONT>'s buffer as shown above.
+
+	<P> We'll get back to <FONT COLOR="#0000FF">WORD</FONT> later on in this chapter. For now, though,
+	    let's define a word that uses <FONT COLOR="#0000FF">WORD</FONT> and that is more useful for 
+	    handling string input:
+<PRE>	: TEXT  ( delimiter -- )  PAD 258 BL FILL  WORD COUNT PAD SWAP  MOVE ;
+</PRE>
+	<P> <TT>TEXT</TT>, like <FONT COLOR="#0000FF">WORD</FONT>, takes a delimiter and scans the input 
+	    stream until it finds the string delimited by it. It then moves the string to the pad. What is 
+	    especially nice about <FONT COLOR="#0000FF">TEXT</FONT> is that before it moves the string, it
+	    blanks the pad. This makes it very convenient for use with <FONT COLOR="#0000FF">TYPE</FONT>. 
+	    Here's a simple example:
+<PRE>	CREATE my-name 40 ALLOT
+	: I'M   BL TEXT  PAD my-name 40 MOVE ;
+</PRE>
+	<P> In the first line we define an array called <TT>my-name</TT>. In the second line we define a 
+	    word called <TT>I'M</TT> which will allow us to enter
+<PRE>	I'M EDWARD<U> ok </U>
+</PRE>
+	<P> The definition of <TT>I'M</TT> breaks down as follows: the phrase
+<PRE>	BL TEXT
+</PRE>	
+	    scans the remainder of the input stream looking for a space or the end of the line, whichever
+	    comes first. (The delimiter that we give to <TT>TEXT</TT> is actually used by <FONT COLOR="#0000FF">WORD</FONT>,
+	    which is included in the definition of <FONT COLOR="#0000FF">TEXT</FONT>.) <FONT COLOR="#0000FF">TEXT</FONT>
+	    then moves the phrase to a nice clean "pad."
+
+	<P> The phrase 
+<PRE>	PAD my-name 40 MOVE
+</PRE>
+	   moves forty bytes from the pad into the array called <TT>my-name</TT>, where it will safely stay 
+	   for as long as we need it.
+
+	<P> We could now define <TT>GREET</TT> as follows:
+<PRE>	: GREET   ." Hello, " my-name 40 -TRAILING TYPE  ." , I speak Forth. " ;
+</PRE>
+	    so that by executing <TT>GREET</TT>, we get
+<PRE>	GREET<U> Hello, EDWARD, I speak Forth.  ok </U>
+</PRE>	
+	<P> Unfortunately, our definition of <TT>I'M</TT> is looking for a space as its delimiter. This means
+	    that a person named Mary Kay will not get her full name into <TT>my-name</TT>. 
+
+	<P> To get the complete input stream, we don't want to "see" any delimiter at all, except the end
+	    of line. Instead of <TT>"BL TEXT,"</TT> we should use the phrase 
+<PRE>	1 TEXT
+</PRE>
+	<P> ASCII 1 is a control character that can't be ever sent from the keyboard and therefore won't ever
+	    appear in the input buffer. Thus <TT>"1 TEXT"</TT> is a convention used to read the entire input
+	    buffer, up to the carriage return. By redefining <TT>I'M</TT> in this way, Mary Kay can get her 
+	    name into <TT>my-name</TT>, space and all.
+
+	<P> By using other delimiters, such as commas, we can "accept" a series of strings and store each of 
+	    them into a different array for different purposes. Consider this example, in which the word 
+	    <TT>VITALS</TT> uses commas as delimiters to separate three input fields:
+<PRE>	( Form love letter )
+
+	CREATE name 14 ALLOT
+	CREATE eyes 12 ALLOT
+	CREATE me   14 ALLOT
+
+	: VITALS
+		[CHAR] , TEXT  PAD name 14 MOVE
+		[CHAR] , TEXT  PAD eyes 12 MOVE
+		       1 TEXT  PAD me   14 MOVE ;
+
+	: LETTER  PAGE
+		." Dear " name 14 -TRAILING TYPE ." ,"
+		CR ." I go to heaven whenever I see your deep " 
+			eyes 12 -TRAILING TYPE ."  eyes. Can "
+		CR ." you go to the movies Friday? "
+		CR 30 SPACES ." Love, "
+		CR 30 SPACES me 14 -TRAILING TYPE
+		CR ." P.S. Wear something " eyes 12 -TRAILING TYPE
+		   ."  to show off those eyes! " ;	
+</PRE>
+	<P> Which allows you to enter
+<PRE>	VITALS Alice,blue,Fred<U> ok </U>
+</PRE>
+	    then enter
+<PRE>	LETTER
+</PRE>
+	<P> It works every time.
+
+	<P> So far all of our input has been "Forth style"; that is, numbers <U>precede</U> commands
+	    (so that a command will find its number on the stack) and strings <U>follow</U> commands
+	    (so that a command will find its string in the input stream). This style makes use of one
+	    of Forth's unique features: it awaits your commands; it does not prompt you.
+
+	<P> But if you want to, you may put <FONT COLOR="#0000FF">ACCEPT</FONT> inside a definition so that
+	    it will request input from you under control of the definition. For example, we could combine 
+	    the two words <TT>I'M</TT> and <TT>GREET</TT> into a single word which "prompts" users to enter
+	    their names. For example,
+<PRE>	GREET<U> </U>
+	<U>What's your name?</U>
+</PRE>
+	    at which point execution stops so the user can enter a name:
+<PRE>	GREET<U> </U>
+	<U>What's your name? </U>Travis Mc Gee
+	<U>Hello, Travis Mc Gee, I speak Forth. ok </U>
+</PRE>
+	<P> We could do this as follows:
+<PRE>	: GREET   CR ." What's your name?" 
+		TIB 40 ACCEPT #TIB !  0 >IN !  
+		1 TEXT  CR ." Hello, " 
+		PAD 40 -TRAILING TYPE  ." , I speak Forth. " ;
+</PRE>
+	<P> We've explained all the phrases in the above definition except this one:
+<PRE>	#TIB !  0 >IN !
+</PRE>	
+	<P> Remember that <FONT COLOR="#0000FF">TEXT</FONT>, because it uses <FONT COLOR="#0000FF">WORD</FONT>,
+	always uses <FONT COLOR="#0000FF">&gt;IN</FONT> as its reference point. But when the user enters the
+	word <TT>GREET</TT> to execute this definition, the string <TT>GREET</TT> will be stored in the terminal 
+	input buffer and <FONT COLOR="#0000FF">&gt;IN</FONT> will be pointing beyond <TT>"GREET"</TT>.
+	<FONT COLOR="#0000FF">ACCEPT</FONT> does <U>not</U> use <FONT COLOR="#0000FF">&gt;IN</FONT> as its
+	reference, so it will store the user's name beginning at <FONT COLOR="#0000FF">TIB</FONT>,
+	on top of <TT>GREET</TT>. If you were to execute <FONT COLOR="#0000FF">TEXT</FONT> <U>now</U>, it 
+	would miss the first five letters of the user's name. It's necessary to reset <FONT COLOR="#0000FF">&gt;IN</FONT>
+	to zero so that <FONT COLOR="#0000FF">TEXT</FONT> will look where <FONT COLOR="#0000FF">ACCEPT</FONT>
+	has put the name. 
+
+<H2>Number Input Conversion</H2>
+
+	<P> When you type a number at your terminal, Forth automatically converts this character string into
+	    a binary value and pushes it onto the stack. Forth also provides a command which let you convert
+	    a character string that begins at <U>any</U> memory location into a binary value.
+
+<P><TABLE WIDTH="100%" BORDER="0">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>&gt;NUMBER</TT>  <TD bgcolor="#EEEEEE" nowrap> ( ud1 c-addr1 u1 -- <BR>ud2 c-addr2 u2 ) <TD bgcolor="#EEEEEE"> ud2 is the unsigned result of converting the characters within the string specified by c-addr1 u1 into digits, using the number in <FONT COLOR="#0000FF">BASE</FONT>, and adding each into ud1 after multiplying ud1 by the number in BASE. Conversion continues left-to-right until a character that is not convertible, including any "+" or "-", is encountered or the string is entirely converted.  c-addr2 is the location of the first unconverted character or the first character past the end of the string if the string was entirely converted.  u2 is the number of unconverted characters in the string. <TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="to-number">
+</TABLE>
+
+	<P> Here's an example that uses <FONT COLOR="#0000FF">&gt;NUMBER</FONT>:
+<PRE>	: PLUS   0. BL WORD COUNT >NUMBER 2DROP DROP  + ." = " . ;
+</PRE>
+	<P> <TT>PLUS</TT> allows us to prove to any skeptic that Forth could use infix notation if it wanted 
+	    to. We can enter
+<PRE>	2 PLUS 13<IMG SRC="enterkey.gif" ALIGN=MIDDLE  ALT="return"><U> = 15 ok </U>
+</PRE>
+	<P> When <TT>PLUS</TT> is executed, the "2" will be put on the stack in binary form, while the "3"
+	    will still be in the input stream as a string. The phrase 
+<PRE>	0. BL WORD
+</PRE>	
+	reads the string and provides the accumulator for <FONT COLOR="#0000FF">&gt;NUMBER</FONT>; 
+	<FONT COLOR="#0000FF">&gt;NUMBER</FONT> converts it to binary and puts the double-length result
+	plus an unconverted string on the stack. We drop the string and the top half of the double-length 
+	result. Now <FONT COLOR="#0000FF">+</FONT> adds the two single-length values and 
+	<FONT COLOR="#0000FF"><B>.</B></FONT> prints the result.
+
+	<P> Note that you can use <FONT COLOR="#0000FF">&gt;NUMBER</FONT> to create your own specialized
+	number input conversion routines. Since <FONT COLOR="#0000FF">&gt;NUMBER</FONT> returns the address
+	of the first unconvertible character, you can make decisions based on whether the character is a 
+	hyphen, dot, or whatever. You can also make decisions based on the location of the non-convertible
+	character within the number. For instance, you can write a routine that lets you enter a number with
+	a decimal point in it and then scales it accordingly.
+
+	<P> To give a good example of the use of <FONT COLOR="#0000FF">&gt;NUMBER</FONT>, Figure 10-1 shows
+	    a definition of <FONT COLOR="#0000FF">NUMBER</FONT>. This version reads any of the characters
+<PRE>	: , - . /
+</PRE>	
+	    as valid punctuation marks which cause the value to be returned on the stack as a double-length 
+	    integer. If none of these characters appear in the string, the value is returned as single-length.<IMG SRC="footnote.gif" ALT="Most versions of the system NUMBER behave similarly and in addition leave in the user variable DPL the number of characters that were converted since the last punctuation was encountered."> 
+	    This definition uses the word <FONT COLOR="#0000FF">WITHIN</FONT> as we defined it in the problems 
+	    for Chap. 4.
+	
+	<P> Here we use the variable <TT>PUNCT</TT> to contain a flag that indicates whether punctuation was 
+	    encountered. We suggest that you use an available user variable instead.
+
+<P><TABLE WIDTH="80%" BORDER="0">
+	<CAPTION><I>Figure 10-1. A Definition of NUMBER</I></CAPTION>
+	<TR><TD bgcolor="#EEEEEE"> <PRE>VARIABLE punct</PRE>  			<TD bgcolor="#EEEEEE"> Creates a flag that will contain true if the number contains valid punctuation.
+	<TR><TD bgcolor="#EEEEEE"> <PRE> : NUMBER ( addr u -- n or d ) </PRE>  	<TD bgcolor="#EEEEEE"> &nbsp;
+	<TR><TD bgcolor="#EEEEEE"> <PRE>   0 punct !   	</PRE>		  	<TD bgcolor="#EEEEEE"> Initialize flag, no punctuation has occured.
+	<TR><TD bgcolor="#EEEEEE"> <PRE>   OVER C@   	</PRE>		  	<TD bgcolor="#EEEEEE"> Get the first digit.
+	<TR><TD bgcolor="#EEEEEE"> <PRE>   [CHAR] - =  	</PRE> 		 	<TD bgcolor="#EEEEEE"> Is it a minus sign?
+	<TR><TD bgcolor="#EEEEEE"> <PRE>   DUP >R      	</PRE>		  	<TD bgcolor="#EEEEEE"> Save the flag on the return stack.
+	<TR><TD bgcolor="#EEEEEE"> <PRE>   IF  1 /STRING  THEN </PRE>		<TD bgcolor="#EEEEEE"> If the first character is "-", adds 1 to the address and decrements the character count. This effectively skips the "-" character, pointing to the real first digit.
+	<TR><TD bgcolor="#EEEEEE"> <PRE>   0. 2SWAP    	</PRE>  		<TD bgcolor="#EEEEEE"> provides the double-length zero as an accumulator.
+	<TR><TD bgcolor="#EEEEEE"> <PRE>   BEGIN 	</PRE> 	 		<TD bgcolor="#EEEEEE"> &nbsp;
+	<TR><TD bgcolor="#EEEEEE"> <PRE>     >NUMBER	</PRE> 	 		<TD bgcolor="#EEEEEE"> Begins conversion; converts until an invalid digit.
+	<TR><TD bgcolor="#EEEEEE"> <PRE>     DUP	</PRE> 		 	<TD bgcolor="#EEEEEE"> While there are still characters left, fetch the invalid digit.
+	<TR><TD bgcolor="#EEEEEE"> <PRE>   WHILE	</PRE> 		 	<TD bgcolor="#EEEEEE"> &nbsp;
+	<TR><TD bgcolor="#EEEEEE"> <PRE>     OVER C@ DUP [CHAR] : = </PRE>		<TD bgcolor="#EEEEEE"> &nbsp;&nbsp;&nbsp;a colon, or
+	<TR><TD bgcolor="#EEEEEE"> <PRE>     SWAP [CHAR] , [CHAR] / 1+ WITHIN OR </PRE> <TD bgcolor="#EEEEEE"> &nbsp;&nbsp;&nbsp;a comma, hyphen, period or slash.
+	<TR><TD bgcolor="#EEEEEE"> <PRE>     DUP punct !	</PRE>	 	<TD bgcolor="#EEEEEE"> Set <TT>punct</TT> to indicate whether valid punctuation has occurred.
+	<TR><TD bgcolor="#EEEEEE"> <PRE>     0= ABORT" ? " 	</PRE>	 	<TD bgcolor="#EEEEEE"> Otherwise issue an error message.
+	<TR><TD bgcolor="#EEEEEE"> <PRE>     1 /STRING	 	</PRE>	 	<TD bgcolor="#EEEEEE"> Skip the punctuation character.
+	<TR><TD bgcolor="#EEEEEE"> <PRE>   REPEAT 	  	</PRE>	 	<TD bgcolor="#EEEEEE"> Exits here if a blank is detected; otherwise repeats conversion.
+	<TR><TD bgcolor="#EEEEEE"> <PRE>   2DROP		</PRE> 	 	<TD bgcolor="#EEEEEE"> Drop the string from the stack.
+	<TR><TD bgcolor="#EEEEEE"> <PRE>   R> IF  DNEGATE  THEN </PRE>	 	<TD bgcolor="#EEEEEE"> If the flag on the return stack is true, negates d.
+	<TR><TD bgcolor="#EEEEEE"> <PRE>   punct @ 0= IF  DROP  THEN ; </PRE> 	<TD bgcolor="#EEEEEE"> If there was no punctuation, returns a single-length value by dropping the high-order cell.
+</TABLE>
+
+
+<H2>A Closer Look at <FONT COLOR="#0000FF">WORD</FONT></H2>
+	
+	<P> So far we have only talked about using <FONT COLOR="#0000FF">WORD</FONT> to scan the <U>terminal</U> input 
+	    buffer (which holds the characters that are accepted from the terminal). 
+	    But if we recall that the phrase
+<PRE>	BL WORD
+</PRE>
+	    is used by the text interpreter, we realize that <FONT COLOR="#0000FF">WORD</FONT> actually scans the
+	    input <U>stream</U>, which is either the terminal input buffer, a string being <FONT COLOR="#0000FF">EVALUATE</FONT>d,
+	    or disk memory being <FONT COLOR="#0000FF">LOAD</FONT>ed or <FONT COLOR="#0000FF">INCLUDED</FONT>.
+
+	<P> To achieve this flexibility, <FONT COLOR="#0000FF">WORD</FONT> uses other pointers in addition to
+	    <FONT COLOR="#0000FF">&gt;IN</FONT>. The other pointers make sure <FONT COLOR="#0000FF">WORD</FONT>
+	    looks in memory (when doing <FONT COLOR="#0000FF">EVALUATE</FONT>), on disk (when doing <FONT COLOR="#0000FF">LOAD</FONT> 
+	    or <FONT COLOR="#0000FF">INCLUDED</FONT>) or in the terminal input buffer.
+
+	<P> A useful word to use in conjunction with <FONT COLOR="#0000FF">WORD</FONT> is <FONT COLOR="#0000FF">COUNT</FONT>.
+	    Recall that <FONT COLOR="#0000FF">WORD</FONT> leaves the length of the word in the first byte of 
+	    <FONT COLOR="#0000FF">WORD</FONT>'s buffer and also leaves the <U>address</U> of this byte on the stack.
+
+<BR><IMG SRC="address.gif" ALIGN=MIDDLE ALT="address">
+
+	<P> The word <FONT COLOR="#0000FF">COUNT</FONT> puts the count on the stack and increments the address,
+	    like this:
+
+<BR><IMG SRC="addressp1.gif" ALIGN=MIDDLE ALT="address+1">
+
+	<P> leaving the stack with a string address and a count as appropriate arguments for <FONT COLOR="#0000FF">TYPE</FONT>,
+	    <FONT COLOR="#0000FF">MOVE</FONT>, etc.
+	
+	<P> <FONT COLOR="#0000FF">COUNT</FONT> is used in the definition of <FONT COLOR="#0000FF">TEXT</FONT> which
+	    we gave a few sections back.
+
+<P><TABLE WIDTH="100%" BORDER="0">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>COUNT</TT>       <TD bgcolor="#EEEEEE" nowrap> ( addr -- addr+1 u )	  <TD bgcolor="#EEEEEE"> Converts a character string, whose length is contained in its first byte, into the form appropriate for <FONT COLOR="#0000FF">TYPE</FONT>, by leaving the address of the first character and the length on the stack. 			<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="count">
+</TABLE>
+	<P> We will further illustrate the use of <FONT COLOR="#0000FF">WORD</FONT> in one of the examples 
+	    in Chap. 12.
+
+<H2>String Comparisons</H2>
+
+	<P> Here is a Forth word that you can use to compare character strings:
+
+<P><TABLE WIDTH="100%" BORDER="0">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>COMPARE</TT>       <TD bgcolor="#EEEEEE" nowrap> ( c-addr1 u1<BR>&nbsp;c-addr2 u2 -- n ) <TD bgcolor="#EEEEEE"> Compare the string specified by c-addr1 and u1 to the string specified by c-addr2 and u2. The strings are compared, beginning at the given addresses, character by character up to the length of the shorter string, or until a difference is found. If both strings are the same up to the length of the shorter string, then the longer string is greater than the shorter string. n is -1 if the string specified by c-addr1 and u1 is less than the string specified by c-addr2 and u2. n is zero if the strings are equal. n is 1 if the string specified by c-addr1 and u1 is greater than the string specified by c-addr2 and u2. <TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="compare">
+</TABLE>
+	<P> <FONT COLOR="#0000FF">COMPARE</FONT> can be used to test whether two character strings are equal or
+	    whether one is alphabetically greater or lesser than the other.
+
+	<P> Here's a list of the Forth words we've covered in this chapter:
+
+<P><TABLE WIDTH="100%" BORDER="0">
+	<TR><TD align=center        bgcolor="#EEEEEE"> <TT>TYPE</TT> 	    <TD bgcolor="#EEEEEE" nowrap> ( addr u -- )	  <TD bgcolor="#EEEEEE"> Transmits u characters, beginning at address, to the current output device.													     <TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="type">
+	<TR><TD align=center nowrap bgcolor="#EEEEEE"> <TT>-TRAILING</TT>   <TD bgcolor="#EEEEEE" nowrap> ( addr u1 -- addr u2 ) <TD bgcolor="#EEEEEE"> Eliminates trailing blanks from the string that starts at the address by reducing the count from u1 (original byte count) to u2 (shortened byte count).  		     <TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="not-trailing">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>MOVE</TT>        <TD bgcolor="#EEEEEE" nowrap> ( addr1 addr2 u -- )   <TD bgcolor="#EEEEEE"> After this move, the u bytes at addr2 contain exactly what the u bytes at addr1 contained before the move (no "clobbering" occurs).						     <TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="move">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>CMOVE</TT>       <TD bgcolor="#EEEEEE" nowrap> ( addr1 addr2 u -- )   <TD bgcolor="#EEEEEE"> Copies a region of memory u bytes long, byte-by-byte beginning at addr1, to memory beginning at addr2. The move begins with the contents of addr1 and proceeds toward high memory.  <TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="c-move">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>KEY</TT>         <TD bgcolor="#EEEEEE" nowrap> ( -- c )   		  <TD bgcolor="#EEEEEE"> Returns the ASCII value of the next available character from the current input device.  											     <TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="key">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>ACCEPT</TT>      <TD bgcolor="#EEEEEE" nowrap> ( c-addr u1 -- u2 )    <TD bgcolor="#EEEEEE"> Accepts at most u1 characters from the terminal keyboard and stores them, starting at the address, returning the count of accepted characters. As this word waits for a carriage return, more than u1 characters can be received.	<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="accept">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>WORD</TT>        <TD bgcolor="#EEEEEE" nowrap> ( c -- addr )  	  <TD bgcolor="#EEEEEE"> Reads one word from the input stream, using the character (usually blank) as a delimiter. Moves the string to the address (<FONT COLOR="#0000FF">HERE</FONT>) with the count in the first byte, leaving the address on the stack. 	<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="word">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>&gt;NUMBER</TT>  <TD bgcolor="#EEEEEE" nowrap> ( ud1 c-addr1 u1 --<BR>&nbsp;ud2 c-addr2 u2 ) <TD bgcolor="#EEEEEE"> ud2 is the unsigned result of converting the characters within the string specified by c-addr1 u1 into digits, using the number in <FONT COLOR="#0000FF">BASE</FONT>, and adding each into ud1 after multiplying ud1 by the number in BASE. Conversion continues left-to-right until a character that is not convertible, including any "+" or "-", is encountered or the string is entirely converted.  c-addr2 is the location of the first unconverted character or the first character past the end of the string if the string was entirely converted.  u2 is the number of unconverted characters in the string. <TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="to-number">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>COUNT</TT>       <TD bgcolor="#EEEEEE" nowrap> ( addr -- addr+1 u )	  <TD bgcolor="#EEEEEE"> Converts a character string, whose length is contained in its first byte, into the form appropriate for <FONT COLOR="#0000FF">TYPE</FONT>, by leaving the address of the first character and the length on the stack. 			<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="count">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>CMOVE&gt;</TT>   <TD bgcolor="#EEEEEE" nowrap> ( addr1 addr2 u -- )	  <TD bgcolor="#EEEEEE"> If u is greater than zero, copy u consecutive characters from the data space starting at c-addr1 to that starting at c-addr2, proceeding character-by-character from higher addresses to lower addresses. 				<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="c-move-up">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>COMPARE</TT>     <TD bgcolor="#EEEEEE" nowrap> ( c-addr1 u1<BR>&nbsp;c-addr2 u2 -- n ) <TD bgcolor="#EEEEEE"> Compare the string specified by c-addr1 and u1 to the string specified by c-addr2 and u2. The strings are compared, beginning at the given addresses, character by character up to the length of the shorter string, or until a difference is found. If both strings are the same up to the length of the shorter string, then the longer string is greater than the shorter string. n is -1 if the string specified by c-addr1 and u1 is less than the string specified by c-addr2 and u2. n is zero if the strings are equal. n is 1 if the string specified by c-addr1 and u1 is greater than the string specified by c-addr2 and u2. <TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="compare">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>BLANK</TT>       <TD bgcolor="#EEEEEE" nowrap> ( addr u -- )	  <TD bgcolor="#EEEEEE"> Store ASCII blanks into u bytes of memory, beginning at addr. 															     <TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="blank">
+</TABLE>
+
+<P>	
+<TABLE WIDTH="100%" BORDER="0">
+	<CAPTION><I>Review of Terms</I></CAPTION>
+	<TR> <TH> <HR NOSHADE SIZE="6"> <TH> <HR NOSHADE SIZE="6">
+	<TR> <TD align=left 
+		 bgcolor="#EEEEEE"> Relative pointer	    <TD bgcolor="#EEEEEE"> A variable which specifies a location in relation to the beginning of an array or string--not the absolute address.
+	<TR> <TD bgcolor="#EEEEEE"> Superstring  	    <TD bgcolor="#EEEEEE"> in Forth, a character array which contains a number of strings. Any one string may be accessed by indexing into the array.
+	<TR> <TD bgcolor="#EEEEEE"> Virtual memory  	    <TD bgcolor="#EEEEEE"> the treatment of mass storage (such as the disk) as though it were resident memory; also the mechanism of the operating system which makes this treatment possible.
+	<TR> <TH> <HR NOSHADE SIZE="6"> <TH> <HR NOSHADE SIZE="6">
+</TABLE>
+
+<H2>Problems -- Chapter 10</H2>
+			<IMG SRC="felix.gif" ALIGN=MIDDLE ALT="problems">
+
+<OL>
+	<LI> Enter some famous quotations into an available block, say 3. Now define a word called <TT>CHANGE</TT> 
+	     which takes two ASCII values and changes all occurrences within block 3 of the first character 
+	     into the second character. For example,
+<PRE>	CHAR A CHAR E CHANGE
+</PRE>
+	     will change all the "A"s into "E"s.
+	     <A HREF="10-1.forth.html">[answer]</A>
+	<LI> Define a word called <TT>FORTUNE</TT> which will print a prediction at your terminal, such as
+	     "You will receive good news in the mail." The prediction should be chosen at random from a list
+	     of sixteen or fewer predictions. Each prediction is sixty-four characters, or less, long.
+	     <A HREF="10-2.forth.html">[answer]</A>
+	<LI> According to Oriental legend, Buddha endows all persons born in each year with special, helpful 
+	     characteristics represented by one of twelve animals. A different animal reigns over each year, and
+	     every twelve years the cycle repeats itself. For instance, persons born in 1900 are said to be 
+	     born in the "Year of the Rat." The art of fortune-telling based on these influences of the natal 
+	     year is called "Juneeshee."
+
+	     <P> Here is the order of the cycle: 
+<PRE>	Rat Ox Tiger Rabbit Dragon Snake Horse Ram Monkey Cock Dog Boar
+</PRE>  
+	<P> Write a word called <TT>.ANIMAL</TT> that types the name of the animal corresponding to its position
+	    in the cycle as listed here; e.g.,
+<PRE>	0 .ANIMAL<U> RAT ok </U>
+</PRE>
+	<P> Now write a word called <TT>(JUNEESHEE)</TT> which takes as an argument a year of birth and prints the
+	    name of the associated animal. (1900 is the year of the Rat, 1901 is the Ox, etc.)
+
+	<P> Finally, write a word called <TT>JUNEESHEE</TT> which prompts the user for his/her year of birth 
+	    and prints the name of the person's Juneeshee animal. Define it so that the user won't have to 
+	    press "return" after entering the year.
+	    <A HREF="10-3.forth.html">[answer]</A> <BR><BR>
+	<LI> Rewrite the definition of <TT>LETTER</TT> that appears in this chapter so that it uses names and
+	     personal descriptions that have been edited into a block, rather than entered into character arrays.
+	     In this way, you can keep a file on many "prospects" and produce a letter for any one person with the
+	     appropriate descriptions, just by supplying an argument to <TT>LETTER</TT>, as in
+<PRE>	1 LETTER
+</PRE>
+	     <P> Now define <TT>LETTERS</TT> so that it prints one letter for each person in your file. 
+	<LI> In this exercise you will create and use a virtual array, that is, an array which resides on disk 
+	     but which is referenced like a memory-resident array (with <FONT COLOR="#0000FF">@</FONT> and
+	     <FONT COLOR="#0000FF">!</FONT>).
+
+	     <P> First select an unused block. Put this block number in a variable. Then define an access word
+	         which accepts a cell subscript from the stack, then computes the block number corresponding 
+		 to this subscript, calls <FONT COLOR="#0000FF">BLOCK</FONT> and returns the memory address of
+		 the subscripted cell. This access word should also call <FONT COLOR="#0000FF">UPDATE</FONT>. 
+		 Test your work sofar.
+	     <P> Next use the first cell as a count of how many data items are stored in the array. Define a
+	         word <TT>PUT</TT> which will store a value into the next available cell of the array. Define 
+		 a display routine which will print the stored elements in the array.
+
+	     <P> Now use this virtual array facility to define a word <TT>ENTER</TT> which will accept pairs of
+	         numbers and store them in the array.
+
+	     <P> Finally, define <TT>TABLE</TT> to print the data entered above, eight members per line.
+	         <A HREF="10-5.forth.html">[answer]</A>
+</OL>
+
+<A HREF="http://validator.w3.org"><IMG SRC="http://validator.w3.org/images/vh32.gif" HEIGHT=31 WIDTH=88 ALIGN=RIGHT BORDER=0 ALT="Valid HTML 3.5"></A>
+</BODY>
+
+</HTML>

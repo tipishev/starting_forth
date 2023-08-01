@@ -1,0 +1,75 @@
+<HTML><HEAD><TITLE>ec 205a ifthen2</TITLE>
+<link rel="stylesheet" type="text/css" href="an.css">
+</HEAD>
+<BODY><center>
+
+<table><tr><td><center>205a
+<br><tt>
+<a href="ec204c.html"> &#171;&#171; </a> &nbsp;
+<a href="ec200.html"> &#171;&#187; </a> &nbsp;
+<a href="ec205b.html"> &#187;&#187; </a>
+
+</tt>
+</center></table>
+
+<br> &nbsp;
+
+<table width="80%"><tr><td><h1> &nbsp; 205 </h1>
+<td class=r align=right> The programming language Forth &nbsp;
+<hr size="1">
+</table>
+
+<table width="80%"><tr><td>
+
+<h5>Control structures II</h5>
+
+<H2>4. WHILE</H2>
+
+<TT>WHILE </TT>is the solution we hinted at last time. 
+This is an<TT> IF </TT>that swaps its administration packet with the administration packet of the enclosing structure. 
+That's why<TT> WHILE </TT>can only be used <B>inside</B> other control structures. 
+The other structures should have been closed before the accompanying<TT> THEN </TT>follows. <TT>WHILE </TT>nests crosswise, and serves to jump <B>out</B> of a structure, to<TT> THEN</TT>:
+
+<PRE>
+: WHILE ( -- )
+  POSTPONE IF
+  1 CS-ROLL ; IMMEDIATE
+
+ .. BEGIN .. WHILE .. AGAIN .. THEN ..
+      1        2        1        2
+</PRE>
+
+The numbers indicate how the words are linked. <TT>WHILE </TT>can be used inside all other control structures. 
+Examples:
+<PRE>
+a) .. BEGIN .. WHILE .. UNTIL .. THEN ..
+        1        2        1        2
+
+b) .. BEGIN .. WHILE .. AGAIN .. ELSE .. THEN ..
+        1        2        1        2       2
+
+c) .. BEGIN .. WHILE .. WHILE .. AGAIN .. THEN .. THEN ...
+        1        2        3        1        3       2
+</PRE>
+
+In c)<TT> WHILE-2 </TT>shoves its compiler administration under<TT> BEGIN-1</TT>, <TT>WHILE-3 </TT> shoves 
+its compiler administration also under<TT> BEGIN-1</TT>, where it lands on top of<TT> WHILE-2</TT>. 
+Internally, both WHILE's are nested normally. 
+
+<P>Trick question:
+<BR>What's the difference between<TT> OIL </TT>and<TT> VINEGAR </TT>?
+
+<PRE>
+: OIL     aaa IF bbb IF ccc THEN THEN ddd ;
+: VINEGAR aaa IF bbb WHILE ccc THEN THEN ddd ;
+</PRE>
+
+Remark:
+<BR><TT>REPEAT </TT>(a standard word) is actually the same as <TT>AGAIN THEN</TT>.
+<PRE>
+.. BEGIN .. WHILE .. REPEAT ..
+<div align=right><tt><a href="ec205b.html">&#187;&#187;</a></tt></div>
+</PRE>
+</TABLE>
+
+</center></BODY></HTML>

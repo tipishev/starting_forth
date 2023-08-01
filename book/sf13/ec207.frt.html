@@ -1,0 +1,67 @@
+\ ROBOT ARM (Albert Nijhof)
+
+FORTH DEFINITIONS   DECIMAL
+: VARIABLES
+  CREATE ( n -- ) CELLS ALLOT
+  DOES>  ( index body -- addres ) SWAP CELLS + ;
+
+5 DUP CONSTANT #MOTORS
+DUP VARIABLES WHERE             \ List of motor positions
+DUP VARIABLES THERE             \ List of target positions
+DUP VARIABLES STEP              \ -1 or +1 (directions)
+DUP VARIABLES TANK              \ Amount of fuel
+DUP VARIABLES USAGE             \ Amount of fuel used per segment
+CELLS  0 WHERE  SWAP 0 FILL
+
+20 VALUE WAIT                   \ Physical motor limitation
+ 0 VALUE #SEGMENTS              \ Longest segment
+
+: TARGET ( m0 m1 m2 m3 m4 -- )  \ Set target 
+  #MOTORS BEGIN 1-
+                TUCK THERE !
+                ?DUP 0= 
+          UNTIL ;
+
+: PREPARE ( -- )
+   0                            \ Longest segment
+   #MOTORS                      \ Per motor:
+   0 DO   I THERE @  I WHERE @
+          2DUP <
+          DUP 2* 1+  I STEP !   \ 1 of -1, direction
+          IF  SWAP  THEN -
+          DUP I USAGE !         \ Distance
+          MAX                   \ Largest distance?
+     LOOP
+   DUP TO #SEGMENTS
+   2/ #MOTORS
+   0 DO   DUP I TANK !          \ Tanks half full
+     LOOP DROP ;
+
+\ To use on-screen without hardware
+: >MOTOR ( new-position motor# -- ) 2DROP ;
+
+\ To put motor information on screen
+: .HERE ( -- ) CR #MOTORS 0 DO  I WHERE @ 4 .R  LOOP SPACE ;
+
+: SEGMENT ( - ) 
+   #MOTORS 
+   0 DO   I TANK @  I USAGE @
+          2DUP <                        \ Fuel shortage?
+          IF   #SEGMENTS -              \ Refuel
+               I STEP @ I WHERE +!      \ New motor position
+               I WHERE @ I >MOTOR       \ P-L-O-P
+          THEN 
+          - I TANK !
+     LOOP ;
+
+: GOTO ( -- ) \ The target should be fixed already.
+   PREPARE
+   #SEGMENTS 
+   0 ?DO  .HERE SEGMENT
+          KEY? IF  KEY DROP LEAVE  THEN
+          WAIT MS
+     LOOP .HERE ;
+
+: DOIT ( targetpositions -- ) TARGET GOTO ;
+
+\ ----- END -----

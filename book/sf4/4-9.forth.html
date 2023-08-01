@@ -1,0 +1,19 @@
+\ -----------------------------------------------------------------------
+\ 4-9.forth -------------------------------------------------------------
+\ -----------------------------------------------------------------------
+\ Code from Starting Forth, Chapter 4
+\ ANSized by Benjamin Hoyt in 1997
+
+: WITHIN  ( n lo hi+1 -- flag )     OVER -  >R  -  R> U< ;
+: 3DUP    ( a b c -- a b c a b c )  DUP 2OVER ROT ;
+
+( problem 4-9 )
+: TRAP  ( answer lo-try hi-try -- answer | )
+   3DUP  OVER =  ROT ROT = AND
+      IF ." You got it! "  2DROP DROP  
+    ELSE 3DUP SWAP  1+  SWAP WITHIN  IF ." Between "
+      				   ELSE ." Not between " 
+				   THEN  
+	 2DROP  
+    THEN ;
+

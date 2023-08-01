@@ -1,0 +1,9 @@
+\ Code from Starting Forth Chapter 6
+\ ANSized by Benjamin Hoyt in 1997
+
+: STAR   [CHAR] * EMIT ;
+: STARS  ( #stars -- )  0 ?DO  STAR  LOOP ;
+
+( problems 6-1 TO 6-5 )
+: BOX  ( width height -- )
+   0 DO  CR  DUP STARS  LOOP DROP ;

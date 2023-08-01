@@ -1,0 +1,529 @@
+<!DOCTYPE HTML PUBLIC "-//Microsoft//DTD Internet Explorer 3.0 HTML//EN">
+<HTML>
+
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Leo Brodie's Starting Forth - Chapter 5</TITLE>
+  <META name="description" content="Starting Forth, Leo Brodie, Chapter 5.">
+  <META name="keywords" content="Forth, example code, Starting Forth, chapter 5">
+</HEAD>
+
+<BODY BGCOLOR="#F8F8F8" TEXT="#000000" LINK="#0000FF" VLINK="#007070" ALINK="#FF0000" TOPMARGIN=0>
+
+<H1>5 The Philosophy of Fixed Point</H1>
+
+	<P> In this chapter we'll introduce a new batch of arithmetic operators. Along the way we'll
+	    tackle the problem of handling decimal points using only whole-number arithmetic.
+
+<H2>Quickie Operators</H2>
+
+	<P> Let's start with the real easy stuff. You should  have no trouble figuring out what the words in 
+	    the following table do.<IMG SRC="footnote.gif" ALT="For Beginners: We'll explain what `arithmetic left shift' is later on.">
+
+<BR>
+<TABLE WIDTH="75%" BORDER="0">
+	<TR><TD bgcolor="#EEEEEE"> <TT>1+</TT> 	<TD nowrap bgcolor="#EEEEEE"> ( n -- n+1 )	<TD bgcolor="#EEEEEE"> Adds one.				  <TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="one-plus">
+	<TR><TD bgcolor="#EEEEEE"> <TT>1-</TT> 	<TD nowrap bgcolor="#EEEEEE"> ( n -- n-1 )	<TD bgcolor="#EEEEEE"> Subtracts one.				  <TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="one-minus">
+	<TR><TD bgcolor="#EEEEEE"> <TT>2+</TT> 	<TD nowrap bgcolor="#EEEEEE"> ( n -- n+2 )	<TD bgcolor="#EEEEEE"> Adds two.				  <TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="two-plus">
+	<TR><TD bgcolor="#EEEEEE"> <TT>2-</TT> 	<TD nowrap bgcolor="#EEEEEE"> ( n -- n-2 )	<TD bgcolor="#EEEEEE"> Subtracts two.				  <TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="two-minus">
+	<TR><TD bgcolor="#EEEEEE"> <TT>2*</TT> 	<TD nowrap bgcolor="#EEEEEE"> ( n -- n*2 )	<TD bgcolor="#EEEEEE"> Multiplies by two (arithmetic left shift). <TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="two-star">
+	<TR><TD bgcolor="#EEEEEE"> <TT>2/</TT> 	<TD nowrap bgcolor="#EEEEEE"> ( n -- n/2 )	<TD bgcolor="#EEEEEE"> Divides by two (arithmetic right shift).	  <TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="two-slash">
+</TABLE>
+
+	<P> The reason they have been defined as words in your Forth system is that they are used very 
+	    frequently in most applications and even in the Forth system itself.
+
+	<P> The only reason to use a word such as <FONT COLOR="#0000FF">1+</FONT>, instead of one
+	    and <FONT COLOR="#0000FF">+</FONT>, is tradition. In modern Forths <FONT COLOR="#0000FF">1+</FONT>
+	    saves neither space nor compile or execution time.
+
+<H2>Miscellaneous Math Operators</H2>
+	<TABLE ALIGN=RIGHT BORDER="0">
+	 <CAPTION><B>Aunt Min<BR>and<BR>Uncle Max</B></CAPTION>
+	 <TR><TD><IMG SRC="aunt&amp;uncle.jpg" ALIGN=RIGHT ALT="Aunt Min and Uncle Max">
+	</TABLE>
+
+	<P> Here's a table of four miscellaneous math operators. Like the quickie operators, these functions
+	    should be obvious from their names.
+<BR>
+<TABLE WIDTH="75%" BORDER="0">
+	<TR><TD bgcolor="#EEEEEE"> <TT>ABS</TT> 	<TD nowrap bgcolor="#EEEEEE"> ( n -- |n| )	<TD bgcolor="#EEEEEE"> Returns the absolute value.		<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="absolute">
+	<TR><TD bgcolor="#EEEEEE"> <TT>NEGATE</TT>	<TD nowrap bgcolor="#EEEEEE"> ( n -- -n )	<TD bgcolor="#EEEEEE"> Changes the sign.				<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="negate">
+	<TR><TD bgcolor="#EEEEEE"> <TT>MIN</TT> 	<TD nowrap bgcolor="#EEEEEE"> ( n1 n2 -- n-min )	<TD bgcolor="#EEEEEE"> Returns the minimum.		<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="min">
+	<TR><TD bgcolor="#EEEEEE"> <TT>MAX</TT> 	<TD nowrap bgcolor="#EEEEEE"> ( n1 n2 -- n-max )	<TD bgcolor="#EEEEEE"> Returns the maximum.		<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="max">
+</TABLE>
+
+	<P> Here are two simple word problems, using <FONT COLOR="#0000FF">ABS</FONT> and <FONT COLOR="#0000FF">MIN</FONT>:
+
+	<P> <FONT COLOR="#0000FF">ABS</FONT><BR>
+	    Write a definition which computes the difference between two numbers, regardless of the order in which the 
+	    numbers are entered.
+<PRE>	: DIFFERENCE   - ABS ;
+</PRE>
+        <P> This gives the same result whether we enter
+<PRE>	52 37 DIFFERENCE .<U> 15 ok </U>
+	37 52 DIFFERENCE .<U> 15 ok </U>
+</PRE>
+
+	<P> <FONT COLOR="#0000FF">MIN</FONT><BR>
+	    Write a definition which computes the commission that furniture salespeople will receive if they've 
+	    been promised $50 or 1/10 of the sales price, whichever is less, on each sale they make.
+<PRE>	: COMMISSION   10 /  50 MIN ;
+</PRE>
+        <P> Three different values would produce these results:
+<PRE>	600 COMMISSION .<U> 50 ok </U>
+	450 COMMISSION .<U> 45 ok </U>
+	 50 COMMISSION .<U> 5 ok </U>
+</PRE>
+
+<H2>The Return Stack</H2>
+
+	<P> We mentioned before that there were still some stack manipulation operators we hadn't discussed 
+	    yet. Now it's time.
+
+	<P> Up till now we've been talking about "the stack" as if there were only one. But in fact there
+	    are two:<IMG SRC="footnote.gif" ALT="In addition, most Forths have a floating-point stack."> the "parameter stack"
+	    and the "return stack." The parameter stack is used more often by Forth programmers, so it's
+	    simply called "the stack" unless there is cause for doubt.
+
+	<P> As you've seen, the parameter stack holds parameters (or "arguments") that are being passed 
+	    from word to word. The return stack, however, holds any number of "pointers" which the Forth
+	    system uses to make its merry way through the maze of words that are executing <U>other</U> words. 
+	    We'll elaborate later on.
+
+	<P> You, the user, can employ the return stack as as kind of "extra hand" to hold values temporarily
+	    while you perform operations on the parameter stack.
+
+	<P> The return stack is a last-in first-out structure, just like the parameter stack, so it can hold 
+	    many values. But here's the catch: whatever you put on the return stack you must remove again 
+	    before you get to the end of the definition (the semicolon), because at that point the Forth
+	    system will expect to find a pointer there. You cannot use the return stack to pass parameters
+	    from one word to another.
+
+	<P> The following table lists the words associated with the return stack. Remember, the stack notation
+	    refers to the <U>parameter</U> stack.
+
+<BR>
+<TABLE WIDTH="75%" BORDER="0">
+	<TR><TD bgcolor="#EEEEEE"> <TT>&gt;R</TT> <TD nowrap bgcolor="#EEEEEE"> ( n -- )	<TD bgcolor="#EEEEEE"> Takes a value off the parameter stack and pushes it onto the return stack.	<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="to-R">
+	<TR><TD bgcolor="#EEEEEE"> <TT>R&gt;</TT> <TD nowrap bgcolor="#EEEEEE"> ( -- n )	<TD bgcolor="#EEEEEE"> Takes a value off the return stack and pushes it onto the parameter stack.	<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="R-from">
+	<TR><TD bgcolor="#EEEEEE"> <TT>I</TT> 	  <TD nowrap bgcolor="#EEEEEE"> ( -- n )	<TD bgcolor="#EEEEEE"> Copies the <U>top</U> of the return stack without affecting it.			<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="I">
+	<TR><TD bgcolor="#EEEEEE"> <TT>R@</TT> 	  <TD nowrap bgcolor="#EEEEEE"> ( -- n )	<TD bgcolor="#EEEEEE"> Copies the <U>top</U> of the return stack without affecting it.			<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="R-fetch">
+	<TR><TD bgcolor="#EEEEEE"> <TT>J</TT> 	  <TD nowrap bgcolor="#EEEEEE"> ( -- n )	<TD bgcolor="#EEEEEE"> Copies the <U>third</U> item of the return stack without affecting it.		<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="J">
+</TABLE>
+
+	<P> The words <FONT COLOR="#0000FF">&gt;R</FONT> and <FONT COLOR="#0000FF">R&gt;</FONT> transfer a value
+	    to and from the return stack, respectively. Say we want the following stack effect:
+<PRE>	( 2 3 1 -- 3 2 1 )
+</PRE>
+	    this is the phrase that will do it:
+<PRE>	>R SWAP R>
+</PRE>
+	<P> Each <FONT COLOR="#0000FF">&gt;R</FONT> and its corresponding <FONT COLOR="#0000FF">R&gt;</FONT> 
+	    must be used together in the same definition.
+
+	<P> The other three words--<FONT COLOR="#0000FF">I</FONT> or <FONT COLOR="#0000FF">R@</FONT> and <FONT COLOR="#0000FF">J</FONT>--only <U>copy</U>
+	    values from the return stack without removing them. Thus the phrase:
+<PRE>	>R SWAP R@
+</PRE>
+	    would produce the same result as far as it goes, but unless you clean up your trash before the next
+	    semicolon you will crash the system.
+	
+	<P> To see how <FONT COLOR="#0000FF">&gt;R</FONT>, <FONT COLOR="#0000FF">R&gt;</FONT>, <FONT COLOR="#0000FF">R@</FONT>, and <FONT COLOR="#0000FF">I</FONT> 
+	    might be used, imagine you are so unlucky as to need to solve the equation:
+<PRE>	ax<SUP>2</SUP> + bx + c
+</PRE>
+	    with <U>all</U> <U>four</U> values on the stack in the following order:
+<PRE>	( a b c x -- )
+</PRE>
+	    (remember to factor out first).
+
+<BR>
+<CENTER><TABLE WIDTH="50%" BORDER="0">
+	<TR><TH bgcolor="#CCCCCC"> Operator       	<TH bgcolor="#CCCCCC"> parameter stack		<TH bgcolor="#CCCCCC"> return stack
+	<TR><TD bgcolor="#EEEEEE">        &nbsp; 	<TD bgcolor="#EEEEEE" ALIGN=CENTER> a b c x 	<TD bgcolor="#EEEEEE" ALIGN=CENTER> &nbsp;
+	<TR><TD bgcolor="#EEEEEE"> <TT>&gt;R</TT> 	<TD bgcolor="#EEEEEE" ALIGN=CENTER> a b c 	<TD bgcolor="#EEEEEE" ALIGN=CENTER> x
+	<TR><TD bgcolor="#EEEEEE"> <TT>SWAP ROT</TT> 	<TD bgcolor="#EEEEEE" ALIGN=CENTER> c b a 	<TD bgcolor="#EEEEEE" ALIGN=CENTER> x
+	<TR><TD bgcolor="#EEEEEE"> <TT>R@</TT> 		<TD bgcolor="#EEEEEE" ALIGN=CENTER> c b a x	<TD bgcolor="#EEEEEE" ALIGN=CENTER> x
+	<TR><TD bgcolor="#EEEEEE"> <TT>*</TT>		<TD bgcolor="#EEEEEE" ALIGN=CENTER> c b ax 	<TD bgcolor="#EEEEEE" ALIGN=CENTER> x
+	<TR><TD bgcolor="#EEEEEE"> <TT>+</TT>		<TD bgcolor="#EEEEEE" ALIGN=CENTER> c ax+b 	<TD bgcolor="#EEEEEE" ALIGN=CENTER> x
+	<TR><TD bgcolor="#EEEEEE"> <TT>R&gt; * </TT>	<TD bgcolor="#EEEEEE" ALIGN=CENTER> c x(ax+b)	<TD bgcolor="#EEEEEE" ALIGN=CENTER> &nbsp;
+	<TR><TD bgcolor="#EEEEEE"> <TT>+</TT>		<TD bgcolor="#EEEEEE" ALIGN=CENTER> x(ax+b)+c 	<TD bgcolor="#EEEEEE" ALIGN=CENTER> &nbsp;
+</TABLE></CENTER>
+
+	<P> Go ahead and try it. Load the following definition:
+<PRE>	: QUADRATIC  ( a b c x -- n )
+		>R SWAP ROT R@ *  + R> *  + ;
+</PRE>
+	<P> Now test it:
+<PRE>	2 7 9 3 QUADRATIC<U> 48 ok </U>
+</PRE>
+
+<H2>An Introduction to Floating-Point Arithmetic</H2>
+
+	<P> First, what does floating point mean?  Take a pocket calculator, for example. Here's what
+	    the display looks like after each step:
+
+<FONT FACE="Courier New"> 
+<CENTER><TABLE WIDTH="40%" BORDER="0" CELLPADDING="6">
+	<TR><TH bgcolor="#CCCCCC" ALIGN=LEFT> You enter:	<TH bgcolor="#CCCCCC" ALIGN=LEFT> Display<BR>reads:
+	<TR><TD bgcolor="#EEEEEE"> 1 . 5 0 x			<TD bgcolor="#EEEEEE"> 1.5
+	<TR><TD bgcolor="#EEEEEE"> 2 . 2 3			<TD bgcolor="#EEEEEE"> 2.23
+	<TR><TD bgcolor="#EEEEEE"> =				<TD bgcolor="#EEEEEE"> 3.345
+</TABLE></CENTER>
+</FONT>
+
+	<P> The decimal point "floats" across the display as necessary. This is called a "floating point 
+	    display."
+
+	<P> "Floating point representation" is a way to store numbers in computer memory using a form
+	    of scientific notation. In scientific notation, twelve million is written:
+<PRE>	12 x 10<SUP>6</SUP>
+</PRE>
+	    since ten to the sixth power equals one million. In a computer twelve million is stored as 
+	    two numbers: 12 and 6, where it is understood that 6 is the power of ten to be multiplied by 12,
+	    while 3.345 could be stored as 3345 and -3.
+
+	<P> The idea of floating-point representation is that the computer can represent an enormous range
+	    of numbers, from atomic to astronomic, with two relatively small numbers.
+
+	<P> What is fixed-point representation? It is simply the method of storing numbers in memory without
+	    storing the positions of each number's decimal point. For example, in working with dollars and
+	    cents, all values can be stored in cents. The <U>program</U>, rather than each individual 
+	    <U>number</U>, can remember the location of the decimal point. 
+
+	<P> For example, let's compare fixed-point and floating-point representations of dollars-and-cents 
+	    values.
+
+<CENTER><TABLE WIDTH="50%" BORDER="0">
+	<TR><TH bgcolor="#CCCCCC" ALIGN=RIGHT> Real world<BR>value: <TH bgcolor="#CCCCCC" ALIGN=RIGHT> Fixed-point<BR>representation: <TH bgcolor="#CCCCCC" ALIGN=RIGHT> Floating-point<BR>representation:
+	<TR><TD bgcolor="#EEEEEE" ALIGN=RIGHT> 1.23		    <TD bgcolor="#EEEEEE" ALIGN=RIGHT> 123	<TD bgcolor="#EEEEEE" ALIGN=RIGHT> 123(-2)
+	<TR><TD bgcolor="#EEEEEE" ALIGN=RIGHT> 10.98		    <TD bgcolor="#EEEEEE" ALIGN=RIGHT> 1098	<TD bgcolor="#EEEEEE" ALIGN=RIGHT> 1098(-2)
+	<TR><TD bgcolor="#EEEEEE" ALIGN=RIGHT> 100.00		    <TD bgcolor="#EEEEEE" ALIGN=RIGHT> 10000	<TD bgcolor="#EEEEEE" ALIGN=RIGHT> 1(2)
+	<TR><TD bgcolor="#EEEEEE" ALIGN=RIGHT> 58.60		    <TD bgcolor="#EEEEEE" ALIGN=RIGHT> 5860	<TD bgcolor="#EEEEEE" ALIGN=RIGHT> 586(-1)
+</TABLE></CENTER>
+
+	<P> As you can see , with fixed-point all the values must conform to the same "scale." The decimal
+	    points must be properly "aligned" (in this case two places in from the right) even though they
+	    are not actually represented. With fixed-point, the computer treats all the numbers as though 
+	    they were integers. If the program needs to print out an answer, however, it simply inserts the
+	    decimal point two places in from the right before it sends the number to the terminal or to the 
+	    printer.
+
+<H2>Why Fixed-Point is Useful</H2>
+
+	<P> A Forth programmer is most interested in maximizing the efficiency of the machine. That means
+	    he or she wants to make the program run as fast as possible and require as little computer memory 
+	    as possible. Unfortunately, not all processors or controllers offer hardware floating-point support. 
+	    Therefore, in some environments, programs that use floating-point features are redirected through 
+	    an emulation library. Emulation code can be up to three times slower than the equivalent 
+	    fixed-point calculation. Of course, this difference is only really noticeable in programs which 
+	    have to do a lot of calculations before sending results to a terminal or taking some action. The
+	    catch is that code from an emulation library is also many times larger than its fixed-point 
+	    counterpart, which is quite uneconomical for small embedded controllers and such.
+
+	<P> You should note carefully that <EM>when</EM> a processor supports hardware floating-point, it
+	    is almost always much faster and more compact than the fixed-point equivalent. The speed difference
+	    can be between 3 and 15 times.
+
+	<P> Everything you can do with floating-point, you can do with fixed-point too, as we'll show in the 
+	    following. But there is one thing you should minimize as much as possible, and that is switching 
+	    back and forth between fixed and floating-point formats. Format conversion and additional scaling 
+	    steps cost as much or even more time than doing the calculations themselves.
+
+	<P> Forth helps programmers use fixed-point by supplying them with a unique set of 
+	    high-level commands called "scaling operators." We'll introduce the first of these commands in 
+	    the next section. (The final example in Chap. 12 illustrates the use of scaling techniques.)
+
+<H2>Star-slash the Scalar</H2>
+
+	<P> Here's a math operator that is as useful as it is unusual: <FONT COLOR="#0000FF">*/</FONT>.
+
+<CENTER><TABLE WIDTH="75%" BORDER="0">
+	<TR><TD bgcolor="#EEEEEE" ALIGN=RIGHT> <TT>*/</TT>	<TD bgcolor="#EEEEEE" ALIGN=CENTER nowrap> ( n1 n2 n3 -- n-result ) <TD bgcolor="#EEEEEE" ALIGN=LEFT> Multiplies, then divides (n1*n2/n3). Uses a double-length intermediate result. <TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="star-slash">
+</TABLE></CENTER>
+
+	<P> As its name implies, <FONT COLOR="#0000FF">*/</FONT> performs multiplication, then division. For 
+	    example, let's say that the stack contains these three numbers:
+<PRE>	( 225 32 100 -- )
+</PRE>
+	    <FONT COLOR="#0000FF">*/</FONT> will first multiply 225 by 32, then divide the result by 100.
+
+	<P> This operator is particularly useful as an integer-arithmetic solution to problems such as 
+	    percentage calculations.
+
+	<TABLE ALIGN=RIGHT BORDER="0">
+	 <CAPTION align=bottom><I>Star and Slash:<BR>Practise, practise ...</I></CAPTION>
+	 <TR><TD><IMG SRC="starslash.gif" ALIGN=RIGHT ALT="Star-slash the Scalar">
+	</TABLE>
+
+	<P> For example, you could define the word <TT>%</TT> like this:
+<PRE>	: %  100 */ ;
+</PRE>
+	    so that by entering the number 225 and then the phrase:
+<PRE>	32 %
+</PRE>
+	    you'd end up with 32% of 225 (that is, 72) on the stack. 
+	<P> The method of first multiplying two integers, then dividing by 100 is identical to the approach
+	    most people take in solving such problems on paper:
+<PRE>	  225
+	 <U>0.32</U> x
+	 4.50
+	<U>67.5 </U>
+	72.00
+</PRE>
+	    
+	<P> <FONT COLOR="#0000FF">*/</FONT> is not <FONT COLOR="#0000FF">*</FONT> and a <FONT COLOR="#0000FF">/</FONT>
+	    thrown together, though. It uses a "double-length intermediate result." What does that mean, you ask?
+
+	<TABLE ALIGN=RIGHT BORDER="0">
+	 <TR><TD><IMG SRC="overflow.gif" ALIGN=RIGHT ALT="overflow">
+	</TABLE>
+
+	<P> Say you want to compute 34% of 912,345,678. Remember that single-precision operators, like 
+	    <FONT COLOR="#0000FF">*</FONT> and <FONT COLOR="#0000FF">/</FONT>, only work with arguments and 
+	    results within the range of a single-length number. If you were to enter the phrase:
+<PRE>	912345678 34 * 100 /
+</PRE>	
+	    you'd get an incorrect result, because the "intermediate result" (in this case, the result of 
+	    the multiplication), exceeds 2147483647, as shown in the left column in this pictorial simulation.
+	
+	<P> But <FONT COLOR="#0000FF">*/</FONT> uses a double-length intermediate result, so that its range 
+	    will be large enough to hold the result of any two single-length numbers multiplied together. 
+	    The phrase:
+<PRE>	912345678 34 100 */
+</PRE>
+	    returns the correct answer because the end result falls within the range of single-length numbers.
+	    
+	<P> The previous example brings up another question: how to round off.
+
+	<P> Let's assume that this is the problem:
+
+<BLOCKQUOTE>
+	If 32% of the students eating at the school cafetaria usually buy bananas, how many bananas should be on
+ 	hand for a crowd of 225? Naturally, we are only interested in whole bananas, so we'd like to round off
+	any decimal remainder.
+</BLOCKQUOTE>
+	
+	<P> As our definition now stands, any value to the right of the decimal is simply dropped. In other 
+	    words, the result is "truncated."
+
+<P><CENTER><TABLE WIDTH="75%" BORDER="0">
+	<TR><TH bgcolor="#CCCCCC" ALIGN=LEFT> 32% of:		<TH bgcolor="#CCCCCC" ALIGN=LEFT> Result: 
+	<TR><TD bgcolor="#EEEEEE" ALIGN=LEFT> 225 = 72.00	<TD bgcolor="#EEEEEE" ALIGN=LEFT> 72 -- exactly correct
+	<TR><TD bgcolor="#EEEEEE" ALIGN=LEFT> 226 = 72.32	<TD bgcolor="#EEEEEE" ALIGN=LEFT> 72 -- correct, rounded down (truncated)
+	<TR><TD bgcolor="#EEEEEE" ALIGN=LEFT> 227 = 72.64	<TD bgcolor="#EEEEEE" ALIGN=LEFT> 72 -- truncated, not rounded
+</TABLE></CENTER>
+
+	<P> There is a way, however, with any decimal value of .5 or higher, to round upwards to the next whole
+	    banana. We could define the word <TT>R%</TT>, for "rounded-percent," like this:
+<PRE>	: R%  10 */  5 +  10 / ;
+</PRE>
+	    so that the phrase:
+<PRE>	227 32 R% .
+</PRE>
+	    will give you 73, which is correctly rounded up.
+
+	<P> Notice that we first divide by 10 rather than by 100. This gives us an extra decimal place to work
+	    with, to which we can add five:
+
+<P><CENTER><TABLE WIDTH="35%" BORDER="0">
+	<TR><TH bgcolor="#CCCCCC">Operation			<TH bgcolor="#CCCCCC">Stack<BR>Contents
+	<TR><TD bgcolor="#EEEEEE" ALIGN=LEFT> &nbsp;		<TD bgcolor="#EEEEEE" ALIGN=RIGHT> 227  32  10
+	<TR><TD bgcolor="#EEEEEE" ALIGN=LEFT> <TT>*/</TT>	<TD bgcolor="#EEEEEE" ALIGN=RIGHT> 726
+	<TR><TD bgcolor="#EEEEEE" ALIGN=LEFT> <TT>5 +</TT>	<TD bgcolor="#EEEEEE" ALIGN=RIGHT> 731 
+	<TR><TD bgcolor="#EEEEEE" ALIGN=LEFT> <TT>10 /</TT>	<TD bgcolor="#EEEEEE" ALIGN=RIGHT> 73 
+</TABLE></CENTER>
+
+	<P> The final division by ten sets the value to its rightful decimal position. Try it and see.
+	    <IMG SRC="footnote.gif" ALT="For experts: : R%  50 */ 1+ 2/ ; is even faster.">
+
+	<P> A disadvantage to this method of rounding is that you lose one decimal place of range in the final 
+	    result; that is, it can only go as high as 214,748,364 rather than 2,147,483,647. But if that's a
+	    problem, you can always use double-length numbers, which we'll introduce later, and still be able
+	    to round.
+
+<H2>Some Perspective on Scaling</H2>
+
+	<P> Let's back up for a minute. Take the simple problem of computing two-thirds of 171. Basically,
+	    there are two ways to go about it.
+
+	<OL>
+	  <LI> We could compute the value of the fraction 2/3 by dividing 2 by 3 to obtain the repeating 
+	       decimal .6666666, etc. Then we could multiply this value by 171. The result would be 113.9999999,
+	       etc., which is not quite right but which could be rounded up to 114.
+	  <LI> We could multiply 171 by 2 to get 342. Then we could divide this by 3 to get 114.
+	</OL>
+
+	<P> Notice that the second way is simpler and more accurate.
+
+	<P> Most computer languages support the first way. "You can't have a fraction like two-thirds hanging
+	    around inside a computer," it is believed, "you must express it as .6666666, etc."
+
+	<P> Forth supports the second way. <FONT COLOR="#0000FF">*/</FONT> lets you have a fraction like 
+	    two-thirds, as in:
+<PRE>	171 2 3 */
+</PRE>
+	<P> Now that we have a little perspective, let's take a slightly more complicated example:
+	
+	<P> We want to distribute $150 in proportion to two values:
+<IMG SRC="footnote.gif" ALT="For beginners who like word problems. Here is a word-problem for the above example: The boss says he'll divide a $150 bonus between the two top-selling representatives according to their montly commissions. When the receipts are counted, the top commissions are $7,105 and $5,145. How much of the bonus does each marketing rep get?">
+<PRE>	 7,105		&nbsp;?&nbsp;
+	 <U>5,145</U>		<U>&nbsp;?&nbsp;</U>
+	12,250		150
+</PRE>
+
+	<TABLE ALIGN=RIGHT BORDER="0">
+	 <TR><TD><IMG SRC="artist.gif" ALIGN=RIGHT ALT="artist scaling">
+	</TABLE>
+
+	    Again, we could solve the problem this way:
+<PRE>	(7,105 / 12,250) x 150</PRE>
+	and
+<PRE>	(5,145 / 12,250) x 150</PRE>
+
+	    but for greater accuracy we should say:
+<PRE>	(7,105 x 150) / 12,250</PRE>
+	and
+<PRE>	(5,145 x 150) / 12,250</PRE>
+
+	    which in Forth is written:
+<PRE>	7105 150 12250 */ .<U> 87 ok </U></PRE>
+	and
+<PRE>	5145 150 12250 */ .<U> 63 ok </U></PRE>
+
+	<P> It can be said that the values 87 and 63 are "scaled" to 7105 and 5145. Calculating percentages,
+	    as we did earlier, is also a form of scaling. For this reason, <FONT COLOR="#0000FF">*/</FONT>
+	    is called a "scaling operator."
+
+	<P> Another scaling operator in Forth is <FONT COLOR="#0000FF">*/MOD</FONT>:
+
+<CENTER><TABLE WIDTH="75%" BORDER="0">
+	<TR><TD bgcolor="#EEEEEE" ALIGN=RIGHT> <TT>*/MOD</TT>	<TD bgcolor="#EEEEEE" ALIGN=CENTER nowrap> ( n1 n2 n3 -- n-rem n-result ) <TD bgcolor="#EEEEEE" ALIGN=LEFT> Multiplies, then divides (n1*n2/n3). Returns the remainder and the quotient. Uses a double-length intermediate result. <TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="star-slash-mod">
+</TABLE></CENTER>
+
+	<P> We'll let you dream up a good example for <FONT COLOR="#0000FF">*/MOD</FONT> yourself.
+
+<H2>Using Rational Approximations</H2>
+
+	<P> So far we've only used scaling operations to work on rational
+	    <IMG SRC="footnote.gif" ALT="A rational number is a whole number or a fraction in which the numerator and denominator are both whole numbers. Seventeen is a rational number, as is 2/3. Even 1.02 is rational, because it's the same as 102/100. sqrt(2), on the other hand, is irrational.">
+	    numbers. They can also be used 
+	    on rational approximations of irrational constants, such as <FONT FACE="symbol">p</FONT> or the <FONT FACE="symbol">+2</FONT>. For example,
+	    the real value of <FONT FACE="symbol">p</FONT> is:
+<PRE>	 3.14159265358979, etc.
+</PRE>
+	    but to stay within the bounds of single-length arithmetic, we could write the phrase:
+<PRE>	 31416 10000 */
+</PRE>
+	    and get a pretty good approximation.
+
+	<P> Now we can write a definition to compute the area of a circle, given its radius. We'll translate
+	    the formula:
+
+<PRE>	&#960;r<SUP>2</SUP> 
+</PRE>
+	    into Forth. The value of the radius will be on the stack, so we <FONT COLOR="#0000FF">DUP</FONT> it
+	    and multiply it by itself, then star-slash the result:
+<PRE>	: PI  DUP * 31416 10000 */ ;
+</PRE>
+	<P> Try it with a  circle whose radius is 10 inches:
+<PRE>	10 PI .<U> 314 ok </U> 
+</PRE>
+	<P> But for even more accuracy, we might wonder if there is a pair of integers beside 3146 and 10000 
+	    that is a closer approximation to &#960;. Surprisingly, there is. The fraction:
+<PRE>	355 113 */
+</PRE>
+	    is accurate to more than six places beyond the decimal, as opposed to less than four places with
+	    31416.
+	    
+	<P> Our new and improved definition, then, is:
+<PRE>	: PI  DUP * 355 113 */ ;
+</PRE>
+	<P> It turns out that you can approximate nearly any constant by many different pairs of integers, all
+	    numbers less than 32768, with an error less than 10<SUP>-8</SUP>.
+
+<P><TABLE WIDTH="80%" BORDER="0">
+	<CAPTION><I>Handy Table of Rational Approximations to Various Constants</I></CAPTION>
+	<TR><TH bgcolor="#CCCCCC">Number					     <TH bgcolor="#CCCCCC">Approximation	 	<TH bgcolor="#CCCCCC" ALIGN=CENTER> Error
+	<TR><TD bgcolor="#EEEEEE" ALIGN=RIGHT> &#960; = 3.141 ...		     <TD bgcolor="#EEEEEE" ALIGN=RIGHT>   355 / 113 	<TD bgcolor="#EEEEEE" ALIGN=RIGHT> 8.5 x 10<SUP>-8</SUP>
+	<TR><TD bgcolor="#EEEEEE" ALIGN=RIGHT> &#960; = 3.141 ...		     <TD bgcolor="#EEEEEE" ALIGN=RIGHT> 1068966896 / 340262731	<TD bgcolor="#EEEEEE" ALIGN=RIGHT> 9.7 x 10<SUP>-19</SUP>
+	<TR><TD bgcolor="#EEEEEE" ALIGN=RIGHT> &#8730;2 = 1.414 ...		     <TD bgcolor="#EEEEEE" ALIGN=RIGHT> 19601 / 13860 	<TD bgcolor="#EEEEEE" ALIGN=RIGHT> 1.3 x 10<SUP>-9</SUP>
+	<TR><TD bgcolor="#EEEEEE" ALIGN=RIGHT> &#8730;3 = 1.732 ...		     <TD bgcolor="#EEEEEE" ALIGN=RIGHT> 18817 / 10864	<TD bgcolor="#EEEEEE" ALIGN=RIGHT> 1.4 x 10<SUP>-9</SUP>
+	<TR><TD bgcolor="#EEEEEE" ALIGN=RIGHT> e = 2.718 ... 			     <TD bgcolor="#EEEEEE" ALIGN=RIGHT> 25946 / 9545	<TD bgcolor="#EEEEEE" ALIGN=RIGHT> 2.0 x 10<SUP>-9</SUP>
+	<TR><TD bgcolor="#EEEEEE" ALIGN=RIGHT> &#8730;10 = 3.162 ...		     <TD bgcolor="#EEEEEE" ALIGN=RIGHT> 22936 / 7253 	<TD bgcolor="#EEEEEE" ALIGN=RIGHT> 5.7 x 10<SUP>-9</SUP>
+	<TR><TD bgcolor="#EEEEEE" ALIGN=RIGHT> <SUP>12</SUP>&#8730;2 = 1.059 ...     <TD bgcolor="#EEEEEE" ALIGN=RIGHT> 26797 / 25293	<TD bgcolor="#EEEEEE" ALIGN=RIGHT> 1.7 x 10<SUP>-9</SUP>
+	<TR><TD bgcolor="#EEEEEE" ALIGN=RIGHT> log(2) / 1.6384 = 0.183 ...	     <TD bgcolor="#EEEEEE" ALIGN=RIGHT>  2040 / 11103 	<TD bgcolor="#EEEEEE" ALIGN=RIGHT> 1.3 x 10<SUP>-8</SUP>
+	<TR><TD bgcolor="#EEEEEE" ALIGN=RIGHT> ln(2) / 16.384 = 0.042 ...	     <TD bgcolor="#EEEEEE" ALIGN=RIGHT>   485 / 11464 	<TD bgcolor="#EEEEEE" ALIGN=RIGHT> 9.0 x 10<SUP>-8</SUP>
+</TABLE>
+
+	<P> Here's a list of the Forth words we've covered in this chapter:
+<P><TABLE WIDTH="100%" BORDER="0">
+	<TR><TD bgcolor="#EEEEEE"> <TT>1+</TT> 	  <TD nowrap bgcolor="#EEEEEE"> ( n -- n+1 )		<TD bgcolor="#EEEEEE"> Adds one.
+	<TR><TD bgcolor="#EEEEEE"> <TT>1-</TT> 	  <TD nowrap bgcolor="#EEEEEE"> ( n -- n-1 )		<TD bgcolor="#EEEEEE"> Subtracts one.
+	<TR><TD bgcolor="#EEEEEE"> <TT>2+</TT> 	  <TD nowrap bgcolor="#EEEEEE"> ( n -- n+2 )		<TD bgcolor="#EEEEEE"> Adds two.
+	<TR><TD bgcolor="#EEEEEE"> <TT>2-</TT> 	  <TD nowrap bgcolor="#EEEEEE"> ( n -- n-2 )		<TD bgcolor="#EEEEEE"> Subtracts two.
+	<TR><TD bgcolor="#EEEEEE"> <TT>2*</TT> 	  <TD nowrap bgcolor="#EEEEEE"> ( n -- n*2 )		<TD bgcolor="#EEEEEE"> Multiplies by two (arithmetic left shift).
+	<TR><TD bgcolor="#EEEEEE"> <TT>2/</TT> 	  <TD nowrap bgcolor="#EEEEEE"> ( n -- n/2 )		<TD bgcolor="#EEEEEE"> Divides by two (arithmetic right shift).
+	<TR><TD bgcolor="#EEEEEE"> <TT>ABS</TT>   <TD nowrap bgcolor="#EEEEEE"> ( n -- |n| )		<TD bgcolor="#EEEEEE"> Returns the absolute value.
+	<TR><TD bgcolor="#EEEEEE"> <TT>NEGATE</TT><TD nowrap bgcolor="#EEEEEE"> ( n -- -n )		<TD bgcolor="#EEEEEE"> Changes the sign.
+	<TR><TD bgcolor="#EEEEEE"> <TT>MIN</TT>   <TD nowrap bgcolor="#EEEEEE"> ( n1 n2 -- n-min )	<TD bgcolor="#EEEEEE"> Returns the minimum.
+	<TR><TD bgcolor="#EEEEEE"> <TT>MAX</TT>   <TD nowrap bgcolor="#EEEEEE"> ( n1 n2 -- n-max )	<TD bgcolor="#EEEEEE"> Returns the maximum.
+	<TR><TD bgcolor="#EEEEEE"> <TT>&gt;R</TT> <TD nowrap bgcolor="#EEEEEE"> ( n --&nbsp)		<TD bgcolor="#EEEEEE"> Takes a value off the parameter stack and pushes it onto the return stack.	
+	<TR><TD bgcolor="#EEEEEE"> <TT>R&gt;</TT> <TD nowrap bgcolor="#EEEEEE"> ( -- n )		<TD bgcolor="#EEEEEE"> Takes a value off the return stack and pushes it onto the parameter stack.	
+	<TR><TD bgcolor="#EEEEEE"> <TT>I</TT> 	  <TD nowrap bgcolor="#EEEEEE"> ( -- n )		<TD bgcolor="#EEEEEE"> Copies the <U>top</U> of the return stack without affecting it.
+	<TR><TD bgcolor="#EEEEEE"> <TT>R@</TT> 	  <TD nowrap bgcolor="#EEEEEE"> ( -- n )		<TD bgcolor="#EEEEEE"> Copies the <U>top</U> of the return stack without affecting it.
+	<TR><TD bgcolor="#EEEEEE"> <TT>J</TT> 	  <TD nowrap bgcolor="#EEEEEE"> ( -- n )		<TD bgcolor="#EEEEEE"> Copies the <U>third</U> item of the return stack without affecting it.
+	<TR><TD bgcolor="#EEEEEE"> <TT>*/</TT>	  <TD nowrap bgcolor="#EEEEEE"> ( n1 n2 n3 -- n-result ) 	<TD bgcolor="#EEEEEE"> Multiplies, then divides (n1*n2/n3). Uses a double-length intermediate result.
+	<TR><TD bgcolor="#EEEEEE"> <TT>*/MOD</TT> <TD nowrap bgcolor="#EEEEEE"> ( n1 n2 n3 -- n-rem n-result ) 	<TD bgcolor="#EEEEEE"> Multiplies, then divides (n1*n2/n3). Returns the remainder and the quotient. Uses a double-length intermediate result.
+</TABLE>
+
+<P>	
+<TABLE WIDTH="100%" BORDER="0">
+	<CAPTION><I>Review of Terms</I></CAPTION>
+	<TR> <TH> <HR NOSHADE SIZE="6"> <TH> <HR NOSHADE SIZE="6">
+	<TR> <TD bgcolor="#EEEEEE"> Double-length intermediate result <TD bgcolor="#EEEEEE"> a double-length value which is created temporarily by a two-part operator, such as <FONT COLOR="#0000FF">*/</FONT>, so that the "intermediate result" (the result of the first operation) is allowed to exceed the range of a single-length number, even when the initial arguments and the final result are not.
+	<TR> <TD bgcolor="#EEEEEE"> Fixed-point arithmetic  	      <TD bgcolor="#EEEEEE"> arithmetic which deals with numbers which do not themselves indicate the location of decimal points. Instead, for any group of numbers, the program assumes the location of the decimal point or keeps the decimal location for all such numbers as a separate number.
+	<TR> <TD bgcolor="#EEEEEE"> Floating-point arithmetic  	      <TD bgcolor="#EEEEEE"> arithmetic which deals with numbers which themselves indicate the location of their decimal points. The program must be able to interpret the true value of each individual number before any arithmetic can be performed.
+	<TR> <TD bgcolor="#EEEEEE"> Parameter stack	  	      <TD bgcolor="#EEEEEE"> in Forth, the region of memory which serves as common ground between various operations to pass arguments (numbers, flags, or whatever) from one operation to another.
+	<TR> <TD bgcolor="#EEEEEE"> Return stack	  	      <TD bgcolor="#EEEEEE"> in Forth, a region of memory distinct from the parameter stack which the Forth system uses to hold "return addresses" (to be discussed in Chap. 9), among other things. The user may keep values on the return stack temporarily, under certain conditions.
+	<TR> <TD bgcolor="#EEEEEE"> Scaling			      <TD bgcolor="#EEEEEE"> the process of multiplying (or dividing) a number by a ratio. Also refers to the process of multiplying (or dividing) a number by a power of ten so that all values in a set of data may be represented as integers with the decimal points assumed to be in the same place for all values.
+	<TR> <TH> <HR NOSHADE SIZE="6"> <TH> <HR NOSHADE SIZE="6">
+</TABLE>
+
+<H2>Problems -- Chapter 5</H2>
+			<IMG SRC="felix.gif" ALIGN=MIDDLE ALT="problems">
+
+<OL>
+	<LI> Translate the following algebraic expression into a Forth definition:
+<PRE>	-<U>a b</U>
+	  c
+</PRE>	
+	     given ( a b c -- ) <A HREF="5-1.forth.html">[answer]</A>
+	<LI> Given these four numbers on the stack:
+<PRE>	( 6 70 123 45 -- )
+</PRE>	
+	     write an expression that prints the largest value. <A HREF="5-2.forth.html">[answer]</A>
+	<LI> In "calculator style," convert the following temperatures, using these formulas:
+<BLOCKQUOTE>
+	<SUP>o</SUP>C = (<SUP>o</SUP>F - 32) / 1.8 <BR>
+	<SUP>o</SUP>F = (<SUP>o</SUP>C x 1.8) + 32<BR>
+	<SUP>o</SUP>K = <SUP>o</SUP>C + 273	  
+</BLOCKQUOTE>
+	(For now, express all arguments and results in whole degrees.)
+		<OL>
+		<LI>  &nbsp;&nbsp;&nbsp; 0<SUP>o</SUP> F in Centigrade
+		<LI>  &nbsp;212<SUP>o</SUP> F in Centigrade
+		<LI>  &nbsp;-32<SUP>o</SUP> F in Centigrade
+		<LI>  &nbsp; 16<SUP>o</SUP> C in Fahrenheit
+		<LI>  &nbsp;233<SUP>o</SUP> K in Centigrade
+		</OL> <A HREF="5-3.forth.html">[answer]</A>
+	<LI> Now define words to perform the conversions in Prob. 3. Use the following names:
+<PRE>	F>C  F>K  C>F  C>K  K>F  K>C </PRE>
+	Test them with the above values. <A HREF="5-4.forth.html">[answer]</A>
+</OL>
+
+<A HREF="http://validator.w3.org"><IMG SRC="http://validator.w3.org/images/vh32.gif" HEIGHT=31 WIDTH=88 ALIGN=RIGHT BORDER=0 ALT="Valid HTML 3.5"></A>
+</BODY>
+
+</HTML>

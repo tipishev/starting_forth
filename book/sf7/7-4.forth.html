@@ -1,0 +1,20 @@
+\ -----------------------------------------------------------------------
+\ 7-4.FORTH -------------------------------------------------------------
+\ -----------------------------------------------------------------------
+\ Code from Starting Forth Chapter 7
+\ ANSized by Benjamin Hoyt in 1997
+
+: MS  ( u -- )  DROP ;  \ if your system doesn't have MS
+
+( problem 7-4a )
+: F>C  ( fahr -- cels )  -320 M+  10 18 M*/ ;
+: C>F  ( cels -- fahr )  18 10 M*/  320 M+ ;
+: C>K  ( cels -- kelv )  2732 M+ ;
+: K>C  ( kelv -- cels )  -2732 M+ ;
+: F>K  ( fahr -- kelv )  F>C C>K ;
+: K>F  ( kelv -- fahr )  K>C C>F ;
+
+( problem 7-4b )
+: .DEG  ( d -- )  TUCK DABS
+   <#  #  [CHAR] . HOLD  #S  ROT SIGN  #>  TYPE SPACE ;
+

@@ -1,0 +1,573 @@
+<!DOCTYPE HTML PUBLIC "-//Microsoft//DTD Internet Explorer 3.0 HTML//EN">
+<HTML>
+
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Leo Brodie's Starting Forth - Chapter 9</TITLE>
+  <META name="description" content="Starting Forth, Leo Brodie, Chapter 9.">
+  <META name="keywords" content="Forth, example code, Starting Forth, chapter 9">
+</HEAD>
+
+<BODY BGCOLOR="#F8F8F8" TEXT="#000000" LINK="#0000FF" VLINK="#007070" ALINK="#FF0000" TOPMARGIN=0>
+
+<H1>9 Under the Hood</H1>
+
+	<P> Let's stop for a chapter to lift Forth's hood and see what goes on inside.
+
+	<P> Some of the information contained herein we've given earlier, but, at the risk of redundancy,
+	    we're now going to view the Forth "machine" as a whole, to see how it all fits together.
+
+<H2>Inside <FONT COLOR="#0000FF">INTERPRET</FONT></H2>
+
+	<P> Back in the first chapter we learned that the text interpreter, whose name is <FONT COLOR="#0000FF">INTERPRET</FONT>,
+	    picks words out of the input stream and tries to find their definitions in the dictionary. If it
+	    finds a word, <FONT COLOR="#0000FF">INTERPRET</FONT> has it executed.
+
+	<P> We can perform these separate operations ourselves by using words that perform the component functions
+	    of <FONT COLOR="#0000FF">INTERPRET</FONT>. For instance, the word <FONT COLOR="#0000FF"><B>'</B></FONT> (pronounced
+	    <U>tick</U>) finds a definition in the dictionary and returns its <U>execution</U> <U>token</U>. If we have defined
+	    <TT>GREET</TT> as we did in Chap. 1, we can now say
+<PRE>	' GREET U.<U> 4956608  ok </U>
+</PRE>
+	    and discover the <U>execution</U> <U>token</U> of <TT>GREET</TT> (whatever it happens to be).
+
+	<P> We may also directly use <FONT COLOR="#0000FF">EXECUTE</FONT>. <FONT COLOR="#0000FF">INTERPRET</FONT>
+	    will execute a definition, given its execution token ("xt") on the stack. Thus we can say
+<PRE>	' GREET EXECUTE<U> Hello, I speak Forth ok </U>
+</PRE>
+	    and accomplish the same thing as if we had merely said <TT>GREET</TT>, only in a more roundabout
+	    way.
+
+	<P> If tick cannot find a word in the dictionary, it executes <FONT COLOR="#0000FF">ABORT"</FONT> and
+	    prints an error message.
+
+	<P> Forth's text interpreter uses a word related to tick that returns a zero flag if the word is found.
+	    The name and usage of the word varies, but the conditional structure of the <FONT COLOR="#0000FF">INTERPRET</FONT>
+	    phrase always looks like this:
+<PRE>	(find the word)	IF	(convert to a number)
+			ELSE	(execute the word)
+			THEN
+</PRE>
+	    that is, if the string is <U>not</U> a defined word in the dictionary, <FONT COLOR="#0000FF">INTERPRET</FONT>
+	    tries to convert it as a number. If it is a defined word, <FONT COLOR="#0000FF">INTERPRET</FONT> executes
+	    it.
+
+	<P> The word <FONT COLOR="#0000FF"><B>'</B></FONT> has several uses. For instance, you can use the phrase
+<PRE>	' GREET .
+</PRE>
+	    to find out whether <TT>GREET</TT> has been defined, without actually having to execute it (it
+	    will either print the xt or respond with an error).<IMG SRC="footnote.gif" ALT="All modern Forths have the word [DEFINED] ( `word' -- f ) to test this directly.">
+
+	<P> You can also use the xt to <FONT COLOR="#0000FF">DUMP</FONT> the contents of the definition, like
+	    this:
+<PRE>	' GREET 12 CELLS DUMP
+	 A054620: 68 13 40 00  00 00 00 00 - 60 3D 03 0A  15 48 65 6C  h.@.....`=...Hel
+	 A054630: 6C 6F 2C 20  49 20 73 70 - 65 61 6B 20  46 6F 72 74  lo, I speak Fort
+	 A054640: 68 20 20 20  38 02 41 00 - 00 00 00 00  00 00 00 00  h   8.A.........
+	 ok
+</PRE>
+	<P> Or you can use tick to implement something called "vectored execution." Which brings us to the next section ...
+
+<H2>Vectored Execution</H2>
+
+	<P> While it <U>sounds</U> hairy, the idea of vectored execution is really quite simple. Instead of
+	    executing a definition <U>directly</U>, as we did with the phrase
+<PRE>	' GREET EXECUTE
+</PRE>
+	    we can execute it <U>indirectly</U> by keeping its xt in a variable, then executing the contents
+	    of the variable, like this:
+<PRE>	' GREET pointer !
+	pointer @ EXECUTE
+</PRE>
+	<P> The advantage is that we can change the pointer later, so that a single word can be made to perform
+	    different things at different times.
+
+	<P> Here is an example that you can try yourself:
+<PRE>	( 1 ) : HELLO    ." Hello " ;
+	( 2 ) : GOODBYE  ." Goodbye " ;
+	( 3 ) VARIABLE 'aloha  ' HELLO 'aloha !
+	( 4 ) : ALOHA    'aloha @ EXECUTE ;
+</PRE>
+	<P> In the first two lines, we've simply created words which print the strings "Hello" and "Goodbye."
+	    In line 3, we've defined a variable called <TT>'aloha</TT>. This will be our pointer. We've initialized
+	    the pointer with the xt of <TT>HELLO</TT>. In line 4, we've defined the word <TT>ALOHA</TT> to
+	    execute the definition whose xt is in <TT>'aloha</TT>.
+
+	<P> Now if we execute <TT>ALOHA</TT>, we will get
+<PRE>	ALOHA<U> Hello ok </U>
+</PRE>
+	<P> Alternatively, if we execute the phrase
+<PRE>	' GOODBYE 'aloha !
+</PRE>
+	    to store the xt of <TT>GOODBYE</TT> into <TT>'aloha</TT>, we will get
+<PRE>	ALOHA<U> Goodbye ok </U>
+</PRE>
+	Thus the same word, <TT>ALOHA</TT>, can do two different things.
+
+	<P> Notice that we named our pointer <TT>'aloha</TT> (which we would pronounce <U>tick-aloha</U>).
+	    Since <U>tick</U> provides an xt, we use it as a prefix to suggest "the xt of" <TT>ALOHA</TT>. It is
+	    a Forth convention to use this prefix for vectored execution pointers.
+
+	<P> Tick always goes to the next word in the <U>input</U> <U>stream</U>. What if we put tick inside
+	    a definition? When we execute the definition, tick will find the next word in the input stream, not
+	    the next word in the definition. Thus we could define
+<PRE>	: SAY  ' 'aloha ! ;
+</PRE>
+	    then enter
+<PRE>	SAY HELLO<U> ok </U>
+	ALOHA<U> Hello ok </U>
+</PRE>
+	    or
+<PRE>	SAY GOODBYE<U> ok </U>
+	ALOHA<U> Goodbye ok </U>
+</PRE>
+	    to store the xt of either <TT>HELLO</TT> or <TT>GOODBYE</TT> into <TT>'aloha</TT>.
+
+	<P> But what if we want tick to use the next word in the <U>definition</U>? We must use the word
+	    <FONT COLOR="#0000FF">[']</FONT> (<U>bracket-tick-bracket</U>) instead of tick. For example:
+<PRE>	: COMING   ['] HELLO   'aloha ! ;
+	: GOING    ['] GOODBYE 'aloha ! ;
+</PRE>
+	<P> Now we can say
+<PRE>	COMING<U> ok </U>
+	ALOHA<U> Hello ok </U>
+	GOING<U> ok </U>
+	ALOHA<U> Goodbye ok </U>
+</PRE>
+	<P> Here are the commands we've covered so far:
+
+<P><TABLE WIDTH="100%" BORDER="0">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>'&nbsp;xxx</TT> <TD bgcolor="#EEEEEE" nowrap> ( -- addr )	<TD bgcolor="#EEEEEE"> Attempts to find the execution token of <I>xxx</I> (the word that follows in the input stream) in the dictionary. <TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="tick">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>[']</TT> 	    <TD bgcolor="#EEEEEE" nowrap> compile time<BR>( -- )<BR>run time<BR>( -- addr ) <TD bgcolor="#EEEEEE"> Used only in a colon definition, compiles the execution token of the next word in the definition as a literal. <TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="bracket-tick-bracket">
+</TABLE>
+
+<H2>The Structure of a Dictionary Entry</H2>
+
+	<P> All definitions, whether they have been defined by <FONT COLOR="#0000FF"><B>:</B></FONT>, by <FONT COLOR="#0000FF">VARIABLE</FONT>,
+	    by <FONT COLOR="#0000FF">VALUE</FONT>, by <FONT COLOR="#0000FF">CREATE</FONT>, or by any other "defining word," share these
+	    basic parts:
+<PRE>	name field
+	link field
+	code pointer field
+	data field
+</PRE>
+	<P> Using the variable <TT>DATE</TT> as an example, here's how these components are arranged within
+	    each dictionary entry. In this diagram, each horizontal line represents one cell in the
+	    dictionary:
+	<P> <CENTER><IMG SRC="precedence.gif" ALT="precedence bit shown"></CENTER>
+
+	<P> No two Forth systems are alike in this respect. There may be more basic parts, their size
+	    may differ, and the order of the components almost certainly differs.
+
+	<P> In this book we're only concerned with the <U>functions</U> of the four components, not with their
+	    <U>order</U> inside a dictionary entry.
+
+	<H3>Name</H3>
+	<P> In our example, the first byte contains the number of characters in the full name of the defined
+	    word (there are four letters in <TT>DATE</TT>). The next four bytes contain the ASCII
+	    representations of the four letters in the name of the defined word.
+
+	<P> Notice the "precedence bit" in the diagram. This bit is used during compilation to indicate whether
+	    the word is supposed to be executed during compilation, or to simply be compiled into the new
+	    definition. More on this in Chap. 11.
+
+	<H3>Link</H3>
+	<P> The "link" cell contains the address of the previous definition in the dictionary list. The link
+	    cell can be used in linearly searching the dictionary. To simplify things a bit, imagine that it works
+	    this way:
+
+	<P> <IMG SRC="links.gif" ALT="compiler linking" ALIGN=LEFT>
+	    Each time the compiler adds a new word to the dictionary, he sets the link field to point to the
+	    address of the previous definition. Here he is setting the link field of <TT>CUISINART</TT> to point
+	    to the definition of <TT>CAR</TT>.
+
+	<P> <IMG SRC="tick.gif" ALT="tick searching links" ALIGN=RIGHT>
+	    At search time, tick (or bracket-tick-bracket, etc.) starts with the most recent word and follows
+	    the "chain" backwards, using the address in each link cell to locate the next definition back.
+
+	<P> The link field of the first definition in the dictionary contains a zero, which tells tick to give up;
+	    the word is not in the dictionary.
+
+	<H3>Code Pointer</H3>
+	<P> <IMG SRC="biglinks.gif" ALT="centralized code" ALIGN=LEFT>
+	    Next is the "code pointer." The xt contained in this pointer is what distinguishes a variable from
+	    a constant or a colon definition. It is the address of the instruction that is executed first when
+	    a particular type of word is executed. Conceptually, in the case of a variable, the pointer points
+	    to code that pushes the address of the variable on the data stack. In the case of a constant, the
+	    pointer points to code that pushes the contents of the constant on the data stack. In the case of
+	    a colon definition, the pointer points to code that executes the rest of the words in the
+	    colon definition. In practice there are many ways to implement this concept, including native code
+	    realizations.
+
+	<P> The code that is pointed to is called the "run-time code" because it is used when a word of that
+	    type is executed (not when a word of that type is defined or compiled).
+
+	<P> All variables (conceptually) have the same code pointer; all constants have the same code pointer
+	    of their own, and so on.
+
+	<H3>Data field</H3>
+	<P> Following the code pointer is the data field. In variables and constants, the data field is only
+	    one cell. In a <FONT COLOR="#0000FF">2VARIABLE</FONT> or a <FONT COLOR="#0000FF">2CONSTANT</FONT>,
+	    the data field is two cells. In an array, the data field can be as long as you want it. In a colon
+	    definition, the length of the data field depends on the length of the definition, as we'll explain
+	    in the next section. Strictly speaking, the colon definition of a modern Forth does not have a data
+	    field.
+
+	<P> The xt that is supplied by tick and expected by <FONT COLOR="#0000FF">EXECUTE</FONT> is the code
+	    pointer defined above. The beginning of the data field can be found with <FONT COLOR="#0000FF">&gt;BODY</FONT>,
+	    a word that computes the data field given an xt. <FONT COLOR="#0000FF">&gt;BODY</FONT> does not
+	    work for colon definitions. Some Forths may even forbid the use of <FONT COLOR="#0000FF">&gt;BODY</FONT>
+	    on any system data structure (variables constants, user, etc.).
+
+<H2>The Basic Structure of a Colon Definition</H2>
+
+	<P> While the format of the head and code pointer is the same for all types of definitions, the format
+	    of the data field varies from type to type. Let's look at the data field of a colon definition.
+
+	<P> The data field of a colon definition contains the <U>xts</U> of the previously defined words which
+	    comprise the definition. Here is the dictionary entry for the definition of <TT>PHOTOGRAPH</TT>,
+	    which is defined as
+<PRE>	: PHOTOGRAPH   SHUTTER OPEN  TIME EXPOSE  SHUTTER CLOSE ;
+</PRE>
+	<P> <IMG SRC="basicstruct.gif" ALT="basic structure" ALIGN=LEFT>
+	    When <TT>PHOTOGRAPH</TT> is executed, the definitions that are pointed to by the successive xts
+	    are executed in turn. The mechanism which reads the list of xts and executes the definitions they
+	    point to is called the "address interpreter."
+
+	<P> The word <FONT COLOR="#0000FF"><B>;</B></FONT> at the end of the definition compiles the xt of a word
+	    called <FONT COLOR="#0000FF">EXIT</FONT>. As you can see in the figure, the xt of <FONT COLOR="#0000FF">EXIT</FONT>
+	    resides in the last cell of the dictionary entry. The address interpreter will execute <FONT COLOR="#0000FF">EXIT</FONT>
+	    when it gets to this address, just as it executes the other words in the definition. <FONT COLOR="#0000FF">EXIT</FONT>
+	    terminates the execution of the address interpreter, as we will see in the next section.
+
+<H2>Nested Levels of Execution</H2>
+
+	<P> The function of <FONT COLOR="#0000FF">EXIT</FONT> is to return the flow of execution to the next
+	    higher-level definition that refers to the current definition. Let's see how this works in
+	    simplified terms.
+
+	<P> Suppose that <TT>DINNER</TT> consists of three courses:
+<PRE>	: DINNER   SOUP ENTREE DESSERT ;
+</PRE>
+	    and that tonight's <TT>ENTREE</TT> consists simply of
+<PRE>	: ENTREE   CHICKEN RICE ;
+</PRE>
+	<P> <IMG SRC="ippointer.gif" ALT="dinner served" ALIGN=RIGHT>
+	    We are executing <TT>DINNER</TT> and we have just finished the <TT>SOUP</TT>. The pointer that is
+	    used by the address interpreter is called the "interpreter pointer". Since the next course after
+	    the <TT>SOUP</TT> is the <TT>ENTREE</TT>, our interpreter pointer is pointing to the cell that
+	    contains the xt of <TT>ENTREE</TT>.
+
+	<P> The action the address interpreter performs can be seen as "subroutine calling" all the xts in
+	    the list, with the return stack used to keep return adresses, and the <FONT COLOR="#0000FF">EXIT</FONT>
+	    working as the machine's RTS (return from subroutine) instruction.
+
+<H2>One Step Beyond</H2>
+
+	<P> Now you're of course wondering: what happens when we finally execute the <FONT COLOR="#0000FF">EXIT</FONT>
+	    in <TT>DINNER</TT>. Whose return address is on the return stack? What do we return to?
+
+	<P> Well, remember that <TT>DINNER</TT> has just been executed by <FONT COLOR="#0000FF">EXECUTE</FONT>,
+	    which is a component of <FONT COLOR="#0000FF">INTERPRET</FONT>. <FONT COLOR="#0000FF">INTERPRET</FONT>
+	    is a loop which checks the entire input stream. Assuming that we entered <IMG SRC="enterkey.gif" ALIGN=MIDDLE  ALT="return"> after <TT>DINNER</TT>,
+	    then there is nothing more to interpret. So when we exit <FONT COLOR="#0000FF">INTERPRET</FONT>, where
+	    does that leave us? In the outermost definition of each terminal, called <FONT COLOR="#0000FF">QUIT</FONT>.
+
+	<P> <FONT COLOR="#0000FF">QUIT</FONT>, in simplified form, looks like this:
+<PRE>	: QUIT	BEGIN	(clear return stack)
+			(accept input)
+			INTERPRET
+			." ok " CR
+		AGAIN ;
+</PRE>
+	<P> (The parenthetical comments represent words and phrases not yet covered.) We can see that after the word
+	    <FONT COLOR="#0000FF">INTERPRET</FONT> comes a dot-quote message, "ok," and a <FONT COLOR="#0000FF">CR</FONT>,
+	    which of course are what we see after interpretation has been completed.
+
+	<P> Next is the phrase
+<PRE>	AGAIN
+</PRE>
+	    which unconditionally returns us to the beginning of the loop, where we clear the return stack and
+	    once again wait for input.
+
+	<P> If we execute <FONT COLOR="#0000FF">QUIT</FONT> at any level of execution, we will immediately cease
+	    execution of our application and re-enter <FONT COLOR="#0000FF">QUIT</FONT>'s loop. The returnstack
+	    will be cleared (regardless of how many levels of return addresses we had there, since we could
+	    never use any of them now) and the system will wait for input. You can see why <FONT COLOR="#0000FF">QUIT</FONT>
+	    can be used to keep the message "ok" from appearing at our terminal.
+
+	<P> The definition of <FONT COLOR="#0000FF">ABORT"</FONT> uses <FONT COLOR="#0000FF">QUIT</FONT>.
+
+<H2>Abandoning the Nest</H2>
+
+	<P> It's possible to include <FONT COLOR="#0000FF">EXIT</FONT> in the middle of a definition. For
+	    example, if we were to redefine <TT>ENTREE</TT> as follows:
+<PRE>	: ENTREE   CHICKEN EXIT RICE ;
+</PRE>
+	    then when we subsequently execute <TT>DINNER</TT>, we will exit right after <TT>CHICKEN</TT> and
+	    return to the next course after the <TT>ENTREE</TT>, i.e., <TT>DESSERT</TT>.
+
+	<P> <FONT COLOR="#0000FF">EXIT</FONT> is commonly used to exit from deeply nested conditional
+	    structures.
+<P><TABLE WIDTH="100%" BORDER="0">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>EXIT</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( -- )		<TD bgcolor="#EEEEEE"> When compiled within a colon definition, terminates execution at that point. 	<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="exit">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>QUIT</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( -- )		<TD bgcolor="#EEEEEE"> Clears the return stack and gives control to the terminal. No message is given.	<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="quit">
+</TABLE>
+
+<H2>Forth Geography</H2>
+
+	<P> This is the memory map of a typical Forth system:
+	    <IMG SRC="geo.gif" ALT="Forth geography" ALIGN=LEFT>
+
+	<H3>System Variables</H3>
+	<P> This section of memory contains "system variables" which are created by the basic Forth core and
+	    used by the entire system. They are not generally used by the user.
+
+	<H3>User Dictionary</H3>
+	<P> The dictionary will grow into higher memory as you add your own definitions. The next available
+	    cell in the dictionary at any time is pointed to by a variable called <FONT COLOR="#0000FF">CP</FONT>.
+	    During the process of compilation, the pointer <FONT COLOR="#0000FF">CP</FONT> is adjusted cell-by-cell
+	    as the entry is being added to the dictionary. Thus <FONT COLOR="#0000FF">CP</FONT> is the compiler's
+	    bookmark; it points to the place in the dictionary where the compiler can next compile.
+
+	<P> <FONT COLOR="#0000FF">CP</FONT> is also used by the word <FONT COLOR="#0000FF">ALLOT</FONT>, which
+	    advances <FONT COLOR="#0000FF">CP</FONT> by the number of bytes given. For example, the phrase
+<PRE>	5 CELLS ALLOT
+</PRE>
+ 	    adds twenty to <FONT COLOR="#0000FF">CP</FONT> so that the compiler will leave room in the dictionary
+	    for a five-cell array.
+
+	<P> A related word is <FONT COLOR="#0000FF">HERE</FONT>, which is simply defined as
+<PRE>	: HERE   CP @ ;
+</PRE>
+	    to put the value of <FONT COLOR="#0000FF">CP</FONT> on the stack. The word <FONT COLOR="#0000FF"><B>,</B></FONT>
+	    (comma), which stores a single-length value into the next available cell in the dictionary, is
+	    simply defined
+<PRE>	: ,   HERE !  CELL ALLOT ;
+</PRE>
+	    that is, it stores a value into <FONT COLOR="#0000FF">HERE</FONT> and advances the dictionary pointer
+	    one cell to leave room for it.
+
+	<P> You can use <FONT COLOR="#0000FF">HERE</FONT> to determine how much memory any part of your application
+	    requires, simply by comparing the <FONT COLOR="#0000FF">HERE</FONT> from before with the
+	    <FONT COLOR="#0000FF">HERE</FONT> after compilation. For example,
+<PRE>	HERE  S" random.frt" INCLUDED  HERE SWAP - .<U> 196 ok </U>
+</PRE>
+	    indicates that the definitions loaded by the file <TT>random.frt</TT> filled 196 bytes of memory space
+	    in the dictionary.
+
+	<H3>The Pad</H3>
+	<P> At a certain distance from <FONT COLOR="#0000FF">HERE</FONT> in your dictionary, you will find a small
+	    region of memory called the "pad." Like a scratch pad, it is usually used to hold ASCII character
+	    strings that are being manipulated prior to being sent out to a terminal. For example, the number
+	    formatting words use the pad to hold the ASCII numerals during the conversion process, prior to
+	    <FONT COLOR="#0000FF">TYPE</FONT>.
+
+	<P> The size of the pad is indefinite. In most systems there are hundreds of kilobytes between the
+	    beginning of the pad and the top of the parameter stack.
+
+	<P> Since the pad's beginning address is defined relative to the last dictionary entry, it moves every
+	    time you add a new definition or execute <FONT COLOR="#0000FF">FORGET</FONT> or <FONT COLOR="#0000FF">MARKER</FONT>.
+	    This arrangement proves safe, however, because the pad is never used when any of these events are
+	    occurring. The word <FONT COLOR="#0000FF">PAD</FONT> returns the current address of the beginning
+	    of the pad. It is defined simply:
+<PRE>	: PAD   HERE 340 + ;
+</PRE>
+	    that is, it returns an address that is a fixed number of bytes beyond <FONT COLOR="#0000FF">HERE</FONT>.
+	    (The actual number varies.)
+
+	<H3>Parameter Stack</H3>
+	<P> Far above the pad in memory is the area reserved for the parameter stack. Although we like to imagine
+	    that values actually move up or down somewhere as we "pop them off" and "push them on," in reality
+	    nothing moves. The only thing that changes is a pointer to the "top" of the stack.
+
+	<P> As you can see below, when we "put a number on the stack," what really happens is that the pointer is
+	    "decremented" (so that it points to the next available location towards low memory), then our
+	    number is stored where the pointer is pointing. When we "remove a number from the stack," the number
+	    is fetched from the location where the pointer is pointing, then the pointer is incremented. Any
+	    numbers above the stack pointer on our map are meaningless.
+
+	<P> <CENTER><IMG SRC="pushpop.gif" ALIGN=MIDDLE ALT="push and pop"></CENTER>
+	<P> As new values are added to the stack, it "grows towards low memory."
+
+	<P> The stack pointer is fetched with the word <FONT COLOR="#0000FF">SP@</FONT> (pronounced <U>s-p-fetch</U>). Since
+	    <FONT COLOR="#0000FF">SP@</FONT> provides the address of the top stack location, the phrase
+<PRE>	SP@ @
+</PRE>
+	    fetches the contents of the top of stack. This operation, of course, is identical to that of
+	    <FONT COLOR="#0000FF">DUP</FONT>. If we had five values on the stack, we could copy the fifth
+	    one down with the phrase
+<PRE>	SP@ 4 CELLS + @
+</PRE>
+	    (but this is not considered good programming practice).
+
+	<P> The bottom of the stack is pointed to by a variable called <FONT COLOR="#0000FF">SP0</FONT>
+	    (<U>s-p-zero</U>). <FONT COLOR="#0000FF">SP0</FONT> always contains the address of the next
+	    cell <U>below</U> the "empty stack" cell.
+
+	<P> Notice that with double-length numbers, the high-order cell is stored at the lower memory address
+	    whether on the stack or in the dictionary. The operators <FONT COLOR="#0000FF">2@</FONT> and
+	    <FONT COLOR="#0000FF">2!</FONT> keep the order of the cells consistent.
+
+	<H3>Input Message Buffer</H3>
+	<P> <FONT COLOR="#0000FF">TIB</FONT> contains the starting address for the "input message buffer," or "Terminal Input Buffer,"
+	    which grows towards <U>high</U> memory (the same direction as the pad). When you enter text from the
+	    terminal, it gets stored into this buffer where the text interpreter will scan it.
+
+	<H3>Return Stack</H3>
+        <P> Above the buffer resides the return stack, which operates identically to the parameter stack. There
+	are no high-level Forth words analogous to <FONT COLOR="#0000FF">SP0</FONT> and
+	<FONT COLOR="#0000FF">SP@</FONT> that refer to the return stack.
+
+	<H3>User Variables</H3>
+	<P> The next section of memory contains "user variables." These variables include <FONT COLOR="#0000FF">BASE</FONT>,
+	    <FONT COLOR="#0000FF">SP0</FONT>, and many others that we'll cover in an upcoming section.
+
+	<P> This completes our journey across the memory map of a typical Forth system. Here are the words we've
+	just covered that relate to memory regions in the Forth system:
+
+<P><TABLE WIDTH="100%" BORDER="0">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>HERE</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( -- addr )	<TD bgcolor="#EEEEEE"> Returns the next available dictionary location. 					 <TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="here">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>PAD</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( -- addr )	<TD bgcolor="#EEEEEE"> Returns the beginning address of a scratchpad area used to hold character strings for intermediate processing. 	<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="pad">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>SP@</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( -- addr )	<TD bgcolor="#EEEEEE"> User variable. Return the address of the top of the stack before <TT>SP@</TT> is executed. <TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="s-p-fetch">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>SP0</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( -- addr )	<TD bgcolor="#EEEEEE"> User variable. Contains the address of the bottom of the parameter stack.	 <TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="s-p-zero">
+</TABLE>
+
+<H2>User Variables</H2>
+
+	<P> The following list shows most of the user variables. Some we won't ever mention again. Don't try to
+	    memorize this table. Just remember where you can find it.
+
+<P><TABLE WIDTH="100%" BORDER="0">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>TIB</TT> 	<TD bgcolor="#EEEEEE"> Contains the address of the start of the terminal input buffer.	<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="t-i-b">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>#TIB</TT> 	<TD bgcolor="#EEEEEE"> Contains the size of the terminal input buffer.			<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="number-t-i-b">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>SCR</TT> 	<TD bgcolor="#EEEEEE"> A pointer to the current block number (set by <TT>LIST</TT>). 	<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="s-c-r">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>BASE</TT> 	<TD bgcolor="#EEEEEE"> Number conversion base.			 			<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="base">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>CP</TT> 	<TD bgcolor="#EEEEEE"> Dictionary pointer. Pointer to the next available byte.		<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="c-p">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>&gt;IN</TT> <TD bgcolor="#EEEEEE"> A pointer to the current position in the input stream.	 	<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="to-in">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>BLK</TT> 	<TD bgcolor="#EEEEEE"> If non-zero, a pointer to the block being interpreted by <TT>LOAD</TT>. A zero indicates interpretation from the terminal (via the input message buffer). <TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="b-l-k">
+</TABLE>
+	<P> User variables are not like ordinary variables. With an ordinary variable (one defined by the word
+	    <FONT COLOR="#0000FF">VARIABLE</FONT>), the value is kept in the body of the dictionary entry. Each
+	    user variable, on the other hand, is kept in an array called the "user table." The dictionary entry
+	    for each user variable is located elsewhere; its body contains an offset into the user table. When you
+	    execute the name of a user variable, such as <FONT COLOR="#0000FF">CP</FONT>, this offset is added
+	    to the beginning address of the user table, allowing you to use <FONT COLOR="#0000FF">@</FONT> or
+	    <FONT COLOR="#0000FF">!</FONT> in the normal way.
+
+	<P> The main advantage of user variables is that any number of tasks can use the same <U>definition</U>
+	    of a variable and each get its own <U>value</U> (because each task has not only its own stacks, but
+	    also its own user table). Each task that executes
+<PRE>	BASE @
+</PRE>
+	    gets the value for <FONT COLOR="#0000FF">BASE</FONT> from its own user table. This saves a lot
+	    of room in the system while still allowing each task to execute independently.
+
+	<P> User variables are defined by the word <FONT COLOR="#0000FF">USER</FONT>. The sequence of user variables
+	    in the table and their offset values vary from one system to another.
+
+	<P> To summarize, there are three kinds of variables: System variables contain values used by the entire
+	    Forth system. User variables contain values that are unique for each task, even though the definitions
+	    can be used by all tasks in the system. Regular variables can be accessible either system-wide
+	    or within a single task only.
+
+
+	<P> Here's a list of the Forth words we've covered in this chapter:
+
+<P><TABLE WIDTH="100%" BORDER="0">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>' xxx</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( -- addr )	<TD bgcolor="#EEEEEE"> Attempts to find the execution token of <I>xxx</I> (the word that follows in the input stream) in the dictionary. <TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="tick">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>[']</TT> 	   <TD bgcolor="#EEEEEE" nowrap> compile time<BR>( -- )<BR>run time<BR>( -- addr ) <TD bgcolor="#EEEEEE"> Used only in a colon definition, compiles the execution token of the next word in the definition as a literal. <TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="bracket-tick-bracket">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>EXECUTE</TT>   <TD bgcolor="#EEEEEE" nowrap> ( xt -- )	<TD bgcolor="#EEEEEE"> Executes the dictionary entry whose execution token is on the stack. 		<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="execute">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>EXIT</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( -- )		<TD bgcolor="#EEEEEE"> When compiled within a colon definition, terminates execution at that point. 	<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="exit">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>QUIT</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( -- )		<TD bgcolor="#EEEEEE"> Clears the return stack and gives control to the terminal. No message is given. 	<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="quit">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>HERE</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( -- addr )	<TD bgcolor="#EEEEEE"> Returns the next available dictionary location. 					<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="here">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>PAD</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( -- addr )	<TD bgcolor="#EEEEEE"> Returns the beginning address of a scratchpad area used to hold character strings for intermediate processing. 	<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="pad">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>SCR</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( -- addr )	<TD bgcolor="#EEEEEE"> User variable. A pointer to the current block number (set by <TT>LIST</TT>). 	<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="s-c-r">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>BASE</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( -- addr )	<TD bgcolor="#EEEEEE"> User variable. Number conversion base.			 			<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="base">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>SP@</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( -- addr )	<TD bgcolor="#EEEEEE"> User variable. Return the address of the top of the stack before <TT>SP@</TT> is executed. <TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="s-p-fetch">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>TIB</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( -- addr )    <TD bgcolor="#EEEEEE"> User variable. Contains the address of the start of the terminal input buffer.	<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="t-i-b">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>#TIB</TT>	   <TD bgcolor="#EEEEEE" nowrap> ( -- addr ) 	<TD bgcolor="#EEEEEE"> User variable. Contains the size of the terminal input buffer.			<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="number-t-i-b">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>SP0</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( -- addr )	<TD bgcolor="#EEEEEE"> User variable. Contains the address of the bottom of the parameter stack.	<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="s-zero">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>&gt;IN</TT>    <TD bgcolor="#EEEEEE" nowrap> ( -- addr )	<TD bgcolor="#EEEEEE"> User variable. A pointer to the current position in the input stream.	 	<TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="to-in">
+	<TR><TD align=center bgcolor="#EEEEEE"> <TT>BLK</TT> 	   <TD bgcolor="#EEEEEE" nowrap> ( -- addr )	<TD bgcolor="#EEEEEE"> User variable. If non-zero, a pointer to the block being interpreted by <TT>LOAD</TT>. A zero indicates interpretation from the terminal (via the input message buffer). <TD bgcolor="#EEEEEE"><IMG SRC="bullet.gif" ALT="b-l-k">
+</TABLE>
+
+<P>
+<TABLE WIDTH="100%" BORDER="0">
+	<CAPTION><I>Review of Terms</I></CAPTION>
+	<TR> <TH> <HR NOSHADE SIZE="6"> <TH> <HR NOSHADE SIZE="6">
+	<TR> <TD bgcolor="#EEEEEE"> Address interpreter	    <TD bgcolor="#EEEEEE"> The second of Forth's two interpreters, the one which executes the data (list of addresses, list of calls, machine code, ...) found in the dictionary entry of a colon definition. The address interpreter also handles the nesting of execution levels for words within words.
+	<TR> <TD bgcolor="#EEEEEE"> Body	  	    <TD bgcolor="#EEEEEE"> the code and data field of a Forth dictionary entry.
+	<TR> <TD bgcolor="#EEEEEE"> Cfa  		    <TD bgcolor="#EEEEEE"> code field address; the address of a dictionary entry's code pointer field.
+	<TR> <TD bgcolor="#EEEEEE"> Code pointer field	    <TD bgcolor="#EEEEEE"> the cell in a dictionary entry which somehow points out the xt of the run-time code for this particular type of definition. For example, in a dictionary entry compiled by <FONT COLOR="#0000FF"><B>:</B></FONT>, the field would point out the address interpreter.
+	<TR> <TD bgcolor="#EEEEEE"> Defining word	    <TD bgcolor="#EEEEEE"> a Forth word which creates a dictionary entry. Examples include <FONT COLOR="#0000FF"><B>:</B></FONT>, <FONT COLOR="#0000FF">CONSTANT</FONT>, <FONT COLOR="#0000FF">VARIABLE</FONT>, etc.
+	<TR> <TD bgcolor="#EEEEEE"> Head  		    <TD bgcolor="#EEEEEE"> the name and link fields of a Forth dictionary entry.
+	<TR> <TD bgcolor="#EEEEEE"> Input message buffer    <TD bgcolor="#EEEEEE"> the region of memory within a terminal task that is used to store text as it arrives from the terminal. Incoming source text is interpreted here.
+	<TR> <TD bgcolor="#EEEEEE"> Link field 		    <TD bgcolor="#EEEEEE"> the cell in a dictionary entry which contains the address of the previous definition, used in searching the dictionary.
+	<TR> <TD bgcolor="#EEEEEE"> Name field 		    <TD bgcolor="#EEEEEE"> the area of a dictionary entry which contains the name of the defined word, along with the number of characters in the name.
+	<TR> <TD bgcolor="#EEEEEE"> Pad  		    <TD bgcolor="#EEEEEE"> the region of memory within a terminal task that is used as a scratch area to hold character strings for intermediate processing.
+	<TR> <TD bgcolor="#EEEEEE"> Data field 		    <TD bgcolor="#EEEEEE"> the area of a dictionary entry which contains the "contents" of a definition: for a <FONT COLOR="#0000FF">CONSTANT</FONT>, the value of the constant, for a <FONT COLOR="#0000FF">VARIABLE</FONT>, the value of the variable; for a colon definition, the list of xts of words that are to be executed in turn when the definition is executed.
+	<TR> <TD bgcolor="#EEEEEE"> Run-time code	    <TD bgcolor="#EEEEEE"> a routine, compiled in memory, which specifies what happens when a member of a given class of words is executed. The run-time code for a colon definition is the address interpreter; the run-time code for a variable pushes the address of the variable's body on the stack.
+	<TR> <TD bgcolor="#EEEEEE"> System variable	    <TD bgcolor="#EEEEEE"> one of a set of variables provided by Forth, which are referred to system-wide (by any task). Contrast with "user variables.".
+	<TR> <TD bgcolor="#EEEEEE"> Task		    <TD bgcolor="#EEEEEE"> in Forth, a partition in memory that contains at minimum a parameter and a return stack and a set of user variables.
+	<TR> <TD bgcolor="#EEEEEE"> User variable	    <TD bgcolor="#EEEEEE"> one of a set of variables provided by Forth, whose values are unique for each task. Contrast with "system variables."
+	<TR> <TD bgcolor="#EEEEEE"> Vectored execution	    <TD bgcolor="#EEEEEE"> the method of specifying code to be executed by providing not the address of the code itself, but the address of a location which contains the xt of the code. This location is  often called "the vector." As circumstances change within the system, the vector can be reset to point to some other piece of code.
+	<TR> <TH> <HR NOSHADE SIZE="6"> <TH> <HR NOSHADE SIZE="6">
+</TABLE>
+
+<H2>Problems -- Chapter 9</H2>
+			<IMG SRC="felix.gif" ALIGN=MIDDLE ALT="problems">
+
+<OL>
+	<LI> First review Chap. 2, Prob. 6. Without changing any of those definitions, write a word called
+	     <TT>COUNTS</TT> which will allow the judge to optionally enter the number of counts for any crime.
+	     For instance, the entry
+<PRE>	CONVICTED-OF  BOOKMAKING  3 COUNTS TAX-EVASION WILL-SERVE<IMG SRC="enterkey.gif" ALIGN=MIDDLE  ALT="return"><U> 17 years ok </U>
+</PRE>	     will compute the sentence for one count of bookmaking and three counts of tax evasion.
+	     <A HREF="9-1.forth.html">[answer]</A>
+	<LI> What's the beginning address of your private dictionary?
+	     <A HREF="9-2.forth.html">[answer]</A>
+	<LI> In your system, how far is the pad from the top of your private dictionary?
+	     <A HREF="9-3.forth.html">[answer]</A> <BR><BR>
+	<LI> Assuming that <TT>DATE</TT> has been defined by <FONT COLOR="#0000FF">VARIABLE</FONT>, what is the difference between
+	     these two phrases:
+<PRE>	DATE .
+</PRE>
+	and
+<PRE>	' DATE >BODY .
+</PRE>
+	<P> What is the difference between these two phrases:
+<PRE>	BASE .
+</PRE>
+	and
+<PRE>	' BASE >BODY .
+</PRE>  <A HREF="9-4.forth.html">[answer]</A>
+	<LI> In this exercise you will create a "vectored execution array," that is, an array which contains
+	     xts of Forth words. You will also create an operation word which will execute one word stored
+	     in the array when the operation word is executed.
+	     <P> Define a one-dimensional array of cells which will return the nth element's address when given
+	         a subscript n. Define several words which output something at your terminal and take no inputs.
+		 Store the xts of these output words in various elements of the array. Store the address of a
+		 do-nothing word in any remaining elements of the array. Define a word which will take a valid
+		 array index and execute the word whose address is stored in the referenced element.
+
+	     <P> For example,
+
+<PRE>	1 DO-SOMETHING<U> Hello, I speak Forth. ok </U>
+	2 DO-SOMETHING<U> 1 2 3 4 5 6 7 8 9 10 ok </U>
+	3 DO-SOMETHING
+	**********
+	**********
+	**********
+	**********
+	********** ok
+	4 DO-SOMETHING<U> ok </U>
+	5 DO-SOMETHING<U> ok </U>
+	<A HREF="9-5.forth.html">[answer]</A>
+</PRE>
+	</OL>
+
+<A HREF="http://validator.w3.org"><IMG SRC="http://validator.w3.org/images/vh32.gif" HEIGHT=31 WIDTH=88 ALIGN=RIGHT BORDER=0 ALT="Valid HTML 3.5"></A>
+</BODY>
+
+</HTML>

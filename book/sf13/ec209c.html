@@ -1,0 +1,68 @@
+<HTML><HEAD><TITLE> ec 209c catch2 </TITLE>
+<link rel="stylesheet" type="text/css" href="an.css">
+</HEAD>
+<BODY><center>
+
+<table><tr><td><center>209c
+<br><tt>
+<a href="ec209b.html"> &#171;&#171; </a> &nbsp;
+<a href="ec200.html"> &#171;&#187; </a> &nbsp;
+<a href="ec210a.html"> &#187;&#187; </a>
+</tt>
+</center></table>
+
+<br> &nbsp;
+
+<table width="80%"><tr><td>
+
+<div class=g><H2>The problems from Chap. 208</H2></div>
+<pre>
+: EX BEGIN DEPTH 0> WHILE DROP REPEAT ;
+
+EX 7 ' S" CATCH Vijgeblaadje" .S [rtn] ( 7 addr len 0 )
+</pre>
+
+<tt>addr len </tt>is addres and length of the string Vijgeblaadje.
+
+<PRE>
+EX 8 ' ' CATCH FIG .S [rtn]
+</pre>
+
+Forth prints an error message because it tries to find<tt> fig </tt>again after the<tt> CATCH</tt>.
+
+<PRE>
+EX 9 ' TO CATCH BL .S [rtn] ( 9 -32 32 )
+</pre>
+
+<tt>TO </tt>can't operate on<tt> BL</tt>: error -32, followed by<tt> BL </tt>(= 32).
+
+<PRE>
+EX 10 ' DUP ' CATCH EXECUTE .S [rtn] ( 10 10 0 )
+</pre>
+
+DUP-action and "allright zero"
+
+<PRE>
+EX 11 ' DUP ' CATCH CATCH .S [rtn] ( 11 11 0 0 )
+</pre>
+
+DUP-action and 2 "allright zeros."
+
+<PRE>
+EX 12 ' DUP ' CATCH ' CATCH CATCH .S [rtn] ( 12 12 0 0 0 )
+
+EX ( 13 ) ' DROP CATCH .S [rtn] ( ) 
+</pre>
+
+DROP-action on empty stack, followed by "allright zero." My Forth did not object.
+
+<pre>
+EX 14 ' THROW CATCH .S [rtn] ( 14? 14 )
+</pre>
+
+The first 14 could be overwritten.
+
+<div align=right><tt><a href="ec210a.html">&#187;&#187;</a></tt></div>
+
+</table>
+</center></BODY></HTML>

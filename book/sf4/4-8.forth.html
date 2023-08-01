@@ -1,0 +1,19 @@
+\ -----------------------------------------------------------------------
+\ 4-8.forth -------------------------------------------------------------
+\ -----------------------------------------------------------------------
+\ Code from Starting Forth, Chapter 4
+\ ANSized by Benjamin Hoyt in 1997
+
+( problem 4-8 )
+: .SIGN  ( n -- |n| )  DUP 0<  IF ." Negative " THEN ABS ;
+
+: SPELLER  ( n -- )  
+	DUP ABS 4 > IF  ." Out of range " 
+		  ELSE  .SIGN 
+			DUP  0= IF ." Zero "  ELSE
+			DUP 1 = IF ." One "   ELSE
+			DUP 2 = IF ." Two "   ELSE
+			DUP 3 = IF ." Three " ELSE 
+				   ." Four " 
+			THEN THEN THEN THEN 
+		 THEN  DROP ;
