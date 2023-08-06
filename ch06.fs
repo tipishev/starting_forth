@@ -49,5 +49,5 @@
 : triangle ( increment limit start -- ) do cr 9 i - spaces i 2* 1+ stars dup +loop drop ;
 : diamonds ( #diamonds -- ) 0 ?do 1 10 0 triangle -1 0 9 triangle loop ;
 ( ex 7 skipped, not interested )
-( ex 8 ) : ** ( n exp -- n**exp ) 1 swap 0 do over * loop swap drop ;
+( ex 8 ) : ** ( n exp -- n**exp ) 1 swap 0 do over * loop nip ;
 
