@@ -1,0 +1,5 @@
+\ don't run it, hangs the computer
+: N-MAX 0 BEGIN 1+ DUP 0< UNTIL 1- ;
+: DELAY 500000 0 DO LOOP ;
+: RING-BELL 7 EMIT ;
+: RING-3-BELLS 3 0 DO RING-BELL DELAY LOOP ;
